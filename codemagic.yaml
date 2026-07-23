@@ -3,7 +3,7 @@ workflows:
     name: iOS Build
     max_build_duration: 30
     environment:
-      node: 20.0.0
+      node: 22.0.0
       xcode: 16.0
       cocoapods: default
       vars:
@@ -16,21 +16,17 @@ workflows:
         script: npm run build
       - name: Sync Capacitor
         script: npx cap sync ios
-      - name: Set up iOS code signing
-        script: |
-          xcode-project use-profiles
       - name: Build IPA
         script: |
-          xcodebuild build -workspace ios/App/${XCODE_WORKSPACE} \
+          cd ios/App
+          xcodebuild build \
+            -workspace ${XCODE_WORKSPACE} \
             -scheme ${XCODE_SCHEME} \
             -sdk iphoneos \
             -configuration Release \
             -archivePath $CM_BUILD_DIR/App.xcarchive \
-            archive
+            archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
     artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-    publishing:
-      email:
-        recipients:
-          - your-email@example.com
+      - $CM_BUILD_DIR/App.xcarchive
