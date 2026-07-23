@@ -27,7 +27,6 @@ workflows:
             -destination 'generic/platform=iOS' \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            SWIFT_VERSION=5.0
+            CODE_SIGN_IDENTITY=""
     artifacts:
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphoneos/App.app
