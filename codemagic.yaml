@@ -24,9 +24,10 @@ workflows:
             -scheme ${XCODE_SCHEME} \
             -sdk iphoneos \
             -configuration Release \
-            -archivePath $CM_BUILD_DIR/App.xcarchive \
-            archive \
+            -destination 'generic/platform=iOS' \
             CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            SWIFT_VERSION=5.0
     artifacts:
-      - $CM_BUILD_DIR/App.xcarchive
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphoneos/App.app
