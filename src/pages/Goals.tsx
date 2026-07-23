@@ -9,6 +9,7 @@ import { showToast } from "@/components/shared/Toast";
 import { getCurrentMonth, daysInCurrentMonth, daysRemainingInMonth } from "@/utils/date";
 import { predictMonthlyTotalEnhanced } from "@/utils/predictionEnhanced";
 import BottomSheet from "@/components/shared/BottomSheet";
+import { SHIFT_DEFINITIONS, type ShiftType } from "@/types";
 
 const container = {
   hidden: { opacity: 0 },
@@ -90,7 +91,7 @@ export default function Goals() {
         </div>
         <button
           onClick={openSheet}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#16213E] border border-white/10 hover:bg-white/10 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass hover:bg-white/[0.06] transition-colors"
         >
           <Edit3 size={16} className="text-white/60" />
           <span className="text-white/60 text-sm">编辑目标</span>
@@ -100,7 +101,7 @@ export default function Goals() {
       {/* Progress Ring */}
       <motion.div
         variants={child}
-        className="bg-gradient-to-br from-[#16213E] to-[#1A1A2E] rounded-3xl p-6 border border-white/5 flex flex-col items-center"
+        className="glass rounded-3xl p-6 flex flex-col items-center"
       >
         <ProgressRing
           progress={goalProgress}
@@ -133,7 +134,7 @@ export default function Goals() {
 
       {/* Stats Grid */}
       <motion.div variants={child} className="grid grid-cols-2 gap-3">
-        <div className="bg-gradient-to-br from-[#16213E] to-[#1A1A2E] rounded-2xl p-4 border border-white/5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Target size={16} className="text-[#FFD100]" />
             <span className="text-white/50 text-xs">目标单量</span>
@@ -145,7 +146,7 @@ export default function Goals() {
           <span className="text-white/60 text-sm ml-1">单</span>
         </div>
 
-        <div className="bg-gradient-to-br from-[#16213E] to-[#1A1A2E] rounded-2xl p-4 border border-white/5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle size={16} className="text-emerald-400" />
             <span className="text-white/50 text-xs">已完成</span>
@@ -157,7 +158,7 @@ export default function Goals() {
           <span className="text-white/60 text-sm ml-1">单</span>
         </div>
 
-        <div className="bg-gradient-to-br from-[#16213E] to-[#1A1A2E] rounded-2xl p-4 border border-white/5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Calendar size={16} className="text-[#00D2FF]" />
             <span className="text-white/50 text-xs">剩余天数</span>
@@ -166,7 +167,7 @@ export default function Goals() {
           <span className="text-white/60 text-sm ml-1">/ {total} 天</span>
         </div>
 
-        <div className="bg-gradient-to-br from-[#16213E] to-[#1A1A2E] rounded-2xl p-4 border border-white/5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Trophy size={16} className="text-[#7B2FF7]" />
             <span className="text-white/50 text-xs">每日需完成</span>
@@ -177,7 +178,7 @@ export default function Goals() {
       </motion.div>
 
       {/* Progress Bar */}
-      <motion.div variants={child} className="bg-gradient-to-br from-[#16213E] to-[#1A1A2E] rounded-2xl p-5 border border-white/5">
+      <motion.div variants={child} className="glass rounded-2xl p-5">
         <div className="flex items-center justify-between mb-3">
           <span className="text-white/60 text-sm">进度</span>
           <span className="text-white/80 text-sm font-medium">{goalProgress}%</span>
@@ -206,7 +207,7 @@ export default function Goals() {
               type="text"
               value={form.riderName}
               onChange={(e) => setForm((f) => ({ ...f, riderName: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl bg-[#0F0F23] border border-white/10 text-white placeholder-white/20 focus:border-[#FFD100] focus:outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
               placeholder="输入名称"
             />
           </div>
@@ -217,7 +218,7 @@ export default function Goals() {
               type="number"
               value={form.monthlyGoal}
               onChange={(e) => setForm((f) => ({ ...f, monthlyGoal: Number(e.target.value) }))}
-              className="w-full px-4 py-3 rounded-xl bg-[#0F0F23] border border-white/10 text-white placeholder-white/20 focus:border-[#FFD100] focus:outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
               min={1}
             />
           </div>
@@ -228,7 +229,7 @@ export default function Goals() {
               type="number"
               value={form.dailyGoal}
               onChange={(e) => setForm((f) => ({ ...f, dailyGoal: Number(e.target.value) }))}
-              className="w-full px-4 py-3 rounded-xl bg-[#0F0F23] border border-white/10 text-white placeholder-white/20 focus:border-[#FFD100] focus:outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
               min={1}
             />
           </div>
@@ -240,7 +241,7 @@ export default function Goals() {
               step="0.1"
               value={form.basePrice}
               onChange={(e) => setForm((f) => ({ ...f, basePrice: Number(e.target.value) }))}
-              className="w-full px-4 py-3 rounded-xl bg-[#0F0F23] border border-white/10 text-white placeholder-white/20 focus:border-[#FFD100] focus:outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
               min={0}
             />
           </div>
@@ -252,7 +253,7 @@ export default function Goals() {
               step="0.1"
               value={form.bonusPrice}
               onChange={(e) => setForm((f) => ({ ...f, bonusPrice: Number(e.target.value) }))}
-              className="w-full px-4 py-3 rounded-xl bg-[#0F0F23] border border-white/10 text-white placeholder-white/20 focus:border-[#FFD100] focus:outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
               min={0}
             />
           </div>
@@ -263,7 +264,7 @@ export default function Goals() {
               type="number"
               value={form.bonusThreshold}
               onChange={(e) => setForm((f) => ({ ...f, bonusThreshold: Number(e.target.value) }))}
-              className="w-full px-4 py-3 rounded-xl bg-[#0F0F23] border border-white/10 text-white placeholder-white/20 focus:border-[#FFD100] focus:outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
               min={0}
             />
           </div>
@@ -278,13 +279,34 @@ export default function Goals() {
                   className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition-all ${
                     form.workDaysPerWeek === day
                       ? "bg-[#FFD100] text-[#0F0F23]"
-                      : "bg-[#0F0F23] border border-white/10 text-white/60 hover:border-white/30"
+                      : "glass rounded-xl text-white/60 hover:border-white/30"
                   }`}
                 >
                   {day} 天
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-white/50 text-sm mb-1.5">当前班次</label>
+            <div className="grid grid-cols-5 gap-1.5">
+              {SHIFT_DEFINITIONS.map((shift) => (
+                <button
+                  key={shift.type}
+                  onClick={() => setForm((f) => ({ ...f, currentShift: shift.type as ShiftType }))}
+                  className={`py-2.5 rounded-xl text-center transition-all ${
+                    (form.currentShift || settings.currentShift) === shift.type
+                      ? "bg-[#FFD100] text-[#0F0F23] shadow-lg shadow-[#FFD100]/20"
+                      : "glass text-white/50 hover:text-white/80"
+                  }`}
+                >
+                  <div className="text-lg">{shift.emoji}</div>
+                  <div className="text-[10px] mt-0.5 font-medium">{shift.name}</div>
+                </button>
+              ))}
+            </div>
+            <p className="text-white/30 text-[10px] mt-1">点击左右箭头可在仪表盘快速切换</p>
           </div>
 
           <motion.button

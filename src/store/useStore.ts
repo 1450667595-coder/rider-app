@@ -5,9 +5,17 @@ import {
   UserSettings,
   Achievement,
   Weather,
+  ShiftType,
 } from "@/types";
 import { loadStorage, saveStorage, generateDemoData } from "@/utils/storage";
 import { today, getCurrentMonth } from "@/utils/date";
+import {
+  isSupabaseConfigured,
+  syncFromCloud,
+  pushSingleRecordToCloud,
+  deleteRecordFromCloud,
+  scheduleSync,
+} from "@/services/supabase";
 
 interface AppState extends AppStorage {
   // Actions
@@ -40,6 +48,37 @@ const useStore = create<AppState>((set, get) => {
     loadData: () => {
       const data = loadStorage();
       set(data);
+
+      // Pull from cloud and merge (cloud wins for conflicts)
+      if (isSupabaseConfigured()) {
+        syncFromCloud().then(({ records, settings }) => {
+          if (records || settings) {
+            set((state) => {
+              const merged = { ...state };
+              if (records) {
+                // Merge: cloud records take priority, cast weather type
+                const typedRecords: Record<string, DailyRecord> = {};
+                for (const [date, r] of Object.entries(records)) {
+                  typedRecords[date] = {
+                    ...r,
+                    weather: (r.weather || "sunny") as Weather,
+                  };
+                }
+                merged.records = { ...state.records, ...typedRecords };
+              }
+              if (settings) {
+                merged.settings = {
+                  ...state.settings,
+                  ...settings,
+                  currentShift: (settings.currentShift || "early_mid") as ShiftType,
+                };
+              }
+              saveStorage(merged);
+              return merged;
+            });
+          }
+        });
+      }
     },
 
     saveRecord: (record: DailyRecord) => {
@@ -70,6 +109,10 @@ const useStore = create<AppState>((set, get) => {
 
         const newState = { ...state, records: newRecords };
         saveStorage(newState);
+
+        // Sync to cloud
+        scheduleSync(newRecords, newState.settings);
+
         return { records: newRecords };
       });
       get().checkAchievements();
@@ -81,6 +124,11 @@ const useStore = create<AppState>((set, get) => {
         delete newRecords[date];
         const newState = { ...state, records: newRecords };
         saveStorage(newState);
+
+        // Sync to cloud
+        deleteRecordFromCloud(date);
+        scheduleSync(newRecords, newState.settings);
+
         return { records: newRecords };
       });
     },
@@ -90,6 +138,10 @@ const useStore = create<AppState>((set, get) => {
         const newSettings = { ...state.settings, ...settings };
         const newState = { ...state, settings: newSettings };
         saveStorage(newState);
+
+        // Sync to cloud
+        scheduleSync(newState.records, newSettings);
+
         return { settings: newSettings };
       });
       get().checkAchievements();

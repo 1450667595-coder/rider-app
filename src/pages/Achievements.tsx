@@ -76,17 +76,17 @@ export default function Achievements() {
 
       {/* Stats Row */}
       <motion.div variants={item} className="grid grid-cols-3 gap-3">
-        <div className="bg-[#16213E] rounded-2xl p-3 border border-white/5 text-center">
+        <div className="glass rounded-2xl p-3 text-center">
           <Award size={20} className="text-[#FFD100] mx-auto mb-1" />
           <span className="text-lg font-bold text-white">{unlockedCount}</span>
           <span className="text-white/40 text-[10px] block">/ {achievements.length}</span>
         </div>
-        <div className="bg-[#16213E] rounded-2xl p-3 border border-white/5 text-center">
+        <div className="glass rounded-2xl p-3 text-center">
           <Flame size={20} className="text-[#FF6B35] mx-auto mb-1" />
           <AnimatedNumber value={streak} className="text-lg font-bold text-white" />
           <span className="text-white/40 text-[10px] block">连续天数</span>
         </div>
-        <div className="bg-[#16213E] rounded-2xl p-3 border border-white/5 text-center">
+        <div className="glass rounded-2xl p-3 text-center">
           <Zap size={20} className="text-[#00D2FF] mx-auto mb-1" />
           <AnimatedNumber value={stats.totalOrders} className="text-lg font-bold text-white" />
           <span className="text-white/40 text-[10px] block">累计单量</span>
@@ -94,7 +94,7 @@ export default function Achievements() {
       </motion.div>
 
       {/* Personal Records */}
-      <motion.div variants={item} className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+      <motion.div variants={item} className="glass rounded-2xl p-4">
         <h3 className="text-white/60 text-sm font-medium mb-3 flex items-center gap-2">
           <Star size={16} className="text-[#FFD100]" />
           个人纪录
@@ -127,7 +127,7 @@ export default function Achievements() {
               variants={item}
               className={`rounded-2xl p-4 border transition-all ${
                 achievement.unlocked
-                  ? "bg-[#16213E] border-white/10"
+                  ? "glass"
                   : "bg-white/[0.02] border-white/5 opacity-50"
               }`}
             >

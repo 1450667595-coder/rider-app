@@ -143,7 +143,7 @@ export default function Records() {
       </motion.div>
 
       {/* Calendar Grid */}
-      <motion.div variants={item} className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+      <motion.div variants={item} className="glass rounded-2xl p-4">
         <div className="grid grid-cols-7 mb-3">
           {WEEKDAYS.map((d) => (
             <div key={d} className="text-center text-white/40 text-xs font-medium py-1">{d}</div>
@@ -178,16 +178,16 @@ export default function Records() {
 
       {/* Bottom Stats */}
       <motion.div variants={item} className="grid grid-cols-3 gap-3">
-        <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5 text-center">
+        <div className="glass rounded-2xl p-3 text-center">
           <p className="text-white/40 text-xs mb-1">本月累计单量</p>
           <AnimatedNumber value={monthStats.orders} className="text-xl font-bold text-white tabular-nums" />
           <span className="text-white/60 text-sm ml-0.5">单</span>
         </div>
-        <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5 text-center">
+        <div className="glass rounded-2xl p-3 text-center">
           <p className="text-white/40 text-xs mb-1">本月累计收入</p>
           <AnimatedNumber value={monthStats.income} prefix="¥" className="text-xl font-bold text-white tabular-nums" />
         </div>
-        <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5 text-center">
+        <div className="glass rounded-2xl p-3 text-center">
           <p className="text-white/40 text-xs mb-1">本月记录天数</p>
           <AnimatedNumber value={monthStats.recordDays} className="text-xl font-bold text-white tabular-nums" />
           <span className="text-white/60 text-sm ml-0.5">天</span>

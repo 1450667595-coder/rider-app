@@ -7,6 +7,8 @@ import ProgressRing from "@/components/shared/ProgressRing";
 import Confetti from "@/components/shared/Confetti";
 import LiveClock from "@/components/shared/LiveClock";
 import WeatherWidget from "@/components/shared/WeatherWidget";
+import ShiftBadge from "@/components/shared/ShiftBadge";
+import SyncIndicator from "@/components/shared/SyncIndicator";
 import { showToast } from "@/components/shared/Toast";
 import { today, getCurrentMonth } from "@/utils/date";
 import { predictTomorrowEnhanced, predictMonthlyTotalEnhanced, predictIncome } from "@/utils/predictionEnhanced";
@@ -84,12 +86,12 @@ export default function Dashboard() {
 
   const getGreeting = () => {
     const h = new Date().getHours();
-    if (h < 6) return "夜深了，注意休息";
-    if (h < 9) return "早上好，新的一天";
-    if (h < 12) return "上午好，加油干";
-    if (h < 14) return "中午好，吃饱再战";
-    if (h < 18) return "下午好，冲刺阶段";
-    return "晚上好，辛苦了";
+    if (h < 6) return "夜深了";
+    if (h < 9) return "早上好";
+    if (h < 12) return "上午好";
+    if (h < 14) return "中午好";
+    if (h < 18) return "下午好";
+    return "晚上好";
   };
 
   return (
@@ -105,18 +107,19 @@ export default function Dashboard() {
       <motion.div variants={item} className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-white/40 text-sm">{getGreeting()}</p>
-            <h1 className="text-2xl font-bold text-white">{settings.riderName}</h1>
+            <p className="text-white/50 text-sm">{getGreeting()}, <span className="text-white font-semibold">{settings.riderName}</span></p>
           </div>
-          <LiveClock />
+          <SyncIndicator />
         </div>
-        <WeatherWidget onWeatherChange={handleWeatherChange} />
+          <LiveClock />
       </motion.div>
+        <WeatherWidget onWeatherChange={handleWeatherChange} />
+        <ShiftBadge />
 
       {/* Quick Entry */}
       <motion.div
         variants={item}
-        className="bg-gradient-to-br from-[#16213E] to-[#1A1A2E] rounded-2xl p-5 border border-white/5"
+        className="glass rounded-3xl p-5"
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-white/60 text-sm font-medium flex items-center gap-2">
@@ -168,7 +171,7 @@ export default function Dashboard() {
 
       {/* Metric Cards */}
       <motion.div variants={item} className="grid grid-cols-2 gap-3">
-        <div className="bg-gradient-to-br from-[#16213E] to-[#1A1A2E] rounded-2xl p-4 border border-white/5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <ShoppingBag size={16} className="text-[#FFD100]" />
             <span className="text-white/50 text-xs">本月累计</span>
@@ -187,14 +190,14 @@ export default function Dashboard() {
               : `距 ¥${settings.bonusPrice}/单 还差 ${settings.bonusThreshold - monthOrders} 单`}
           </p>
         </div>
-        <div className="bg-gradient-to-br from-[#16213E] to-[#1A1A2E] rounded-2xl p-4 border border-white/5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign size={16} className="text-emerald-400" />
             <span className="text-white/50 text-xs">今日收入</span>
           </div>
           <AnimatedNumber value={todayIncome} prefix="¥" className="text-2xl font-bold text-white tabular-nums" />
         </div>
-        <div className="bg-gradient-to-br from-[#16213E] to-[#1A1A2E] rounded-2xl p-4 border border-white/5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Target size={16} className="text-[#7B2FF7]" />
             <span className="text-white/50 text-xs">目标进度</span>
@@ -204,7 +207,7 @@ export default function Dashboard() {
             <ProgressRing progress={goalProgress} size={40} strokeWidth={3} />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-[#16213E] to-[#1A1A2E] rounded-2xl p-4 border border-white/5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp size={16} className="text-[#00D2FF]" />
             <span className="text-white/50 text-xs">本月收入</span>
@@ -220,7 +223,7 @@ export default function Dashboard() {
           智能预测
         </h3>
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-gradient-to-br from-[#7B2FF7]/10 to-[#16213E] rounded-2xl p-4 border border-[#7B2FF7]/20">
+          <div className="glass rounded-2xl p-4">
             <p className="text-white/50 text-xs mb-1">明日预测单量</p>
             <span className="text-3xl font-bold text-white">{tomorrowPrediction.predictedOrders}</span>
             <span className="text-white/60 text-sm ml-1">单</span>
@@ -235,7 +238,7 @@ export default function Dashboard() {
               </span>
             </div>
           </div>
-          <div className="bg-gradient-to-br from-[#00D2FF]/10 to-[#16213E] rounded-2xl p-4 border border-[#00D2FF]/20">
+          <div className="glass rounded-2xl p-4">
             <p className="text-white/50 text-xs mb-1">本月预计收入</p>
             <span className="text-3xl font-bold text-white">¥{predictedIncome.toLocaleString()}</span>
             <p className="text-white/40 text-[10px] mt-2">

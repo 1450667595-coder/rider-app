@@ -109,7 +109,7 @@ export default function Income() {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="bg-[#16213E] border border-white/10 rounded-lg px-3 py-2 shadow-xl">
+      <div className="glass rounded-lg px-3 py-2">
         <p className="text-white/50 text-xs">{label}日</p>
         <p className="text-[#FFD100] text-sm font-bold">
           ¥{payload[0].value.toLocaleString()}
@@ -139,7 +139,7 @@ export default function Income() {
 
       {/* Comparison & Prediction Cards */}
       <motion.div variants={item} className="grid grid-cols-3 gap-3">
-        <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-1.5 mb-2">
             {incomeChangePercent >= 0 ? (
               <TrendingUp size={14} className="text-emerald-400" />
@@ -161,7 +161,7 @@ export default function Income() {
           </p>
         </div>
 
-        <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-1.5 mb-2">
             <ArrowUpRight size={14} className="text-[#00D2FF]" />
             <span className="text-white/50 text-xs">预计本月</span>
@@ -174,7 +174,7 @@ export default function Income() {
           </p>
         </div>
 
-        <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-1.5 mb-2">
             <DollarSign size={14} className="text-[#FFD100]" />
             <span className="text-white/50 text-xs">日均收入</span>
@@ -191,7 +191,7 @@ export default function Income() {
       {/* Trend Chart */}
       <motion.div
         variants={item}
-        className="bg-[#16213E] rounded-2xl p-4 border border-white/5"
+        className="glass rounded-2xl p-4"
       >
         <h3 className="text-white/60 text-sm font-medium mb-3">收入趋势</h3>
         <ResponsiveContainer width="100%" height={200}>
@@ -264,7 +264,7 @@ export default function Income() {
                   layout
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="bg-[#16213E] rounded-xl p-4 border border-white/5 flex items-center justify-between"
+                  className="glass rounded-xl p-4 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
                     <div className="text-center min-w-[40px]">

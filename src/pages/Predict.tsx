@@ -106,7 +106,7 @@ export default function Predict() {
       <WeatherWidget onWeatherChange={handleWeatherChange} />
 
       {/* Tabs */}
-      <motion.div variants={item} className="flex gap-2 bg-[#16213E] rounded-xl p-1">
+      <motion.div variants={item} className="flex gap-2 glass rounded-xl p-1">
         {[
           { key: "tomorrow" as const, label: "明日预测" },
           { key: "monthly" as const, label: "月度预测" },
@@ -136,7 +136,7 @@ export default function Predict() {
             className="space-y-4"
           >
             {/* Prediction Card */}
-            <div className="bg-gradient-to-br from-[#7B2FF7]/20 to-[#16213E] rounded-2xl p-6 border border-[#7B2FF7]/20 text-center">
+            <div className="glass rounded-2xl p-6 text-center">
               <p className="text-white/50 text-sm mb-2">明日预计单量</p>
               <AnimatedNumber
                 value={prediction.predictedOrders}
@@ -156,7 +156,7 @@ export default function Predict() {
             </div>
 
             {/* Weather Selector */}
-            <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+            <div className="glass rounded-2xl p-4">
               <p className="text-white/50 text-xs mb-3 flex items-center gap-2">
                 <Cloud size={14} />
                 切换天气查看预测变化
@@ -179,7 +179,7 @@ export default function Predict() {
             </div>
 
             {/* Factors */}
-            <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+            <div className="glass rounded-2xl p-4">
               <h3 className="text-white/60 text-sm font-medium mb-3 flex items-center gap-2">
                 <AlertCircle size={16} />
                 影响因素分析
@@ -204,7 +204,7 @@ export default function Predict() {
             exit={{ opacity: 0, x: 20 }}
             className="space-y-4"
           >
-            <div className="bg-gradient-to-br from-[#00D2FF]/20 to-[#16213E] rounded-2xl p-6 border border-[#00D2FF]/20 text-center">
+            <div className="glass rounded-2xl p-6 text-center">
               <p className="text-white/50 text-sm mb-2">本月预计总单量</p>
               <AnimatedNumber
                 value={monthlyPrediction.predicted}
@@ -217,18 +217,18 @@ export default function Predict() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+              <div className="glass rounded-2xl p-4">
                 <span className="text-white/50 text-xs">已完成</span>
                 <AnimatedNumber value={monthlyPrediction.completed} className="block text-2xl font-bold text-white mt-1" />
                 <span className="text-white/60 text-sm">单</span>
               </div>
-              <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+              <div className="glass rounded-2xl p-4">
                 <span className="text-white/50 text-xs">预计收入</span>
                 <span className="block text-2xl font-bold text-white mt-1">¥{predictedIncome.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+            <div className="glass rounded-2xl p-4">
               <h3 className="text-white/60 text-sm font-medium mb-3 flex items-center gap-2">
                 <Target size={16} />
                 目标进度
@@ -264,24 +264,24 @@ export default function Predict() {
             className="space-y-4"
           >
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-[#16213E] rounded-2xl p-3 border border-white/5 text-center">
+              <div className="glass rounded-2xl p-3 text-center">
                 <span className="text-white/40 text-xs">最高</span>
                 <p className="text-lg font-bold text-white">{stats.max}</p>
                 <span className="text-white/40 text-[10px]">单</span>
               </div>
-              <div className="bg-[#16213E] rounded-2xl p-3 border border-white/5 text-center">
+              <div className="glass rounded-2xl p-3 text-center">
                 <span className="text-white/40 text-xs">最低</span>
                 <p className="text-lg font-bold text-white">{stats.min}</p>
                 <span className="text-white/40 text-[10px]">单</span>
               </div>
-              <div className="bg-[#16213E] rounded-2xl p-3 border border-white/5 text-center">
+              <div className="glass rounded-2xl p-3 text-center">
                 <span className="text-white/40 text-xs">平均</span>
                 <p className="text-lg font-bold text-white">{stats.avg}</p>
                 <span className="text-white/40 text-[10px]">单</span>
               </div>
             </div>
 
-            <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+            <div className="glass rounded-2xl p-4">
               <h3 className="text-white/60 text-sm font-medium mb-4 flex items-center gap-2">
                 <TrendingUp size={16} />
                 近30天单量趋势

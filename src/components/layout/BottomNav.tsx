@@ -7,6 +7,7 @@ import {
   Target,
   BarChart3,
   Award,
+  FileText,
 } from "lucide-react";
 
 const navItems = [
@@ -14,6 +15,7 @@ const navItems = [
   { to: "/records", icon: CalendarDays, label: "记录" },
   { to: "/income", icon: TrendingUp, label: "收入" },
   { to: "/predict", icon: LineChart, label: "预测" },
+  { to: "/weekly", icon: FileText, label: "周报" },
   { to: "/goals", icon: Target, label: "目标" },
   { to: "/analytics", icon: BarChart3, label: "看板" },
   { to: "/achievements", icon: Award, label: "成就" },
@@ -21,8 +23,8 @@ const navItems = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[#0F0F23]/95 backdrop-blur-xl border-t border-white/5 pb-safe">
-      <div className="flex items-center justify-around max-w-lg mx-auto h-16 px-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 glass-nav pb-safe">
+      <div className="flex items-center justify-around max-w-lg mx-auto h-16 px-0.5">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -36,12 +38,12 @@ export default function BottomNav() {
             {({ isActive }) => (
               <>
                 <div className="relative">
-                  <item.icon size={20} strokeWidth={isActive ? 2.5 : 1.5} />
+                  <item.icon size={17} strokeWidth={isActive ? 2.5 : 1.5} />
                   {isActive && (
                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#FFD100]" />
                   )}
                 </div>
-                <span className="text-[10px] font-medium">{item.label}</span>
+                <span className="text-[9px] font-medium leading-none">{item.label}</span>
               </>
             )}
           </NavLink>

@@ -16,13 +16,14 @@ const DEFAULT_ACHIEVEMENTS: Achievement[] = [
 ];
 
 const DEFAULT_SETTINGS: UserSettings = {
-  riderName: "骑手小哥",
+  riderName: "Power",
   monthlyGoal: 1000,
   dailyGoal: 40,
   basePrice: 4.2,
   bonusPrice: 4.5,
   bonusThreshold: 1500,
   workDaysPerWeek: 6,
+  currentShift: "early_mid",
 };
 
 function getDefaultStorage(): AppStorage {

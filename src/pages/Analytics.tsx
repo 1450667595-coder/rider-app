@@ -105,7 +105,7 @@ export default function Analytics() {
       </motion.div>
 
       {/* View Tabs */}
-      <motion.div variants={item} className="flex gap-2 bg-[#16213E] rounded-xl p-1">
+      <motion.div variants={item} className="flex gap-2 glass rounded-xl p-1">
         {[
           { key: "week", label: "本周趋势" },
           { key: "month", label: "本月概览" },
@@ -128,7 +128,7 @@ export default function Analytics() {
       {viewMode === "week" && (
         <motion.div
           variants={item}
-          className="bg-[#16213E] rounded-2xl p-4 border border-white/5"
+          className="glass rounded-2xl p-4"
         >
           <h3 className="text-white/60 text-sm font-medium mb-4 flex items-center gap-2">
             <TrendingUp size={16} />
@@ -183,14 +183,14 @@ export default function Analytics() {
       {viewMode === "month" && (
         <motion.div variants={item} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+            <div className="glass rounded-2xl p-4">
               <span className="text-white/50 text-xs">本月总单量</span>
               <AnimatedNumber
                 value={monthData.orders}
                 className="block text-2xl font-bold text-white mt-1"
               />
             </div>
-            <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+            <div className="glass rounded-2xl p-4">
               <span className="text-white/50 text-xs">本月总收入</span>
               <AnimatedNumber
                 value={monthData.income}
@@ -198,13 +198,13 @@ export default function Analytics() {
                 className="block text-2xl font-bold text-white mt-1"
               />
             </div>
-            <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+            <div className="glass rounded-2xl p-4">
               <span className="text-white/50 text-xs">日均单量</span>
               <span className="block text-2xl font-bold text-white mt-1">
                 {monthData.avgDaily}
               </span>
             </div>
-            <div className="bg-[#16213E] rounded-2xl p-4 border border-white/5">
+            <div className="glass rounded-2xl p-4">
               <span className="text-white/50 text-xs">记录天数</span>
               <span className="block text-2xl font-bold text-white mt-1">
                 {monthData.recordDays}
@@ -221,14 +221,14 @@ export default function Analytics() {
             本月天气与单量关系
           </h3>
           {weatherStats.length === 0 ? (
-            <div className="bg-[#16213E] rounded-2xl p-8 border border-white/5 text-center">
+            <div className="glass rounded-2xl p-8 text-center">
               <p className="text-white/40">暂无本月数据</p>
             </div>
           ) : (
             weatherStats.map((stat) => (
               <div
                 key={stat.weather}
-                className="bg-[#16213E] rounded-2xl p-4 border border-white/5 flex items-center gap-4"
+                className="glass rounded-2xl p-4 flex items-center gap-4"
               >
                 <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white/60">
                   {weatherIcons[stat.weather]}

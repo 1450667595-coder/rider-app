@@ -9,6 +9,31 @@ export interface DailyRecord {
   note: string;
 }
 
+export type ShiftType = "early_mid" | "early" | "late_mid" | "late" | "night";
+
+export interface ShiftInfo {
+  type: ShiftType;
+  name: string;
+  timeRange: string;
+  startTime: string;
+  endTime: string;
+  restTime: string;
+  emoji: string;
+  color: string;
+}
+
+export const SHIFT_DEFINITIONS: ShiftInfo[] = [
+  { type: "early_mid", name: "早中班", timeRange: "9:00-21:00", startTime: "09:00", endTime: "21:00", restTime: "13:30-15:20", emoji: "🌅", color: "#FFD100" },
+  { type: "early", name: "早班", timeRange: "6:25-20:00", startTime: "06:25", endTime: "20:00", restTime: "13:30-15:20", emoji: "☀️", color: "#FF8C00" },
+  { type: "late_mid", name: "晚中班", timeRange: "10:00-22:00", startTime: "10:00", endTime: "22:00", restTime: "", emoji: "🌆", color: "#7B2FF7" },
+  { type: "late", name: "晚班", timeRange: "11:00-23:00", startTime: "11:00", endTime: "23:00", restTime: "15:30-17:20", emoji: "🌙", color: "#4B6BFB" },
+  { type: "night", name: "大夜班", timeRange: "12:00-01:05", startTime: "12:00", endTime: "01:05", restTime: "15:30-17:20", emoji: "🌃", color: "#FF6B9D" },
+];
+
+export const SHIFT_MAP: Record<ShiftType, ShiftInfo> = Object.fromEntries(
+  SHIFT_DEFINITIONS.map((s) => [s.type, s])
+) as Record<ShiftType, ShiftInfo>;
+
 export interface UserSettings {
   riderName: string;
   monthlyGoal: number;
@@ -17,6 +42,7 @@ export interface UserSettings {
   bonusPrice: number;
   bonusThreshold: number;
   workDaysPerWeek: number;
+  currentShift: ShiftType;
 }
 
 export interface Achievement {

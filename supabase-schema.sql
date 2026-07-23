@@ -20,13 +20,14 @@ CREATE TABLE IF NOT EXISTS daily_records (
 CREATE TABLE IF NOT EXISTS user_settings (
   id BIGSERIAL PRIMARY KEY,
   user_id TEXT NOT NULL UNIQUE,
-  rider_name TEXT NOT NULL DEFAULT '骑手小哥',
+  rider_name TEXT NOT NULL DEFAULT 'Power',
   monthly_goal INTEGER NOT NULL DEFAULT 1000,
   daily_goal INTEGER NOT NULL DEFAULT 40,
   base_price REAL NOT NULL DEFAULT 4.2,
   bonus_price REAL NOT NULL DEFAULT 4.5,
   bonus_threshold INTEGER NOT NULL DEFAULT 1500,
   work_days_per_week INTEGER NOT NULL DEFAULT 6,
+  current_shift TEXT NOT NULL DEFAULT 'early_mid',
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
