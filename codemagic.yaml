@@ -7,7 +7,7 @@ workflows:
       xcode: 16.0
       cocoapods: default
       vars:
-        XCODE_WORKSPACE: "App.xcworkspace"
+        XCODE_PROJECT: "App.xcodeproj"
         XCODE_SCHEME: "App"
     scripts:
       - name: Install dependencies
@@ -20,7 +20,7 @@ workflows:
         script: |
           cd ios/App
           xcodebuild build \
-            -workspace ${XCODE_WORKSPACE} \
+            -project ${XCODE_PROJECT} \
             -scheme ${XCODE_SCHEME} \
             -sdk iphoneos \
             -configuration Release \
