@@ -16,7 +16,7 @@ workflows:
         script: npm run build
       - name: Sync Capacitor
         script: npx cap sync ios
-      - name: Build IPA
+      - name: Build app
         script: |
           cd ios/App
           xcodebuild build \
@@ -28,5 +28,13 @@ workflows:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY=""
+      - name: Package IPA
+        script: |
+          APP_PATH=$(find $HOME/Library/Developer/Xcode/DerivedData -name "App.app" -path "*/Release-iphoneos/*" | head -1)
+          cd $(dirname "$APP_PATH")
+          mkdir -p Payload
+          cp -r App.app Payload/
+          zip -r App.ipa Payload/
+          echo "IPA generated at: $(pwd)/App.ipa"
     artifacts:
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphoneos/App.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphoneos/App.ipa
