@@ -9,6 +9,8 @@ workflows:
       vars:
         XCODE_PROJECT: "App.xcodeproj"
         XCODE_SCHEME: "App"
+    code_signing:
+      automatic: true
     scripts:
       - name: Install dependencies
         script: npm install
@@ -16,6 +18,10 @@ workflows:
         script: npm run build
       - name: Sync Capacitor
         script: npx cap sync ios
+      - name: Set up code signing
+        script: |
+          cd ios/App
+          xcode-project use-profiles
       - name: Build app
         script: |
           cd ios/App
@@ -24,10 +30,7 @@ workflows:
             -scheme ${XCODE_SCHEME} \
             -sdk iphoneos \
             -configuration Release \
-            -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            -destination 'generic/platform=iOS'
       - name: Package IPA
         script: |
           APP_PATH=$(find $HOME/Library/Developer/Xcode/DerivedData -name "App.app" -path "*/Release-iphoneos/*" | head -1)
