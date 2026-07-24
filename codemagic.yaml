@@ -50,6 +50,7 @@ workflows:
     max_build_duration: 20
     environment:
       node: 22.0.0
+      java: 21
       vars:
         PACKAGE_NAME: "com.meituan.rider"
     scripts:
@@ -59,6 +60,9 @@ workflows:
         script: npm run build
       - name: Sync Capacitor
         script: npx cap sync android
+      - name: Fix Java version
+        script: |
+          sed -i '' 's/JavaVersion.VERSION_21/JavaVersion.VERSION_17/g' android/app/capacitor.build.gradle
       - name: Build APK
         script: |
           cd android
