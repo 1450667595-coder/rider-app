@@ -18,10 +18,6 @@ workflows:
         script: npm run build
       - name: Sync Capacitor
         script: npx cap sync ios
-      - name: Set up code signing
-        script: |
-          cd ios/App
-          xcode-project use-profiles
       - name: Build app
         script: |
           cd ios/App
