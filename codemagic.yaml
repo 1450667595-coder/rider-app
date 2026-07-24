@@ -9,8 +9,8 @@ workflows:
       vars:
         XCODE_PROJECT: "App.xcodeproj"
         XCODE_SCHEME: "App"
-    code_signing:
-      automatic: true
+        APPLE_ID: "1450667595@qq.com"
+        APPLE_PASSWORD: "yvko-rood-rlqt-pnmq"
     scripts:
       - name: Install dependencies
         script: npm install
@@ -21,12 +21,19 @@ workflows:
       - name: Build app
         script: |
           cd ios/App
+          security add-generic-password -a "${APPLE_ID}" -s "Xcode" -w "${APPLE_PASSWORD}" -T /usr/bin/security -T /usr/bin/xcodebuild -U 2>/dev/null || true
+          security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
           xcodebuild build \
             -project ${XCODE_PROJECT} \
             -scheme ${XCODE_SCHEME} \
             -sdk iphoneos \
             -configuration Release \
-            -destination 'generic/platform=iOS'
+            -destination 'generic/platform=iOS' \
+            -allowProvisioningUpdates \
+            -allowProvisioningDeviceRegistration \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER=""
       - name: Package IPA
         script: |
           APP_PATH=$(find $HOME/Library/Developer/Xcode/DerivedData -name "App.app" -path "*/Release-iphoneos/*" | head -1)
