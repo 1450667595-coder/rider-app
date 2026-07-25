@@ -63,6 +63,7 @@ workflows:
       - name: Fix Java version
         script: |
           sed -i '' 's/JavaVersion.VERSION_21/JavaVersion.VERSION_17/g' android/app/capacitor.build.gradle
+          sed -i '' 's/JavaVersion.VERSION_21/JavaVersion.VERSION_17/g' node_modules/@capacitor/android/capacitor/build.gradle
       - name: Build APK
         script: |
           cd android
