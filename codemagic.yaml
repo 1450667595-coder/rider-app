@@ -60,12 +60,14 @@ workflows:
         script: npm run build
       - name: Sync Capacitor
         script: npx cap sync android
-      - name: Fix Java version
+      - name: Install Java 21
         script: |
-          sed -i '' 's/JavaVersion.VERSION_21/JavaVersion.VERSION_17/g' android/app/capacitor.build.gradle
-          sed -i '' 's/JavaVersion.VERSION_21/JavaVersion.VERSION_17/g' node_modules/@capacitor/android/capacitor/build.gradle
+          brew install openjdk@21
+          echo 'export JAVA_HOME="/usr/local/opt/openjdk@21"' >> $CM_ENV
+          export JAVA_HOME="/usr/local/opt/openjdk@21"
       - name: Build APK
         script: |
+          export JAVA_HOME="/usr/local/opt/openjdk@21"
           cd android
           ./gradlew assembleDebug
     artifacts:
