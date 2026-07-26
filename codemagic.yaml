@@ -14,18 +14,21 @@ workflows:
         script: npm run build
       - name: Sync Capacitor
         script: npx cap sync android
-      - name: Fix Java 17 compatibility
+      - name: Fix Java version
         script: |
-          echo "=== Before fix ==="
-          grep -r "VERSION_2[12]" android/app/capacitor.build.gradle node_modules/@capacitor/android/capacitor/build.gradle 2>/dev/null || echo "no match"
-          sed -i '' 's/VERSION_21/VERSION_17/g' android/app/capacitor.build.gradle
-          sed -i '' 's/VERSION_21/VERSION_17/g' node_modules/@capacitor/android/capacitor/build.gradle
-          sed -i '' 's/VERSION_22/VERSION_17/g' android/app/capacitor.build.gradle
-          sed -i '' 's/VERSION_22/VERSION_17/g' node_modules/@capacitor/android/capacitor/build.gradle
+          java -version
+          echo "=== Files with VERSION_2[12] ==="
+          grep -rl "VERSION_2[12]" android/ node_modules/@capacitor/ 2>/dev/null
+          echo "=== Replacing ==="
+          grep -rl "VERSION_2[12]" android/ node_modules/@capacitor/ 2>/dev/null | while read f; do
+            echo "Fixing: $f"
+            perl -pi -e 's/JavaVersion\.VERSION_2[12]/JavaVersion.VERSION_17/g' "$f"
+          done
           echo "=== After fix ==="
-          grep -r "VERSION_" android/app/capacitor.build.gradle node_modules/@capacitor/android/capacitor/build.gradle 2>/dev/null || echo "no match"
+          grep -r "VERSION_2[12]" android/ node_modules/@capacitor/ 2>/dev/null || echo "All VERSION_21/22 replaced!"
       - name: Build APK
         script: |
+          java -version
           cd android
           ./gradlew assembleDebug
     artifacts:
