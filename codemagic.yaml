@@ -16,8 +16,14 @@ workflows:
         script: npx cap sync android
       - name: Fix Java 17 compatibility
         script: |
-          find . -name "*.gradle" -path "*/capacitor*" -exec sed -i '' 's/JavaVersion\.VERSION_21/JavaVersion.VERSION_17/g' {} \;
-          find . -name "*.gradle" -path "*capacitor*" -exec sed -i '' 's/JavaVersion\.VERSION_22/JavaVersion.VERSION_17/g' {} \;
+          echo "=== Before fix ==="
+          grep -r "VERSION_2[12]" android/app/capacitor.build.gradle node_modules/@capacitor/android/capacitor/build.gradle 2>/dev/null || echo "no match"
+          sed -i '' 's/VERSION_21/VERSION_17/g' android/app/capacitor.build.gradle
+          sed -i '' 's/VERSION_21/VERSION_17/g' node_modules/@capacitor/android/capacitor/build.gradle
+          sed -i '' 's/VERSION_22/VERSION_17/g' android/app/capacitor.build.gradle
+          sed -i '' 's/VERSION_22/VERSION_17/g' node_modules/@capacitor/android/capacitor/build.gradle
+          echo "=== After fix ==="
+          grep -r "VERSION_" android/app/capacitor.build.gradle node_modules/@capacitor/android/capacitor/build.gradle 2>/dev/null || echo "no match"
       - name: Build APK
         script: |
           cd android
