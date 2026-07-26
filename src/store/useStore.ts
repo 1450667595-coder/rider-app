@@ -149,7 +149,7 @@ const useStore = create<AppState>((set, get) => {
 
     checkAchievements: () => {
       const state = get();
-      const allRecords = Object.values(state.records);
+      const allRecords = Object.values(state.records) as DailyRecord[];
       const totalOrders = allRecords.reduce((s, r) => s + r.orders, 0);
       const maxDaily = allRecords.reduce((max, r) => Math.max(max, r.orders), 0);
       const { year, month } = getCurrentMonth();
@@ -238,7 +238,7 @@ const useStore = create<AppState>((set, get) => {
     getMonthRecords: () => {
       const { year, month } = getCurrentMonth();
       const prefix = `${year}-${String(month).padStart(2, "0")}`;
-      return Object.values(get().records)
+      return (Object.values(get().records) as DailyRecord[])
         .filter((r) => r.date.startsWith(prefix))
         .sort((a, b) => a.date.localeCompare(b.date));
     },
@@ -252,11 +252,11 @@ const useStore = create<AppState>((set, get) => {
     },
 
     getTotalOrders: () => {
-      return Object.values(get().records).reduce((s, r) => s + r.orders, 0);
+      return (Object.values(get().records) as DailyRecord[]).reduce((s, r) => s + r.orders, 0);
     },
 
     getTotalIncome: () => {
-      return Object.values(get().records).reduce((s, r) => s + r.income, 0);
+      return (Object.values(get().records) as DailyRecord[]).reduce((s, r) => s + r.income, 0);
     },
 
     getStreak: () => {

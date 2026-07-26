@@ -1,73 +1,34 @@
 workflows:
-  ios-build:
-    name: iOS Build
-    max_build_duration: 30
-    environment:
-      node: 22.0.0
-      xcode: 16.0
-      cocoapods: default
-      vars:
-        XCODE_PROJECT: "App.xcodeproj"
-        XCODE_SCHEME: "App"
-        APPLE_ID: "1450667595@qq.com"
-        APPLE_PASSWORD: "yvko-rood-rlqt-pnmq"
-    scripts:
-      - name: Install dependencies
-        script: npm install
-      - name: Build web app
-        script: npm run build
-      - name: Sync Capacitor
-        script: npx cap sync ios
-      - name: Build app
-        script: |
-          cd ios/App
-          security add-generic-password -a "${APPLE_ID}" -s "Xcode" -w "${APPLE_PASSWORD}" -T /usr/bin/security -T /usr/bin/xcodebuild -U 2>/dev/null || true
-          security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
-          xcodebuild build \
-            -project ${XCODE_PROJECT} \
-            -scheme ${XCODE_SCHEME} \
-            -sdk iphoneos \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -allowProvisioningUpdates \
-            -allowProvisioningDeviceRegistration \
-            CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE_SPECIFIER=""
-      - name: Package IPA
-        script: |
-          APP_PATH=$(find $HOME/Library/Developer/Xcode/DerivedData -name "App.app" -path "*/Release-iphoneos/*" | head -1)
-          cd $(dirname "$APP_PATH")
-          mkdir -p Payload
-          cp -r App.app Payload/
-          zip -r App.ipa Payload/
-          echo "IPA generated at: $(pwd)/App.ipa"
-    artifacts:
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphoneos/App.ipa
-
   android-build:
     name: Android Build
     max_build_duration: 20
+    instance_type: linux
     environment:
       node: 22.0.0
-      java: 21
       vars:
         PACKAGE_NAME: "com.meituan.rider"
     scripts:
+      - name: Install Java 21
+        script: |
+          apt-get update -qq && apt-get install -y -qq wget unzip > /dev/null
+          wget -q https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz
+          tar -xzf jdk-21_linux-x64_bin.tar.gz -C /usr/local
+          mv /usr/local/jdk-21* /usr/local/jdk-21
+          echo "export JAVA_HOME=/usr/local/jdk-21" >> $CM_ENV
+          echo "export PATH=/usr/local/jdk-21/bin:$PATH" >> $CM_ENV
+          export JAVA_HOME=/usr/local/jdk-21
+          export PATH=/usr/local/jdk-21/bin:$PATH
+          java -version
       - name: Install dependencies
         script: npm install
       - name: Build web app
         script: npm run build
       - name: Sync Capacitor
         script: npx cap sync android
-      - name: Install Java 21
-        script: |
-          brew install openjdk@21
-          echo 'export JAVA_HOME="/usr/local/opt/openjdk@21"' >> $CM_ENV
-          export JAVA_HOME="/usr/local/opt/openjdk@21"
       - name: Build APK
         script: |
-          export JAVA_HOME="/usr/local/opt/openjdk@21"
+          export JAVA_HOME=/usr/local/jdk-21
+          export PATH=/usr/local/jdk-21/bin:$PATH
           cd android
           ./gradlew assembleDebug
     artifacts:
