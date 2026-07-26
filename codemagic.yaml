@@ -2,33 +2,24 @@ workflows:
   android-build:
     name: Android Build
     max_build_duration: 20
-    instance_type: linux
     environment:
       node: 22.0.0
+      java: 17
       vars:
         PACKAGE_NAME: "com.meituan.rider"
     scripts:
-      - name: Install Java 21
-        script: |
-          apt-get update -qq && apt-get install -y -qq wget unzip > /dev/null
-          wget -q https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz
-          tar -xzf jdk-21_linux-x64_bin.tar.gz -C /usr/local
-          mv /usr/local/jdk-21* /usr/local/jdk-21
-          echo "export JAVA_HOME=/usr/local/jdk-21" >> $CM_ENV
-          echo "export PATH=/usr/local/jdk-21/bin:$PATH" >> $CM_ENV
-          export JAVA_HOME=/usr/local/jdk-21
-          export PATH=/usr/local/jdk-21/bin:$PATH
-          java -version
       - name: Install dependencies
         script: npm install
       - name: Build web app
         script: npm run build
       - name: Sync Capacitor
         script: npx cap sync android
+      - name: Fix Java 17 compatibility
+        script: |
+          find . -name "*.gradle" -path "*/capacitor*" -exec sed -i '' 's/JavaVersion\.VERSION_21/JavaVersion.VERSION_17/g' {} \;
+          find . -name "*.gradle" -path "*capacitor*" -exec sed -i '' 's/JavaVersion\.VERSION_22/JavaVersion.VERSION_17/g' {} \;
       - name: Build APK
         script: |
-          export JAVA_HOME=/usr/local/jdk-21
-          export PATH=/usr/local/jdk-21/bin:$PATH
           cd android
           ./gradlew assembleDebug
     artifacts:
