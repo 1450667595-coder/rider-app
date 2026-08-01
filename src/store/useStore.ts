@@ -139,7 +139,8 @@ const useStore = create<AppState>((set, get) => {
       // 添加 5 秒超时，避免 VPN 下 Supabase 连接慢阻塞页面
       if (isSupabaseConfigured()) {
         set({ syncStatus: "syncing" });
-        withTimeout(syncFromCloud(), 5000, { records: null, settings: null }).then(({ records: cloudRecords, settings: cloudSettings }) => {
+        const currentSyncKey = data.settings.syncKey || "";
+        withTimeout(syncFromCloud(currentSyncKey), 5000, { records: null, settings: null }).then(({ records: cloudRecords, settings: cloudSettings }) => {
           if (cloudRecords || cloudSettings) {
             set((state) => {
               const merged = { ...state };
@@ -292,7 +293,7 @@ const useStore = create<AppState>((set, get) => {
 
         // 优先同步到 Supabase 云端
         if (isSupabaseConfigured()) {
-          deleteRecordFromCloud(date);
+          deleteRecordFromCloud(date, newState.settings.syncKey);
           scheduleSync(newRecords, newState.settings);
         }
 
@@ -309,6 +310,48 @@ const useStore = create<AppState>((set, get) => {
         // 优先同步到 Supabase 云端
         if (isSupabaseConfigured()) {
           scheduleSync(newState.records, newSettings);
+        }
+
+        // 如果 syncKey 发生了变化，立即从云端重新拉取数据
+        const oldSyncKey = state.settings.syncKey || "";
+        const newSyncKey = newSettings.syncKey || "";
+        if (oldSyncKey !== newSyncKey) {
+          set({ syncStatus: "syncing" });
+          withTimeout(syncFromCloud(newSyncKey), 5000, { records: null, settings: null }).then(({ records: cloudRecords, settings: cloudSettings }) => {
+            if (cloudRecords || cloudSettings) {
+              set((s) => {
+                const merged = { ...s };
+                if (cloudRecords) {
+                  const typedRecords: Record<string, DailyRecord> = {};
+                  for (const [date, r] of Object.entries(cloudRecords)) {
+                    typedRecords[date] = {
+                      date: r.date,
+                      orders: r.orders,
+                      income: r.income,
+                      workHours: r.workHours,
+                      weather: (r.weather || "sunny") as Weather,
+                      note: r.note || "",
+                    };
+                  }
+                  merged.records = { ...s.records, ...typedRecords };
+                }
+                if (cloudSettings) {
+                  merged.settings = {
+                    ...s.settings,
+                    ...cloudSettings,
+                    currentShift: (cloudSettings.currentShift || "early_mid") as ShiftType,
+                  };
+                }
+                saveStorageImmediate(toStorageData(merged));
+                set({ syncStatus: "synced" });
+                return merged;
+              });
+            } else {
+              set({ syncStatus: "synced" });
+            }
+          }).catch(() => {
+            set({ syncStatus: "offline" });
+          });
         }
 
         // 同时尝试同步到 API 服务器（如果可用）

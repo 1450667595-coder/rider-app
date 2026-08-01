@@ -42,6 +42,7 @@ export interface DbSettings {
   bonus_threshold: number;
   work_days_per_week: number;
   current_shift: string;
+  sync_key: string;
   updated_at?: string;
 }
 
@@ -68,12 +69,11 @@ function setSyncStatus(s: SyncStatus) {
   syncListeners.forEach((cb) => cb(s));
 }
 
-// Generate persistent device ID
+// Generate persistent device ID (fallback when syncKey is not set)
 export function getDeviceId(): string {
   const key = "rider-device-id";
   let id = localStorage.getItem(key);
   if (!id) {
-    // crypto.randomUUID() may not be available in non-secure contexts
     id = typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
       : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -86,12 +86,35 @@ export function getDeviceId(): string {
   return id;
 }
 
-// Push records to cloud
+// Get the sync user ID: uses syncKey if set, otherwise falls back to device ID
+// This is the KEY to cross-device sync - same syncKey = same user_id = shared data
+export function getSyncUserId(syncKey?: string): string {
+  if (syncKey && syncKey.trim()) {
+    return "sync_" + syncKey.trim();
+  }
+  return getDeviceId();
+}
+
+// ── Push to Cloud ──
+
+export interface SyncSettings {
+  riderName: string;
+  monthlyGoal: number;
+  dailyGoal: number;
+  basePrice: number;
+  bonusPrice: number;
+  bonusThreshold: number;
+  workDaysPerWeek: number;
+  currentShift: string;
+  syncKey: string;
+}
+
 export async function pushRecordsToCloud(
-  records: Record<string, { date: string; orders: number; income: number; workHours: number; weather: string; note: string }>
+  records: Record<string, { date: string; orders: number; income: number; workHours: number; weather: string; note: string }>,
+  syncKey?: string
 ): Promise<boolean> {
   if (!isSupabaseConfigured()) return false;
-  const userId = getDeviceId();
+  const userId = getSyncUserId(syncKey);
 
   try {
     const dbRecords: DbRecord[] = Object.values(records).map((r) => ({
@@ -115,12 +138,12 @@ export async function pushRecordsToCloud(
   }
 }
 
-// Push single record to cloud
 export async function pushSingleRecordToCloud(
-  record: { date: string; orders: number; income: number; workHours: number; weather: string; note: string }
+  record: { date: string; orders: number; income: number; workHours: number; weather: string; note: string },
+  syncKey?: string
 ): Promise<boolean> {
   if (!isSupabaseConfigured()) return false;
-  const userId = getDeviceId();
+  const userId = getSyncUserId(syncKey);
 
   try {
     const client = getSupabase();
@@ -143,10 +166,9 @@ export async function pushSingleRecordToCloud(
   }
 }
 
-// Delete record from cloud
-export async function deleteRecordFromCloud(date: string): Promise<boolean> {
+export async function deleteRecordFromCloud(date: string, syncKey?: string): Promise<boolean> {
   if (!isSupabaseConfigured()) return false;
-  const userId = getDeviceId();
+  const userId = getSyncUserId(syncKey);
 
   try {
     const client = getSupabase();
@@ -162,19 +184,9 @@ export async function deleteRecordFromCloud(date: string): Promise<boolean> {
   }
 }
 
-// Push settings to cloud
-export async function pushSettingsToCloud(settings: {
-  riderName: string;
-  monthlyGoal: number;
-  dailyGoal: number;
-  basePrice: number;
-  bonusPrice: number;
-  bonusThreshold: number;
-  workDaysPerWeek: number;
-  currentShift: string;
-}): Promise<boolean> {
+export async function pushSettingsToCloud(settings: SyncSettings): Promise<boolean> {
   if (!isSupabaseConfigured()) return false;
-  const userId = getDeviceId();
+  const userId = getSyncUserId(settings.syncKey);
 
   try {
     const client = getSupabase();
@@ -190,6 +202,7 @@ export async function pushSettingsToCloud(settings: {
         bonus_threshold: settings.bonusThreshold,
         work_days_per_week: settings.workDaysPerWeek,
         current_shift: settings.currentShift,
+        sync_key: settings.syncKey,
       },
       { onConflict: "user_id" }
     );
@@ -201,9 +214,9 @@ export async function pushSettingsToCloud(settings: {
 
 // ── Pull from Cloud ──
 
-export async function pullRecordsFromCloud(): Promise<Record<string, { date: string; orders: number; income: number; workHours: number; weather: string; note: string }> | null> {
+export async function pullRecordsFromCloud(syncKey?: string): Promise<Record<string, { date: string; orders: number; income: number; workHours: number; weather: string; note: string }> | null> {
   if (!isSupabaseConfigured()) return null;
-  const userId = getDeviceId();
+  const userId = getSyncUserId(syncKey);
 
   try {
     const client = getSupabase();
@@ -232,18 +245,9 @@ export async function pullRecordsFromCloud(): Promise<Record<string, { date: str
   }
 }
 
-export async function pullSettingsFromCloud(): Promise<{
-  riderName: string;
-  monthlyGoal: number;
-  dailyGoal: number;
-  basePrice: number;
-  bonusPrice: number;
-  bonusThreshold: number;
-  workDaysPerWeek: number;
-  currentShift: string;
-} | null> {
+export async function pullSettingsFromCloud(syncKey?: string): Promise<SyncSettings | null> {
   if (!isSupabaseConfigured()) return null;
-  const userId = getDeviceId();
+  const userId = getSyncUserId(syncKey);
 
   try {
     const client = getSupabase();
@@ -266,6 +270,7 @@ export async function pullSettingsFromCloud(): Promise<{
       bonusThreshold: s.bonus_threshold,
       workDaysPerWeek: s.work_days_per_week,
       currentShift: s.current_shift || "early_mid",
+      syncKey: s.sync_key || "",
     };
   } catch {
     return null;
@@ -274,18 +279,9 @@ export async function pullSettingsFromCloud(): Promise<{
 
 // ── Full Sync (pull + merge) ──
 
-export async function syncFromCloud(): Promise<{
+export async function syncFromCloud(syncKey?: string): Promise<{
   records: Record<string, { date: string; orders: number; income: number; workHours: number; weather: string; note: string }> | null;
-  settings: {
-    riderName: string;
-    monthlyGoal: number;
-    dailyGoal: number;
-    basePrice: number;
-    bonusPrice: number;
-    bonusThreshold: number;
-    workDaysPerWeek: number;
-    currentShift: string;
-  } | null;
+  settings: SyncSettings | null;
 }> {
   if (!isSupabaseConfigured()) {
     setSyncStatus("offline");
@@ -295,8 +291,8 @@ export async function syncFromCloud(): Promise<{
   setSyncStatus("syncing");
   try {
     const [records, settings] = await Promise.all([
-      pullRecordsFromCloud(),
-      pullSettingsFromCloud(),
+      pullRecordsFromCloud(syncKey),
+      pullSettingsFromCloud(syncKey),
     ]);
     setSyncStatus("synced");
     return { records, settings };
@@ -312,16 +308,7 @@ let syncTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function scheduleSync(
   records: Record<string, { date: string; orders: number; income: number; workHours: number; weather: string; note: string }>,
-  settings: {
-    riderName: string;
-    monthlyGoal: number;
-    dailyGoal: number;
-    basePrice: number;
-    bonusPrice: number;
-    bonusThreshold: number;
-    workDaysPerWeek: number;
-    currentShift: string;
-  }
+  settings: SyncSettings
 ) {
   if (!isSupabaseConfigured()) return;
 
@@ -330,7 +317,7 @@ export function scheduleSync(
     setSyncStatus("syncing");
     try {
       const [recordsOk, settingsOk] = await Promise.all([
-        pushRecordsToCloud(records),
+        pushRecordsToCloud(records, settings.syncKey),
         pushSettingsToCloud(settings),
       ]);
       setSyncStatus(recordsOk && settingsOk ? "synced" : "error");

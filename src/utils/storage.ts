@@ -31,6 +31,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   bonusThreshold: 1500,
   workDaysPerWeek: 6,
   currentShift: "early_mid",
+  syncKey: "",
 };
 
 function getDefaultStorage(): AppStorage {

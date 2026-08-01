@@ -28,8 +28,12 @@ CREATE TABLE IF NOT EXISTS user_settings (
   bonus_threshold INTEGER NOT NULL DEFAULT 1500,
   work_days_per_week INTEGER NOT NULL DEFAULT 6,
   current_shift TEXT NOT NULL DEFAULT 'early_mid',
+  sync_key TEXT NOT NULL DEFAULT '',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- 如果表已存在，添加 sync_key 列（兼容旧表结构）
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS sync_key TEXT NOT NULL DEFAULT '';
 
 -- 索引
 CREATE INDEX IF NOT EXISTS idx_daily_records_user_id ON daily_records(user_id);

@@ -315,6 +315,34 @@ export default function Goals() {
             <p className="text-[#E0E0E0]/30 text-[10px] mt-1">点击左右箭头可在仪表盘快速切换</p>
           </div>
 
+          <div>
+            <label className="block terminal-text text-sm mb-1.5">
+              云端同步密钥
+              <span className="text-[#E0E0E0]/20 text-[10px] ml-1">（跨设备同步必填）</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={form.syncKey || ""}
+                onChange={(e) => setForm((f) => ({ ...f, syncKey: e.target.value }))}
+                className="flex-1 px-4 py-3 rounded-xl input-cyber text-[#E0E0E0] placeholder-[#E0E0E0]/20 transition-colors"
+                placeholder="设置相同的密钥即可跨设备同步"
+              />
+              <button
+                onClick={() => {
+                  const key = "power-" + Math.random().toString(36).slice(2, 8);
+                  setForm((f) => ({ ...f, syncKey: key }));
+                }}
+                className="px-3 py-2 rounded-xl text-xs text-[#00E5FF] border border-[#00E5FF]/20 hover:bg-[#00E5FF]/10 transition-colors shrink-0"
+              >
+                随机生成
+              </button>
+            </div>
+            <p className="text-[#E0E0E0]/30 text-[10px] mt-1">
+              在所有设备上输入相同的同步密钥，数据将自动同步。留空则使用本机设备ID。
+            </p>
+          </div>
+
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={handleSave}

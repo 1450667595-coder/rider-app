@@ -43,6 +43,7 @@ export interface UserSettings {
   bonusThreshold: number;
   workDaysPerWeek: number;
   currentShift: ShiftType;
+  syncKey: string;
 }
 
 export interface Achievement {
