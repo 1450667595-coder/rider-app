@@ -150,7 +150,17 @@ export default function Records() {
 
   const handleSave = () => {
     if (!selectedDate) return;
-    saveRecord({ date: selectedDate, ...editForm });
+    // 从当前输入框获取最新值（而非 editForm 中可能过时的值）
+    const currentOrders = ordersInput === "" ? 0 : Number(ordersInput);
+    const currentIncome = incomeInput === "" ? 0 : Number(incomeInput);
+    saveRecord({
+      date: selectedDate,
+      orders: isNaN(currentOrders) ? 0 : currentOrders,
+      income: isNaN(currentIncome) ? 0 : currentIncome,
+      workHours: editForm.workHours,
+      weather: editForm.weather,
+      note: editForm.note,
+    });
     showToast("记录已保存", "success");
     closeEditor();
   };
@@ -169,21 +179,21 @@ export default function Records() {
   };
 
   const handleOrdersBlur = () => {
-    // 失焦时，如果输入为空则设为0
-    const num = ordersInput === "" ? 0 : Number(ordersInput);
+    // 失焦时：如果输入为空，保持空字符串（允许用户清空后重新输入）
+    if (ordersInput === "") return;
+    const num = Number(ordersInput);
     if (isNaN(num)) {
-      setOrdersInput("0");
-      setEditForm((p) => ({ ...p, orders: 0 }));
+      setOrdersInput("");
       return;
     }
     handleOrdersChange(num);
   };
 
   const handleIncomeBlur = () => {
-    const num = incomeInput === "" ? 0 : Number(incomeInput);
+    if (incomeInput === "") return;
+    const num = Number(incomeInput);
     if (isNaN(num)) {
-      setIncomeInput("0");
-      setEditForm((p) => ({ ...p, income: 0 }));
+      setIncomeInput("");
       return;
     }
     setEditForm((p) => ({ ...p, income: num }));

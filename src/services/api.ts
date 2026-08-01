@@ -25,12 +25,12 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T | nul
       ...options,
     });
     if (!res.ok) {
-      console.error(`API ${options?.method || "GET"} ${path} failed: ${res.status}`);
+      // 静默处理API不可用（GitHub Pages无后端是正常情况）
       return null;
     }
     return await res.json() as T;
-  } catch (err) {
-    console.error(`API ${path} error:`, err);
+  } catch {
+    // 网络错误也静默处理
     return null;
   }
 }
