@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Minus, TrendingUp, Target, DollarSign, ShoppingBag, Zap, Download, Upload, Cpu, Activity, Shield, Database, Clock, BarChart3, Compass, ArrowUpRight, ArrowDownRight, Layers, Wrench, PenTool, X, Brain, Calendar } from "lucide-react";
+import { Plus, Minus, TrendingUp, Target, DollarSign, ShoppingBag, Zap, Download, Upload, Cpu, Activity, Shield, Database, Clock, BarChart3, Compass, ArrowUpRight, ArrowDownRight, Layers, Wrench, PenTool, X, Brain, Calendar, Copy, Check, Link } from "lucide-react";
 import useStore from "@/store/useStore";
 import AnimatedNumber from "@/components/shared/AnimatedNumber";
 import ProgressRing from "@/components/shared/ProgressRing";
@@ -72,6 +72,21 @@ export default function Dashboard() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [realWeather, setRealWeather] = useState<Weather>("sunny");
   const [showFab, setShowFab] = useState(false);
+  const [syncKeyCopied, setSyncKeyCopied] = useState(false);
+
+  const handleCopySyncKey = () => {
+    const syncUrl = `${window.location.origin}${window.location.pathname}#/?sync=${encodeURIComponent(settings.syncKey)}`;
+    navigator.clipboard.writeText(syncUrl).then(() => {
+      setSyncKeyCopied(true);
+      showToast("同步链接已复制！在另一个设备打开即可同步", "success");
+      setTimeout(() => setSyncKeyCopied(false), 2000);
+    }).catch(() => {
+      // fallback: copy just the sync key
+      navigator.clipboard.writeText(settings.syncKey).then(() => {
+        showToast("同步密钥已复制", "success");
+      });
+    });
+  };
 
   const handleWeatherChange = useCallback((w: Weather) => {
     setRealWeather(w);
@@ -435,6 +450,26 @@ export default function Dashboard() {
             </span>
             )}
             <SyncIndicator />
+            {/* 同步密钥徽章 */}
+            {settings.syncKey && (
+              <button
+                onClick={handleCopySyncKey}
+                className="flex items-center gap-1 px-2 py-1 rounded-full text-[9px] transition-all"
+                style={{
+                  background: "rgba(0,229,255,0.06)",
+                  border: "1px solid rgba(0,229,255,0.15)",
+                }}
+                title="点击复制同步链接，在另一设备打开即可同步数据"
+              >
+                <Link size={10} className="text-[#00E5FF]/60" />
+                <span className="text-[#00E5FF]/50 font-mono">{settings.syncKey.slice(0, 8)}...</span>
+                {syncKeyCopied ? (
+                  <Check size={10} className="text-[#00E676]" />
+                ) : (
+                  <Copy size={10} className="text-[#00E5FF]/40" />
+                )}
+              </button>
+            )}
           </div>
         </div>
         <LiveClock />

@@ -38,10 +38,7 @@ import {
 export type SyncStatus = "idle" | "syncing" | "synced" | "error" | "offline";
 
 interface AppState extends AppStorage {
-  // Sync status
   syncStatus: SyncStatus;
-
-  // Actions
   loadData: () => void;
   saveRecord: (record: DailyRecord) => void;
   deleteRecord: (date: string) => void;
@@ -50,8 +47,6 @@ interface AppState extends AppStorage {
   loadDemoData: () => void;
   resetData: () => void;
   getEffectivePrice: (monthOrders: number) => number;
-
-  // Computed helpers
   getTodaysRecord: () => DailyRecord | undefined;
   getMonthRecords: () => DailyRecord[];
   getMonthOrders: () => number;
@@ -62,7 +57,6 @@ interface AppState extends AppStorage {
   getLastNDaysRecords: (n: number) => DailyRecord[];
 }
 
-// Extract only data fields for persistence (exclude methods)
 const toStorageData = (state: AppState): AppStorage => ({
   version: state.version,
   records: state.records,
@@ -70,51 +64,99 @@ const toStorageData = (state: AppState): AppStorage => ({
   achievements: state.achievements,
 });
 
+// 生成同步密钥
+function generateSyncKey(): string {
+  return "power-" + Math.random().toString(36).slice(2, 10);
+}
+
+// 从URL hash参数中提取 sync key
+function getSyncKeyFromURL(): string | null {
+  try {
+    const hash = window.location.hash;
+    const match = hash.match(/[?&]sync=([^&]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
+// 将云端数据合并到本地（提取公共逻辑）
+function mergeCloudData(
+  state: AppState,
+  cloudRecords: Record<string, { date: string; orders: number; income: number; workHours: number; weather: string; note: string }> | null,
+  cloudSettings: {
+    riderName: string; monthlyGoal: number; dailyGoal: number; basePrice: number;
+    bonusPrice: number; bonusThreshold: number; workDaysPerWeek: number;
+    currentShift: string; syncKey: string;
+  } | null
+): AppState {
+  const merged = { ...state };
+  if (cloudRecords) {
+    const typedRecords: Record<string, DailyRecord> = {};
+    for (const [date, r] of Object.entries(cloudRecords)) {
+      typedRecords[date] = {
+        date: r.date, orders: r.orders, income: r.income,
+        workHours: r.workHours, weather: (r.weather || "sunny") as Weather,
+        note: r.note || "",
+      };
+    }
+    // 云端数据优先，本地独有的也保留
+    merged.records = { ...state.records, ...typedRecords };
+  }
+  if (cloudSettings) {
+    merged.settings = {
+      ...state.settings, ...cloudSettings,
+      currentShift: (cloudSettings.currentShift || "early_mid") as ShiftType,
+    };
+  }
+  return merged;
+}
+
 // API sync helpers
-let syncTimer: ReturnType<typeof setTimeout> | null = null;
+let apiSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
 function scheduleApiSync(state: AppState) {
-  if (syncTimer) clearTimeout(syncTimer);
-  syncTimer = setTimeout(async () => {
+  if (apiSyncTimer) clearTimeout(apiSyncTimer);
+  apiSyncTimer = setTimeout(async () => {
     const userId = getDeviceId();
     const serverOnline = await checkServerHealth();
-    if (!serverOnline) {
-      // 不要覆盖 Supabase 的同步状态（Vercel 部署时 API 服务器不可用是正常的）
-      return;
-    }
+    if (!serverOnline) return;
     useStore.setState({ syncStatus: "syncing" });
     try {
       const s = state;
       const records = Object.values(s.records);
       if (records.length > 0) {
         await apiSaveSettings(userId, {
-          riderName: s.settings.riderName,
-          monthlyGoal: s.settings.monthlyGoal,
-          dailyGoal: s.settings.dailyGoal,
-          basePrice: s.settings.basePrice,
-          bonusPrice: s.settings.bonusPrice,
-          bonusThreshold: s.settings.bonusThreshold,
-          workDaysPerWeek: s.settings.workDaysPerWeek,
-          currentShift: s.settings.currentShift,
+          riderName: s.settings.riderName, monthlyGoal: s.settings.monthlyGoal,
+          dailyGoal: s.settings.dailyGoal, basePrice: s.settings.basePrice,
+          bonusPrice: s.settings.bonusPrice, bonusThreshold: s.settings.bonusThreshold,
+          workDaysPerWeek: s.settings.workDaysPerWeek, currentShift: s.settings.currentShift,
         });
         await batchSaveRecords(userId, records.map(r => ({
-          date: r.date,
-          orders: r.orders,
-          income: r.income,
-          workHours: r.workHours,
-          weather: r.weather,
-          note: r.note,
+          date: r.date, orders: r.orders, income: r.income,
+          workHours: r.workHours, weather: r.weather, note: r.note,
         })));
       }
       useStore.setState({ syncStatus: "synced" });
-    } catch {
-      // 不要覆盖 Supabase 的状态
-    }
+    } catch { /* ignore */ }
   }, 1000);
 }
 
 const useStore = create<AppState>((set, get) => {
   const initialData = loadStorage();
+
+  // 首次启动自动生成 syncKey
+  if (!initialData.settings.syncKey) {
+    initialData.settings.syncKey = generateSyncKey();
+    saveStorageImmediate(initialData);
+  }
+
+  // 检查 URL 参数中的 sync key，自动导入
+  const urlSyncKey = getSyncKeyFromURL();
+  if (urlSyncKey && urlSyncKey !== initialData.settings.syncKey) {
+    initialData.settings.syncKey = urlSyncKey;
+    saveStorageImmediate(initialData);
+  }
 
   return {
     ...initialData,
@@ -122,108 +164,65 @@ const useStore = create<AppState>((set, get) => {
 
     loadData: () => {
       const data = loadStorage();
-      // 验证并修复数据完整性
+
+      // 再次确保 syncKey 存在
+      if (!data.settings.syncKey) {
+        data.settings.syncKey = generateSyncKey();
+        saveStorageImmediate(data);
+      }
+
       const { issues } = validateAndRepair(data);
       if (issues.length > 0) {
         console.warn("数据修复:", issues);
       }
       set((s) => ({ ...s, ...data }));
 
-      // 启动数据持久化心跳
       startDataHeartbeat(() => {
         const state = get();
         return { version: state.version, records: state.records, settings: state.settings, achievements: state.achievements };
       });
 
-      // 优先从 Supabase 云端拉取数据（Vercel 部署的主要数据源）
-      // 添加 5 秒超时，避免 VPN 下 Supabase 连接慢阻塞页面
+      // 从 Supabase 云端拉取数据
       if (isSupabaseConfigured()) {
         set({ syncStatus: "syncing" });
         const currentSyncKey = data.settings.syncKey || "";
-        withTimeout(syncFromCloud(currentSyncKey), 5000, { records: null, settings: null }).then(({ records: cloudRecords, settings: cloudSettings }) => {
-          if (cloudRecords || cloudSettings) {
-            set((state) => {
-              const merged = { ...state };
-              if (cloudRecords) {
-                const typedRecords: Record<string, DailyRecord> = {};
-                for (const [date, r] of Object.entries(cloudRecords)) {
-                  typedRecords[date] = {
-                    date: r.date,
-                    orders: r.orders,
-                    income: r.income,
-                    workHours: r.workHours,
-                    weather: (r.weather || "sunny") as Weather,
-                    note: r.note || "",
-                  };
-                }
-                // 云端数据优先，合并本地独有的数据
-                merged.records = { ...state.records, ...typedRecords };
-              }
-              if (cloudSettings) {
-                merged.settings = {
-                  ...state.settings,
-                  ...cloudSettings,
-                  currentShift: (cloudSettings.currentShift || "early_mid") as ShiftType,
-                };
-              }
-              saveStorageImmediate(toStorageData(merged));
-              set({ syncStatus: "synced" });
-              return merged;
-            });
-          } else {
-            set({ syncStatus: "synced" });
+        withTimeout(syncFromCloud(currentSyncKey), 5000, { records: null, settings: null }).then(
+          ({ records: cloudRecords, settings: cloudSettings }) => {
+            if (cloudRecords || cloudSettings) {
+              set((state) => {
+                const merged = mergeCloudData(state, cloudRecords, cloudSettings);
+                saveStorageImmediate(toStorageData(merged));
+                set({ syncStatus: "synced" });
+                return merged;
+              });
+            } else {
+              // 云端无数据，把本地数据推上去
+              set((state) => {
+                scheduleSync(state.records, state.settings as any);
+                set({ syncStatus: "synced" });
+                return state;
+              });
+            }
           }
-        }).catch(() => {
-          // Supabase 不可用时，尝试 API 服务器
+        ).catch(() => {
           set({ syncStatus: "offline" });
           tryApiServerFallback();
         });
       } else {
-        // 没有 Supabase 配置，尝试 API 服务器
         tryApiServerFallback();
       }
 
       function tryApiServerFallback() {
         const userId = getDeviceId();
         withTimeout(
-          Promise.all([
-            fetchRecords(userId),
-            fetchSettings(userId),
-            checkServerHealth(),
-          ]),
-          4000,
-          [null, null, false]
+          Promise.all([fetchRecords(userId), fetchSettings(userId), checkServerHealth()]),
+          4000, [null, null, false]
         ).then(([serverRecords, serverSettings, serverOnline]) => {
-          if (!serverOnline) {
-            set({ syncStatus: "offline" });
-            return;
-          }
+          if (!serverOnline) { set({ syncStatus: "offline" }); return; }
           set({ syncStatus: "syncing" });
-
           if (serverRecords || serverSettings) {
             set((state) => {
-              const merged = { ...state };
-              if (serverRecords) {
-                const typedRecords: Record<string, DailyRecord> = {};
-                for (const [date, r] of Object.entries(serverRecords)) {
-                  typedRecords[date] = {
-                    date: r.date,
-                    orders: r.orders,
-                    income: r.income,
-                    workHours: r.workHours,
-                    weather: (r.weather || "sunny") as Weather,
-                    note: r.note || "",
-                  };
-                }
-                merged.records = { ...state.records, ...typedRecords };
-              }
-              if (serverSettings) {
-                merged.settings = {
-                  ...state.settings,
-                  ...serverSettings,
-                  currentShift: (serverSettings.currentShift || "early_mid") as ShiftType,
-                };
-              }
+              const merged = mergeCloudData(state, serverRecords as any, serverSettings as any);
               saveStorageImmediate(toStorageData(merged));
               set({ syncStatus: "synced" });
               return merged;
@@ -231,9 +230,7 @@ const useStore = create<AppState>((set, get) => {
           } else {
             set({ syncStatus: "synced" });
           }
-        }).catch(() => {
-          set({ syncStatus: "offline" });
-        });
+        }).catch(() => { set({ syncStatus: "offline" }); });
       }
     },
 
@@ -241,20 +238,11 @@ const useStore = create<AppState>((set, get) => {
       set((state) => {
         const newRecords = { ...state.records, [record.date]: record };
         const s = state.settings;
-
-        // Get the month prefix for this record
         const recordMonth = record.date.slice(0, 7);
 
-        // Recalculate income for all records in this month with effective price
-        const monthKeys = Object.keys(newRecords).filter((k) =>
-          k.startsWith(recordMonth)
-        );
-        const totalMonthOrders = monthKeys.reduce(
-          (sum, k) => sum + newRecords[k].orders,
-          0
-        );
-        const effectivePrice =
-          totalMonthOrders >= s.bonusThreshold ? s.bonusPrice : s.basePrice;
+        const monthKeys = Object.keys(newRecords).filter((k) => k.startsWith(recordMonth));
+        const totalMonthOrders = monthKeys.reduce((sum, k) => sum + newRecords[k].orders, 0);
+        const effectivePrice = totalMonthOrders >= s.bonusThreshold ? s.bonusPrice : s.basePrice;
 
         monthKeys.forEach((k) => {
           newRecords[k] = {
@@ -266,14 +254,22 @@ const useStore = create<AppState>((set, get) => {
         const newState = { ...state, records: newRecords };
         saveStorage(toStorageData(newState));
 
-        // 优先同步到 Supabase 云端
+        // 立即推送到 Supabase 云端（单条记录，不等防抖）
         if (isSupabaseConfigured()) {
+          const updatedRecord = newRecords[record.date];
+          pushSingleRecordToCloud({
+            date: updatedRecord.date,
+            orders: updatedRecord.orders,
+            income: updatedRecord.income,
+            workHours: updatedRecord.workHours,
+            weather: updatedRecord.weather,
+            note: updatedRecord.note,
+          }, newState.settings.syncKey);
+          // 同时批量同步确保完整
           scheduleSync(newRecords, newState.settings);
         }
 
-        // 同时尝试同步到 API 服务器（如果可用）
         scheduleApiSync(newState);
-
         return { records: newRecords };
       });
       get().checkAchievements();
@@ -284,14 +280,12 @@ const useStore = create<AppState>((set, get) => {
         const newRecords = { ...state.records };
         delete newRecords[date];
 
-        // Delete from API server (if available)
         const userId = getDeviceId();
         apiDeleteRecord(userId, date);
 
         const newState = { ...state, records: newRecords };
         saveStorage(toStorageData(newState));
 
-        // 优先同步到 Supabase 云端
         if (isSupabaseConfigured()) {
           deleteRecordFromCloud(date, newState.settings.syncKey);
           scheduleSync(newRecords, newState.settings);
@@ -307,56 +301,35 @@ const useStore = create<AppState>((set, get) => {
         const newState = { ...state, settings: newSettings };
         saveStorage(toStorageData(newState));
 
-        // 优先同步到 Supabase 云端
         if (isSupabaseConfigured()) {
           scheduleSync(newState.records, newSettings);
         }
 
-        // 如果 syncKey 发生了变化，立即从云端重新拉取数据
+        // syncKey 变化时：先推本地数据，再拉云端数据合并
         const oldSyncKey = state.settings.syncKey || "";
         const newSyncKey = newSettings.syncKey || "";
         if (oldSyncKey !== newSyncKey) {
           set({ syncStatus: "syncing" });
-          withTimeout(syncFromCloud(newSyncKey), 5000, { records: null, settings: null }).then(({ records: cloudRecords, settings: cloudSettings }) => {
-            if (cloudRecords || cloudSettings) {
-              set((s) => {
-                const merged = { ...s };
-                if (cloudRecords) {
-                  const typedRecords: Record<string, DailyRecord> = {};
-                  for (const [date, r] of Object.entries(cloudRecords)) {
-                    typedRecords[date] = {
-                      date: r.date,
-                      orders: r.orders,
-                      income: r.income,
-                      workHours: r.workHours,
-                      weather: (r.weather || "sunny") as Weather,
-                      note: r.note || "",
-                    };
-                  }
-                  merged.records = { ...s.records, ...typedRecords };
-                }
-                if (cloudSettings) {
-                  merged.settings = {
-                    ...s.settings,
-                    ...cloudSettings,
-                    currentShift: (cloudSettings.currentShift || "early_mid") as ShiftType,
-                  };
-                }
-                saveStorageImmediate(toStorageData(merged));
+          // 先把本地数据推到新 syncKey 下
+          scheduleSync(newState.records, newSettings);
+          // 再拉取新 syncKey 下的云端数据
+          withTimeout(syncFromCloud(newSyncKey), 5000, { records: null, settings: null }).then(
+            ({ records: cloudRecords, settings: cloudSettings }) => {
+              if (cloudRecords || cloudSettings) {
+                set((s) => {
+                  const merged = mergeCloudData(s, cloudRecords, cloudSettings);
+                  saveStorageImmediate(toStorageData(merged));
+                  set({ syncStatus: "synced" });
+                  return merged;
+                });
+              } else {
                 set({ syncStatus: "synced" });
-                return merged;
-              });
-            } else {
-              set({ syncStatus: "synced" });
+              }
             }
-          }).catch(() => {
-            set({ syncStatus: "offline" });
-          });
+          ).catch(() => { set({ syncStatus: "offline" }); });
         }
 
-        // 同时尝试同步到 API 服务器（如果可用）
         scheduleApiSync(newState);
-
         return { settings: newSettings };
       });
       get().checkAchievements();
@@ -373,7 +346,6 @@ const useStore = create<AppState>((set, get) => {
         .filter((r) => r.date.startsWith(prefix))
         .reduce((s, r) => s + r.orders, 0);
 
-      // Calculate streak
       let streak = 0;
       const todayStr = today();
       const todayDate = new Date(todayStr);
@@ -381,11 +353,8 @@ const useStore = create<AppState>((set, get) => {
         const d = new Date(todayDate);
         d.setDate(d.getDate() - i);
         const ds = d.toISOString().slice(0, 10);
-        if (state.records[ds] && state.records[ds].orders > 0) {
-          streak++;
-        } else {
-          break;
-        }
+        if (state.records[ds] && state.records[ds].orders > 0) streak++;
+        else break;
       }
 
       let changed = false;
@@ -393,23 +362,12 @@ const useStore = create<AppState>((set, get) => {
         if (a.unlocked) return a;
         let shouldUnlock = false;
         switch (a.type) {
-          case "total_orders":
-            shouldUnlock = totalOrders >= a.threshold;
-            break;
-          case "streak":
-            shouldUnlock = streak >= a.threshold;
-            break;
-          case "daily_record":
-            shouldUnlock = maxDaily >= a.threshold;
-            break;
-          case "monthly_record":
-            shouldUnlock = monthOrders >= a.threshold;
-            break;
+          case "total_orders": shouldUnlock = totalOrders >= a.threshold; break;
+          case "streak": shouldUnlock = streak >= a.threshold; break;
+          case "daily_record": shouldUnlock = maxDaily >= a.threshold; break;
+          case "monthly_record": shouldUnlock = monthOrders >= a.threshold; break;
         }
-        if (shouldUnlock) {
-          changed = true;
-          return { ...a, unlocked: true, unlockedAt: today() };
-        }
+        if (shouldUnlock) { changed = true; return { ...a, unlocked: true, unlockedAt: today() }; }
         return a;
       });
 
@@ -424,7 +382,6 @@ const useStore = create<AppState>((set, get) => {
 
     loadDemoData: () => {
       const data = generateDemoData();
-      // Zustand v5: use spread to merge instead of replace
       set((s) => ({ ...s, ...data }));
       saveStorage(toStorageData({ ...get(), ...data }));
       get().checkAchievements();
@@ -433,11 +390,9 @@ const useStore = create<AppState>((set, get) => {
     resetData: () => {
       const data = loadStorage();
       const empty = {
-        ...data,
-        records: {},
+        ...data, records: {},
         achievements: data.achievements.map((a) => ({ ...a, unlocked: false, unlockedAt: null })),
       };
-      // Zustand v5: use spread to merge instead of replace
       set((s) => ({ ...s, ...empty }));
       saveStorage(empty);
     },
@@ -447,11 +402,7 @@ const useStore = create<AppState>((set, get) => {
       return monthOrders >= s.bonusThreshold ? s.bonusPrice : s.basePrice;
     },
 
-    // Computed helpers
-    getTodaysRecord: () => {
-      return get().records[today()];
-    },
-
+    getTodaysRecord: () => get().records[today()],
     getMonthRecords: () => {
       const { year, month } = getCurrentMonth();
       const prefix = `${year}-${String(month).padStart(2, "0")}`;
@@ -459,49 +410,28 @@ const useStore = create<AppState>((set, get) => {
         .filter((r) => r.date.startsWith(prefix))
         .sort((a, b) => a.date.localeCompare(b.date));
     },
-
-    getMonthOrders: () => {
-      return get().getMonthRecords().reduce((s, r) => s + r.orders, 0);
-    },
-
-    getMonthIncome: () => {
-      return get().getMonthRecords().reduce((s, r) => s + r.income, 0);
-    },
-
-    getTotalOrders: () => {
-      return (Object.values(get().records) as DailyRecord[]).reduce((s, r) => s + r.orders, 0);
-    },
-
-    getTotalIncome: () => {
-      return (Object.values(get().records) as DailyRecord[]).reduce((s, r) => s + r.income, 0);
-    },
-
+    getMonthOrders: () => get().getMonthRecords().reduce((s, r) => s + r.orders, 0),
+    getMonthIncome: () => get().getMonthRecords().reduce((s, r) => s + r.income, 0),
+    getTotalOrders: () => (Object.values(get().records) as DailyRecord[]).reduce((s, r) => s + r.orders, 0),
+    getTotalIncome: () => (Object.values(get().records) as DailyRecord[]).reduce((s, r) => s + r.income, 0),
     getStreak: () => {
       let streak = 0;
       const todayDate = new Date(today());
       for (let i = 0; i < 365; i++) {
-        const d = new Date(todayDate);
-        d.setDate(d.getDate() - i);
+        const d = new Date(todayDate); d.setDate(d.getDate() - i);
         const ds = d.toISOString().slice(0, 10);
-        if (get().records[ds] && get().records[ds].orders > 0) {
-          streak++;
-        } else {
-          break;
-        }
+        if (get().records[ds] && get().records[ds].orders > 0) streak++;
+        else break;
       }
       return streak;
     },
-
     getLastNDaysRecords: (n: number) => {
       const records = get().records;
       const result: DailyRecord[] = [];
       for (let i = n - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
+        const d = new Date(); d.setDate(d.getDate() - i);
         const ds = d.toISOString().slice(0, 10);
-        if (records[ds]) {
-          result.push(records[ds]);
-        }
+        if (records[ds]) result.push(records[ds]);
       }
       return result;
     },
