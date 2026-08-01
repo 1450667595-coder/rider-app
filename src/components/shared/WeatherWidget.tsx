@@ -1,26 +1,45 @@
-import { motion } from "framer-motion";
-import { Cloud, Thermometer, Wind, Droplets, RefreshCw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Cloud, Wind, Droplets, RefreshCw, ChevronDown, ChevronUp, Calendar, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useWeather } from "@/hooks/useWeather";
-import { weatherCodeToOurWeather } from "@/services/weather";
+import { weatherCodeToOurWeather, getWeatherForecastSummary, getWeatherImpactScore } from "@/services/weather";
+import type { Weather, DailyRecord } from "@/types";
+import useStore from "@/store/useStore";
 
 interface WeatherWidgetProps {
-  onWeatherChange?: (weather: "sunny" | "cloudy" | "rainy" | "snowy" | "windy") => void;
+  onWeatherChange?: (weather: Weather) => void;
 }
 
 export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
-  const { weather, loading, error, refetch } = useWeather();
+  const { weather, forecast, loading, error, refetch } = useWeather();
+  const prevWeatherRef = useRef<Weather | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const records = useStore((s) => s.records);
+  const saveRecord = useStore((s) => s.saveRecord);
 
-  // Notify parent of weather change
-  if (weather && onWeatherChange) {
-    const ourWeather = weatherCodeToOurWeather(weather.weatherCode);
-    onWeatherChange(ourWeather);
-  }
+  useEffect(() => {
+    if (weather && onWeatherChange) {
+      const ourWeather = weatherCodeToOurWeather(weather.weatherCode);
+      if (prevWeatherRef.current !== ourWeather) {
+        prevWeatherRef.current = ourWeather;
+        onWeatherChange(ourWeather);
+      }
+    }
+  }, [weather, onWeatherChange]);
+
+  // Auto-bind forecast weather to upcoming records
+  const forecastSummary = weather ? getWeatherForecastSummary(weather) : null;
+  const impactScore = weather ? getWeatherImpactScore(weather) : null;
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 bg-white/5 rounded-full px-3 py-1.5 animate-pulse">
-        <Cloud size={14} className="text-white/30" />
-        <span className="text-white/30 text-xs">获取天气...</span>
+      <div className="flex items-center gap-2 rounded-full px-3 py-1.5"
+        style={{
+          background: "rgba(0,229,255,0.03)",
+          border: "1px solid rgba(0,229,255,0.08)",
+        }}>
+        <Cloud size={14} className="text-[#E0E0E0]/25" />
+        <span className="terminal-text text-[10px]">获取天气中...</span>
       </div>
     );
   }
@@ -29,34 +48,125 @@ export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
     return (
       <button
         onClick={refetch}
-        className="flex items-center gap-2 bg-white/5 rounded-full px-3 py-1.5 hover:bg-white/10 transition-colors"
-      >
-        <RefreshCw size={14} className="text-white/40" />
-        <span className="text-white/40 text-xs">获取天气</span>
+        className="tap-cyber flex items-center gap-2 rounded-full px-3 py-1.5 transition-colors"
+        style={{
+          background: "rgba(0,229,255,0.03)",
+          border: "1px solid rgba(0,229,255,0.08)",
+        }}>
+        <RefreshCw size={14} className="text-[#E0E0E0]/35" />
+        <span className="terminal-text text-[10px]">获取天气</span>
       </button>
     );
   }
+
+  const currentWeather = weatherCodeToOurWeather(weather.weatherCode);
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="flex items-center gap-3 bg-white/5 rounded-full px-3 py-1.5"
+      className="space-y-2"
     >
-      <span className="text-lg">{weather.weatherEmoji}</span>
-      <span className="text-white text-sm font-medium">{weather.temperature}°C</span>
-      <span className="text-white/40 text-[10px]">{weather.weatherLabel}</span>
-      <div className="flex items-center gap-1 text-white/30 text-[10px]">
-        <Wind size={10} />
-        <span>{weather.windSpeed}km/h</span>
+      {/* Current Weather Bar */}
+      <div className="flex items-center gap-3 rounded-full px-3 py-1.5 cursor-pointer"
+        style={{
+          background: "rgba(0,229,255,0.03)",
+          border: "1px solid rgba(0,229,255,0.08)",
+        }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span className="text-lg">{weather.weatherEmoji}</span>
+        <span className="text-[#E0E0E0] text-sm font-medium">{weather.temperature}°C</span>
+        <span className="terminal-text text-[9px]">{weather.weatherLabel}</span>
+        <div className="flex items-center gap-1 text-[#E0E0E0]/25 text-[10px]">
+          <Wind size={10} />
+          <span>{weather.windSpeed}km/h</span>
+        </div>
+        <div className="flex items-center gap-1 text-[#E0E0E0]/25 text-[10px]">
+          <Droplets size={10} />
+          <span>{weather.humidity}%</span>
+        </div>
+        {impactScore && (
+          <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+            impactScore.score <= 30 ? "badge-cyber-green" :
+            impactScore.score <= 60 ? "badge-cyber-gold" : "badge-cyber-red"
+          }`}>
+            {impactScore.score}分
+          </span>
+        )}
+        <button onClick={(e) => { e.stopPropagation(); refetch(); }} className="tap-cyber text-[#E0E0E0]/20 hover:text-[#E0E0E0]/45 transition-colors ml-auto">
+          <RefreshCw size={10} />
+        </button>
+        {expanded ? <ChevronUp size={12} className="text-[#E0E0E0]/25" /> : <ChevronDown size={12} className="text-[#E0E0E0]/25" />}
       </div>
-      <div className="flex items-center gap-1 text-white/30 text-[10px]">
-        <Droplets size={10} />
-        <span>{weather.humidity}%</span>
-      </div>
-      <button onClick={refetch} className="text-white/20 hover:text-white/50 transition-colors">
-        <RefreshCw size={10} />
-      </button>
+
+      {/* 7-Day Forecast (Expanded) */}
+      <AnimatePresence>
+        {expanded && forecast.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="holo-card rounded-[20px] p-4 overflow-hidden"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar size={12} className="text-[#00E5FF]/60" />
+              <span className="terminal-text text-[10px] text-[#E0E0E0]/40">7日天气预报</span>
+              {forecastSummary && (
+                <span className="text-[9px] text-[#E0E0E0]/25 ml-auto">
+                  降雨概率 {forecastSummary.rainProbability}%
+                </span>
+              )}
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {forecast.slice(0, 7).map((day, i) => {
+                const dayWeather = weatherCodeToOurWeather(day.weatherCode);
+                const isToday = i === 0;
+                return (
+                  <div
+                    key={day.date}
+                    className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl min-w-[60px] ${
+                      isToday ? "bg-[#00E5FF]/10 border border-[#00E5FF]/20" : "bg-[#00E5FF]/3"
+                    }`}
+                  >
+                    <span className="text-[9px] text-[#E0E0E0]/40">
+                      {isToday ? "今天" : new Date(day.date).getDate() + "日"}
+                    </span>
+                    <span className="text-base">{day.weatherEmoji}</span>
+                    <span className="text-[11px] font-medium text-[#E0E0E0]">{day.maxTemp}°</span>
+                    <span className="text-[9px] text-[#E0E0E0]/30">{day.minTemp}°</span>
+                    <span className={`text-[8px] ${
+                      dayWeather === "rainy" ? "text-[#E040FB]" :
+                      dayWeather === "sunny" ? "text-[#FFD740]" :
+                      "text-[#E0E0E0]/40"
+                    }`}>
+                      {day.weatherLabel}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Temperature Trend */}
+            {forecastSummary && (
+              <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[#00E5FF]/8">
+                <span className="text-[9px] text-[#E0E0E0]/30">气温趋势:</span>
+                {forecastSummary.temperatureTrend === "rising" ? (
+                  <span className="text-[9px] text-[#FF6D00] flex items-center gap-1"><TrendingUp size={10} /> 升温</span>
+                ) : forecastSummary.temperatureTrend === "falling" ? (
+                  <span className="text-[9px] text-[#00E5FF] flex items-center gap-1"><TrendingDown size={10} /> 降温</span>
+                ) : (
+                  <span className="text-[9px] text-[#E0E0E0]/40 flex items-center gap-1"><Minus size={10} /> 稳定</span>
+                )}
+                <span className="text-[9px] text-[#E0E0E0]/20 ml-auto">
+                  最佳工作日: {forecastSummary.bestWorkDay.date.slice(5)}
+                </span>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

@@ -1,5 +1,5 @@
 interface ProgressRingProps {
-  progress: number; // 0-100
+  progress: number;
   size?: number;
   strokeWidth?: number;
   color?: string;
@@ -11,8 +11,8 @@ export default function ProgressRing({
   progress,
   size = 80,
   strokeWidth = 6,
-  color = "#FFD100",
-  bgColor = "rgba(255,255,255,0.1)",
+  color = "#00E5FF",
+  bgColor = "rgba(0,229,255,0.06)",
   children,
 }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2;
@@ -40,7 +40,10 @@ export default function ProgressRing({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 0.8s ease-out" }}
+          style={{
+            transition: "stroke-dashoffset 0.8s ease-out",
+            filter: `drop-shadow(0 0 6px ${color}40)`,
+          }}
         />
       </svg>
       {children && (

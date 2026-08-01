@@ -65,7 +65,14 @@ export function getDeviceId(): string {
   const key = "rider-device-id";
   let id = localStorage.getItem(key);
   if (!id) {
-    id = crypto.randomUUID();
+    // crypto.randomUUID() may not be available in non-secure contexts
+    id = typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+          const r = (Math.random() * 16) | 0;
+          const v = c === "x" ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        });
     localStorage.setItem(key, id);
   }
   return id;

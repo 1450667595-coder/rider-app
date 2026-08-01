@@ -96,9 +96,9 @@ export default function Weekly() {
       {/* Header */}
       <motion.div variants={item} className="flex items-center justify-between">
         <div>
-          <p className="text-white/40 text-sm">周报总结</p>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Calendar size={22} className="text-[#FFD100]" />
+          <p className="terminal-text text-sm tracking-tight">周报总结</p>
+          <h1 className="text-2xl font-bold text-[#E0E0E0] flex items-center gap-2 tracking-[-0.01em]">
+            <Calendar size={22} className="icon-glow-cyan" />
             {formatDate(thisWeek.start)} - {formatDate(thisWeek.end)}
           </h1>
         </div>
@@ -111,37 +111,37 @@ export default function Weekly() {
 
       {/* Big Numbers */}
       <motion.div variants={item} className="grid grid-cols-2 gap-3">
-        <div className="glass rounded-2xl p-4">
+        <div className="holo-card rounded-[26px] p-4">
           <div className="flex items-center gap-2 mb-1">
-            <ShoppingBag size={16} className="text-[#FFD100]" />
-            <span className="text-white/50 text-xs">本周单量</span>
+            <ShoppingBag size={16} className="icon-glow-cyan" />
+            <span className="terminal-text text-xs tracking-tight">本周单量</span>
           </div>
-          <AnimatedNumber value={thisWeekStats.totalOrders} className="text-3xl font-bold text-white tabular-nums" />
-          <span className="text-white/60 text-sm ml-1">单</span>
+          <AnimatedNumber value={thisWeekStats.totalOrders} className="text-3xl font-bold text-[#E0E0E0] tabular-nums" />
+          <span className="text-[#E0E0E0]/40 text-sm ml-1">单</span>
           <div className="flex items-center gap-1 mt-1">
             {orderChange >= 0 ? (
-              <ArrowUp size={12} className="text-emerald-400" />
+              <ArrowUp size={12} className="text-[#00E676]" />
             ) : (
               <ArrowDown size={12} className="text-red-400" />
             )}
-            <span className={`text-xs ${orderChange >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            <span className={`text-xs ${orderChange >= 0 ? "text-[#00E676]" : "text-red-400"}`}>
               {orderChange >= 0 ? "+" : ""}{orderChange}% 环比
             </span>
           </div>
         </div>
-        <div className="glass rounded-2xl p-4">
+        <div className="holo-card rounded-[26px] p-4">
           <div className="flex items-center gap-2 mb-1">
-            <DollarSign size={16} className="text-emerald-400" />
-            <span className="text-white/50 text-xs">本周收入</span>
+            <DollarSign size={16} className="text-[#00E676]" />
+            <span className="terminal-text text-xs tracking-tight">本周收入</span>
           </div>
-          <AnimatedNumber value={thisWeekStats.totalIncome} prefix="¥" className="text-3xl font-bold text-white tabular-nums" />
+          <AnimatedNumber value={thisWeekStats.totalIncome} prefix="¥" className="text-3xl font-bold text-[#E0E0E0] tabular-nums" />
           <div className="flex items-center gap-1 mt-1">
             {incomeChange >= 0 ? (
-              <ArrowUp size={12} className="text-emerald-400" />
+              <ArrowUp size={12} className="text-[#00E676]" />
             ) : (
               <ArrowDown size={12} className="text-red-400" />
             )}
-            <span className={`text-xs ${incomeChange >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            <span className={`text-xs ${incomeChange >= 0 ? "text-[#00E676]" : "text-red-400"}`}>
               {incomeChange >= 0 ? "+" : ""}{incomeChange}% 环比
             </span>
           </div>
@@ -150,30 +150,30 @@ export default function Weekly() {
 
       {/* Stats Grid */}
       <motion.div variants={item} className="grid grid-cols-3 gap-3">
-        <div className="glass rounded-2xl p-3 text-center">
-          <Clock size={16} className="text-[#00D2FF] mx-auto mb-1" />
-          <p className="text-lg font-bold text-white">{thisWeekStats.hourlyRate}</p>
-          <p className="text-white/40 text-[10px]">单/小时</p>
+        <div className="holo-card rounded-[26px] p-3 text-center">
+          <Clock size={16} className="icon-glow-cyan mx-auto mb-1" />
+          <p className="text-lg font-bold text-[#E0E0E0]">{thisWeekStats.hourlyRate}</p>
+          <p className="terminal-text text-[10px] tracking-tight">单/小时</p>
         </div>
-        <div className="glass rounded-2xl p-3 text-center">
-          <Zap size={16} className="text-[#FFD100] mx-auto mb-1" />
-          <p className="text-lg font-bold text-white">{thisWeekStats.avgDaily}</p>
-          <p className="text-white/40 text-[10px]">日均单量</p>
+        <div className="holo-card rounded-[26px] p-3 text-center">
+          <Zap size={16} className="icon-glow-gold mx-auto mb-1" />
+          <p className="text-lg font-bold text-[#E0E0E0]">{thisWeekStats.avgDaily}</p>
+          <p className="terminal-text text-[10px] tracking-tight">日均单量</p>
         </div>
-        <div className="glass rounded-2xl p-3 text-center">
-          <Award size={16} className="text-[#7B2FF7] mx-auto mb-1" />
-          <p className="text-lg font-bold text-white">{thisWeekStats.workDays}</p>
-          <p className="text-white/40 text-[10px]">出勤天数</p>
+        <div className="holo-card rounded-[26px] p-3 text-center">
+          <Award size={16} className="text-[#E040FB] mx-auto mb-1" />
+          <p className="text-lg font-bold text-[#E0E0E0]">{thisWeekStats.workDays}</p>
+          <p className="terminal-text text-[10px] tracking-tight">出勤天数</p>
         </div>
       </motion.div>
 
       {/* Best Day */}
-      <motion.div variants={item} className="glass rounded-2xl p-4 ring-1 ring-[#FFD100]/10">
+      <motion.div variants={item} className="holo-card rounded-[26px] p-4 ring-1 ring-[#00E5FF]/10">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🏆</span>
           <div>
-            <p className="text-white font-bold text-sm">本周最佳</p>
-            <p className="text-white/60 text-xs">
+            <p className="text-[#E0E0E0] font-bold text-sm">本周最佳</p>
+            <p className="text-[#E0E0E0]/40 text-xs">
               {bestDayLabel} — {thisWeekStats.maxDay.orders} 单
             </p>
           </div>
@@ -182,7 +182,7 @@ export default function Weekly() {
 
       {/* Daily Breakdown */}
       <motion.div variants={item} className="space-y-2">
-        <h3 className="text-white/60 text-sm font-medium">每日明细</h3>
+        <h3 className="cyber-section-title text-sm font-medium tracking-tight">每日明细</h3>
         {thisWeekData.map((day, i) => {
           const isToday = day.date === new Date().toISOString().slice(0, 10);
           const maxOrders = Math.max(...thisWeekData.map((d) => d.orders), 1);
@@ -191,33 +191,33 @@ export default function Weekly() {
             <motion.div
               key={day.date}
               variants={item}
-              className={`rounded-xl p-3 ${isToday ? "glass-strong ring-1 ring-[#FFD100]/20" : "glass"}`}
+              className={`tap-cyber rounded-xl p-3 ${isToday ? "holo-card ring-1 ring-[#00E5FF]/20" : "holo-card"}`}
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 text-center">
-                  <p className="text-white/50 text-[10px]">{WEEKDAYS[i]}</p>
-                  <p className={`text-xs font-bold ${isToday ? "text-[#FFD100]" : "text-white/60"}`}>
+                  <p className="terminal-text text-[10px]">{WEEKDAYS[i]}</p>
+                  <p className={`text-xs font-bold ${isToday ? "text-[#FFD740]" : "text-[#E0E0E0]/40"}`}>
                     {day.date.slice(8)}
                   </p>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-white text-sm font-medium">
+                    <span className="text-[#E0E0E0] text-sm font-medium">
                       {day.orders > 0 ? `${day.orders} 单` : "休息"}
                     </span>
                     {day.income > 0 && (
-                      <span className="text-emerald-400 text-xs">¥{day.income}</span>
+                      <span className="text-[#00E676] text-xs">¥{day.income}</span>
                     )}
                   </div>
-                  <div className="w-full bg-white/5 rounded-full h-1.5">
+                  <div className="w-full bg-[#E0E0E0]/5 rounded-full h-1.5">
                     <motion.div
                       className="h-1.5 rounded-full"
                       style={{
                         width: `${barWidth}%`,
                         background: isToday
-                          ? "linear-gradient(90deg, #FFD100, #FF8C00)"
+                          ? "linear-gradient(90deg, #00E5FF, #E040FB)"
                           : day.orders > 0
-                          ? "#7B2FF7"
+                          ? "#E040FB"
                           : "transparent",
                       }}
                       initial={{ width: 0 }}
@@ -226,7 +226,7 @@ export default function Weekly() {
                     />
                   </div>
                 </div>
-                <span className="text-white/30 text-xs w-10 text-right">
+                <span className="text-[#E0E0E0]/30 text-xs w-10 text-right">
                   {WEATHER_LABELS[day.weather as keyof typeof WEATHER_LABELS]}
                 </span>
               </div>

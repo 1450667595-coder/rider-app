@@ -53,10 +53,10 @@ export default function Achievements() {
 
   const getTypeColor = (type: Achievement["type"]) => {
     switch (type) {
-      case "total_orders": return "text-[#FFD100]";
-      case "streak": return "text-[#FF6B35]";
-      case "daily_record": return "text-[#00D2FF]";
-      case "monthly_record": return "text-[#7B2FF7]";
+      case "total_orders": return "text-[#00E5FF]";
+      case "streak": return "text-[#FF6D00]";
+      case "daily_record": return "text-[#00E5FF]";
+      case "monthly_record": return "text-[#E040FB]";
     }
   };
 
@@ -68,49 +68,49 @@ export default function Achievements() {
       animate="show"
     >
       <motion.div variants={item}>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Award size={24} className="text-[#FFD100]" />
+        <h1 className="text-2xl font-bold text-[#E0E0E0] flex items-center gap-2 tracking-[-0.01em]">
+          <Award size={24} className="text-[#00E5FF] icon-glow-cyan" />
           成就系统
         </h1>
       </motion.div>
 
       {/* Stats Row */}
       <motion.div variants={item} className="grid grid-cols-3 gap-3">
-        <div className="glass rounded-2xl p-3 text-center">
-          <Award size={20} className="text-[#FFD100] mx-auto mb-1" />
-          <span className="text-lg font-bold text-white">{unlockedCount}</span>
-          <span className="text-white/40 text-[10px] block">/ {achievements.length}</span>
+        <div className="holo-card rounded-[26px] p-3 text-center">
+          <Award size={20} className="text-[#00E5FF] mx-auto mb-1 icon-glow-cyan" />
+          <span className="text-lg font-bold text-[#E0E0E0]">{unlockedCount}</span>
+          <span className="terminal-text text-[10px] block">/ {achievements.length}</span>
         </div>
-        <div className="glass rounded-2xl p-3 text-center">
-          <Flame size={20} className="text-[#FF6B35] mx-auto mb-1" />
-          <AnimatedNumber value={streak} className="text-lg font-bold text-white" />
-          <span className="text-white/40 text-[10px] block">连续天数</span>
+        <div className="holo-card rounded-[26px] p-3 text-center">
+          <Flame size={20} className="text-[#FF6D00] mx-auto mb-1 icon-glow-gold" />
+          <AnimatedNumber value={streak} className="text-lg font-bold text-[#E0E0E0]" />
+          <span className="terminal-text text-[10px] block">连续天数</span>
         </div>
-        <div className="glass rounded-2xl p-3 text-center">
-          <Zap size={20} className="text-[#00D2FF] mx-auto mb-1" />
-          <AnimatedNumber value={stats.totalOrders} className="text-lg font-bold text-white" />
-          <span className="text-white/40 text-[10px] block">累计单量</span>
+        <div className="holo-card rounded-[26px] p-3 text-center">
+          <Zap size={20} className="text-[#00E5FF] mx-auto mb-1 icon-glow-cyan" />
+          <AnimatedNumber value={stats.totalOrders} className="text-lg font-bold text-[#E0E0E0]" />
+          <span className="terminal-text text-[10px] block">累计单量</span>
         </div>
       </motion.div>
 
       {/* Personal Records */}
-      <motion.div variants={item} className="glass rounded-2xl p-4">
-        <h3 className="text-white/60 text-sm font-medium mb-3 flex items-center gap-2">
-          <Star size={16} className="text-[#FFD100]" />
+      <motion.div variants={item} className="holo-card rounded-[26px] p-4">
+        <h3 className="cyber-section-title flex items-center gap-2">
+          <Star size={16} className="text-[#00E5FF] icon-glow-cyan" />
           个人纪录
         </h3>
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/5 rounded-xl p-3">
-            <p className="text-white/40 text-xs">最高日单量</p>
-            <p className="text-xl font-bold text-white mt-0.5">{stats.maxDaily} <span className="text-sm font-normal text-white/60">单</span></p>
+          <div className="bg-[#00E5FF]/5 rounded-xl p-3">
+            <p className="terminal-text text-xs">最高日单量</p>
+            <p className="text-xl font-bold text-[#E0E0E0] mt-0.5">{stats.maxDaily} <span className="text-sm font-normal terminal-text">单</span></p>
           </div>
-          <div className="bg-white/5 rounded-xl p-3">
-            <p className="text-white/40 text-xs">最高月单量</p>
-            <p className="text-xl font-bold text-white mt-0.5">{stats.maxMonthly} <span className="text-sm font-normal text-white/60">单</span></p>
+          <div className="bg-[#00E5FF]/5 rounded-xl p-3">
+            <p className="terminal-text text-xs">最高月单量</p>
+            <p className="text-xl font-bold text-[#E0E0E0] mt-0.5">{stats.maxMonthly} <span className="text-sm font-normal terminal-text">单</span></p>
           </div>
-          <div className="bg-white/5 rounded-xl p-3 col-span-2">
-            <p className="text-white/40 text-xs">累计总收入</p>
-            <p className="text-xl font-bold text-white mt-0.5">
+          <div className="bg-[#00E5FF]/5 rounded-xl p-3 col-span-2">
+            <p className="terminal-text text-xs">累计总收入</p>
+            <p className="text-xl font-bold text-[#E0E0E0] mt-0.5">
               ¥{stats.totalIncome.toLocaleString()}
             </p>
           </div>
@@ -119,38 +119,38 @@ export default function Achievements() {
 
       {/* Badge Grid */}
       <motion.div variants={item}>
-        <h3 className="text-white/60 text-sm font-medium mb-3">徽章墙</h3>
+        <h3 className="cyber-section-title">徽章墙</h3>
         <div className="grid grid-cols-2 gap-3">
           {achievements.map((achievement) => (
             <motion.div
               key={achievement.id}
               variants={item}
-              className={`rounded-2xl p-4 border transition-all ${
+              className={`tap-cyber rounded-2xl p-4 border transition-all ${
                 achievement.unlocked
-                  ? "glass"
-                  : "bg-white/[0.02] border-white/5 opacity-50"
+                  ? "holo-card"
+                  : "bg-[#00E5FF]/[0.02] border-[#00E5FF]/8 opacity-50"
               }`}
             >
               <div className="flex items-center gap-3">
                 <div
                   className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${
-                    achievement.unlocked ? "bg-white/10" : "bg-white/5"
+                    achievement.unlocked ? "bg-[#00E5FF]/10" : "bg-[#00E5FF]/5"
                   }`}
                 >
-                  {achievement.unlocked ? achievement.icon : <Lock size={20} className="text-white/20" />}
+                  {achievement.unlocked ? achievement.icon : <Lock size={20} className="text-[#E0E0E0]/20" />}
                 </div>
                 <div>
-                  <p className={`text-sm font-bold ${achievement.unlocked ? "text-white" : "text-white/30"}`}>
+                  <p className={`text-sm font-bold ${achievement.unlocked ? "text-[#E0E0E0]" : "text-[#E0E0E0]/30"}`}>
                     {achievement.name}
                   </p>
-                  <p className="text-white/40 text-[10px]">{achievement.description}</p>
+                  <p className="terminal-text text-[10px]">{achievement.description}</p>
                   <span className={`text-[10px] font-medium ${getTypeColor(achievement.type)}`}>
                     {getTypeLabel(achievement.type)}
                   </span>
                 </div>
               </div>
               {achievement.unlocked && achievement.unlockedAt && (
-                <p className="text-white/20 text-[10px] mt-2">
+                <p className="terminal-text text-[10px] mt-2">
                   解锁于 {achievement.unlockedAt}
                 </p>
               )}

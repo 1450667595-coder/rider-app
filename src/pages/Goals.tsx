@@ -22,9 +22,9 @@ const child = {
 };
 
 function getProgressColor(pct: number): string {
-  if (pct >= 80) return "#22C55E";
-  if (pct >= 50) return "#F97316";
-  return "#EAB308";
+  if (pct >= 80) return "#00E676";
+  if (pct >= 50) return "#FFD740";
+  return "#00E5FF";
 }
 
 export default function Goals() {
@@ -86,22 +86,28 @@ export default function Goals() {
       {/* Header */}
       <motion.div variants={child} className="flex items-center justify-between">
         <div>
-          <p className="text-white/40 text-sm">目标追踪</p>
-          <h1 className="text-2xl font-bold text-white">{year}年{month}月</h1>
+          <p className="terminal-text text-sm tracking-tight">目标追踪</p>
+          <h1 className="text-2xl font-bold text-[#E0E0E0] neon-cyan tracking-[-0.01em]">{year}年{month}月</h1>
         </div>
         <button
           onClick={openSheet}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass hover:bg-white/[0.06] transition-colors"
+          className="tap-cyber flex items-center gap-1.5 px-3 py-2 rounded-xl transition-colors"
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "0.5px solid rgba(255,255,255,0.06)",
+          }}
         >
-          <Edit3 size={16} className="text-white/60" />
-          <span className="text-white/60 text-sm">编辑目标</span>
+          <Edit3 size={16} className="text-[#E0E0E0]/60" />
+          <span className="text-[#E0E0E0]/60 text-sm">编辑目标</span>
         </button>
       </motion.div>
 
       {/* Progress Ring */}
       <motion.div
         variants={child}
-        className="glass rounded-3xl p-6 flex flex-col items-center"
+        className="holo-card rounded-[32px] p-6 flex flex-col items-center"
       >
         <ProgressRing
           progress={goalProgress}
@@ -114,9 +120,9 @@ export default function Goals() {
             <AnimatedNumber
               value={goalProgress}
               suffix="%"
-              className="text-4xl font-bold text-white tabular-nums"
+              className="text-4xl font-bold text-[#E0E0E0] tabular-nums"
             />
-            <p className="text-white/40 text-xs mt-1">月度目标</p>
+            <p className="terminal-text text-xs mt-1">月度目标</p>
           </div>
         </ProgressRing>
 
@@ -124,77 +130,77 @@ export default function Goals() {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="mt-4 flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-400/20 border border-emerald-400/30"
+            className="mt-4 flex items-center gap-2 px-4 py-2 rounded-full bg-[#00E676]/20 border border-[#00E676]/30"
           >
-            <Trophy size={18} className="text-emerald-400" />
-            <span className="text-emerald-400 font-semibold text-sm">目标达成！</span>
+            <Trophy size={18} className="text-[#00E676]" />
+            <span className="text-[#00E676] font-semibold text-sm">目标达成！</span>
           </motion.div>
         )}
       </motion.div>
 
       {/* Stats Grid */}
       <motion.div variants={child} className="grid grid-cols-2 gap-3">
-        <div className="glass rounded-2xl p-4">
+        <div className="holo-card rounded-[26px] p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Target size={16} className="text-[#FFD100]" />
-            <span className="text-white/50 text-xs">目标单量</span>
+            <Target size={16} className="text-[#FFD740] icon-glow-gold drop-shadow-[0_0_6px_rgba(255,215,64,0.25)]" />
+            <span className="terminal-text text-xs tracking-tight">目标单量</span>
           </div>
           <AnimatedNumber
             value={settings.monthlyGoal}
-            className="text-2xl font-bold text-white tabular-nums"
+            className="text-2xl font-bold text-[#E0E0E0] tabular-nums neon-cyan"
           />
-          <span className="text-white/60 text-sm ml-1">单</span>
+          <span className="text-[#E0E0E0]/60 text-sm ml-1">单</span>
         </div>
 
-        <div className="glass rounded-2xl p-4">
+        <div className="holo-card rounded-[26px] p-4">
           <div className="flex items-center gap-2 mb-2">
-            <CheckCircle size={16} className="text-emerald-400" />
-            <span className="text-white/50 text-xs">已完成</span>
+            <CheckCircle size={16} className="text-[#00E676] drop-shadow-[0_0_6px_rgba(0,230,118,0.25)]" />
+            <span className="terminal-text text-xs tracking-tight">已完成</span>
           </div>
           <AnimatedNumber
             value={monthOrders}
-            className="text-2xl font-bold text-white tabular-nums"
+            className="text-2xl font-bold text-[#E0E0E0] tabular-nums neon-cyan"
           />
-          <span className="text-white/60 text-sm ml-1">单</span>
+          <span className="text-[#E0E0E0]/60 text-sm ml-1">单</span>
         </div>
 
-        <div className="glass rounded-2xl p-4">
+        <div className="holo-card rounded-[26px] p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Calendar size={16} className="text-[#00D2FF]" />
-            <span className="text-white/50 text-xs">剩余天数</span>
+            <Calendar size={16} className="text-[#00E5FF] icon-glow-cyan drop-shadow-[0_0_6px_rgba(0,229,255,0.25)]" />
+            <span className="terminal-text text-xs tracking-tight">剩余天数</span>
           </div>
-          <span className="text-2xl font-bold text-white">{remaining}</span>
-          <span className="text-white/60 text-sm ml-1">/ {total} 天</span>
+          <span className="text-2xl font-bold text-[#E0E0E0] neon-cyan">{remaining}</span>
+          <span className="text-[#E0E0E0]/60 text-sm ml-1">/ {total} 天</span>
         </div>
 
-        <div className="glass rounded-2xl p-4">
+        <div className="holo-card rounded-[26px] p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Trophy size={16} className="text-[#7B2FF7]" />
-            <span className="text-white/50 text-xs">每日需完成</span>
+            <Trophy size={16} className="text-[#E040FB] drop-shadow-[0_0_6px_rgba(224,64,251,0.25)]" />
+            <span className="terminal-text text-xs tracking-tight">每日需完成</span>
           </div>
-          <span className="text-2xl font-bold text-white">{dailyNeeded}</span>
-          <span className="text-white/60 text-sm ml-1">单</span>
+          <span className="text-2xl font-bold text-[#E0E0E0] neon-cyan">{dailyNeeded}</span>
+          <span className="text-[#E0E0E0]/60 text-sm ml-1">单</span>
         </div>
       </motion.div>
 
       {/* Progress Bar */}
-      <motion.div variants={child} className="glass rounded-2xl p-5">
+      <motion.div variants={child} className="holo-card rounded-[26px] p-5">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-white/60 text-sm">进度</span>
-          <span className="text-white/80 text-sm font-medium">{goalProgress}%</span>
+          <span className="cyber-section-title text-sm tracking-tight">进度</span>
+          <span className="text-[#E0E0E0]/80 text-sm font-medium">{goalProgress}%</span>
         </div>
-        <div className="h-3 rounded-full bg-white/5 overflow-hidden">
+        <div className="h-3 rounded-full bg-[#E0E0E0]/5 overflow-hidden">
           <motion.div
             className="h-full rounded-full"
-            style={{ backgroundColor: progressColor }}
+            style={{ background: "linear-gradient(90deg, #00E5FF, #E040FB)" }}
             initial={{ width: 0 }}
             animate={{ width: `${goalProgress}%` }}
             transition={{ duration: 1, ease: "easeOut" }}
           />
         </div>
         <div className="flex justify-between mt-2">
-          <span className="text-white/30 text-xs">0</span>
-          <span className="text-white/30 text-xs">{settings.monthlyGoal} 单</span>
+          <span className="text-[#E0E0E0]/30 text-xs">0</span>
+          <span className="text-[#E0E0E0]/30 text-xs">{settings.monthlyGoal} 单</span>
         </div>
       </motion.div>
 
@@ -202,75 +208,75 @@ export default function Goals() {
       <BottomSheet isOpen={sheetOpen} onClose={() => setSheetOpen(false)} title="目标设置">
         <div className="space-y-4">
           <div>
-            <label className="block text-white/50 text-sm mb-1.5">骑手名称</label>
+            <label className="block terminal-text text-sm mb-1.5">骑手名称</label>
             <input
               type="text"
               value={form.riderName}
               onChange={(e) => setForm((f) => ({ ...f, riderName: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
+              className="w-full px-4 py-3 rounded-xl input-cyber text-[#E0E0E0] placeholder-[#E0E0E0]/20 transition-colors"
               placeholder="输入名称"
             />
           </div>
 
           <div>
-            <label className="block text-white/50 text-sm mb-1.5">月度目标单量</label>
+            <label className="block terminal-text text-sm mb-1.5">月度目标单量</label>
             <input
               type="number"
               value={form.monthlyGoal}
               onChange={(e) => setForm((f) => ({ ...f, monthlyGoal: Number(e.target.value) }))}
-              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
+              className="w-full px-4 py-3 rounded-xl input-cyber text-[#E0E0E0] placeholder-[#E0E0E0]/20 transition-colors"
               min={1}
             />
           </div>
 
           <div>
-            <label className="block text-white/50 text-sm mb-1.5">每日目标单量</label>
+            <label className="block terminal-text text-sm mb-1.5">每日目标单量</label>
             <input
               type="number"
               value={form.dailyGoal}
               onChange={(e) => setForm((f) => ({ ...f, dailyGoal: Number(e.target.value) }))}
-              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
+              className="w-full px-4 py-3 rounded-xl input-cyber text-[#E0E0E0] placeholder-[#E0E0E0]/20 transition-colors"
               min={1}
             />
           </div>
 
           <div>
-            <label className="block text-white/50 text-sm mb-1.5">基础单价 (¥)</label>
+            <label className="block terminal-text text-sm mb-1.5">基础单价 (¥)</label>
             <input
               type="number"
               step="0.1"
               value={form.basePrice}
               onChange={(e) => setForm((f) => ({ ...f, basePrice: Number(e.target.value) }))}
-              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
+              className="w-full px-4 py-3 rounded-xl input-cyber text-[#E0E0E0] placeholder-[#E0E0E0]/20 transition-colors"
               min={0}
             />
           </div>
 
           <div>
-            <label className="block text-white/50 text-sm mb-1.5">奖励单价 (¥) — 月达{form.bonusThreshold}单触发</label>
+            <label className="block terminal-text text-sm mb-1.5">奖励单价 (¥) — 月达{form.bonusThreshold}单触发</label>
             <input
               type="number"
               step="0.1"
               value={form.bonusPrice}
               onChange={(e) => setForm((f) => ({ ...f, bonusPrice: Number(e.target.value) }))}
-              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
+              className="w-full px-4 py-3 rounded-xl input-cyber text-[#E0E0E0] placeholder-[#E0E0E0]/20 transition-colors"
               min={0}
             />
           </div>
 
           <div>
-            <label className="block text-white/50 text-sm mb-1.5">奖励触发阈值 (单)</label>
+            <label className="block terminal-text text-sm mb-1.5">奖励触发阈值 (单)</label>
             <input
               type="number"
               value={form.bonusThreshold}
               onChange={(e) => setForm((f) => ({ ...f, bonusThreshold: Number(e.target.value) }))}
-              className="w-full px-4 py-3 rounded-xl glass-input text-white placeholder-white/20 transition-colors"
+              className="w-full px-4 py-3 rounded-xl input-cyber text-[#E0E0E0] placeholder-[#E0E0E0]/20 transition-colors"
               min={0}
             />
           </div>
 
           <div>
-            <label className="block text-white/50 text-sm mb-1.5">每周工作天数</label>
+            <label className="block terminal-text text-sm mb-1.5">每周工作天数</label>
             <div className="flex gap-2">
               {[5, 6, 7].map((day) => (
                 <button
@@ -278,8 +284,8 @@ export default function Goals() {
                   onClick={() => setForm((f) => ({ ...f, workDaysPerWeek: day }))}
                   className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition-all ${
                     form.workDaysPerWeek === day
-                      ? "bg-[#FFD100] text-[#0F0F23]"
-                      : "glass rounded-xl text-white/60 hover:border-white/30"
+                      ? "bg-[#00E5FF] text-[#020408]"
+                      : "holo-card rounded-xl text-[#E0E0E0]/60 hover:border-[#E0E0E0]/30"
                   }`}
                 >
                   {day} 天
@@ -289,7 +295,7 @@ export default function Goals() {
           </div>
 
           <div>
-            <label className="block text-white/50 text-sm mb-1.5">当前班次</label>
+            <label className="block terminal-text text-sm mb-1.5">当前班次</label>
             <div className="grid grid-cols-5 gap-1.5">
               {SHIFT_DEFINITIONS.map((shift) => (
                 <button
@@ -297,8 +303,8 @@ export default function Goals() {
                   onClick={() => setForm((f) => ({ ...f, currentShift: shift.type as ShiftType }))}
                   className={`py-2.5 rounded-xl text-center transition-all ${
                     (form.currentShift || settings.currentShift) === shift.type
-                      ? "bg-[#FFD100] text-[#0F0F23] shadow-lg shadow-[#FFD100]/20"
-                      : "glass text-white/50 hover:text-white/80"
+                      ? "bg-[#00E5FF] text-[#020408] shadow-lg shadow-[#00E5FF]/20"
+                      : "holo-card text-[#E0E0E0]/50 hover:text-[#E0E0E0]/80"
                   }`}
                 >
                   <div className="text-lg">{shift.emoji}</div>
@@ -306,13 +312,13 @@ export default function Goals() {
                 </button>
               ))}
             </div>
-            <p className="text-white/30 text-[10px] mt-1">点击左右箭头可在仪表盘快速切换</p>
+            <p className="text-[#E0E0E0]/30 text-[10px] mt-1">点击左右箭头可在仪表盘快速切换</p>
           </div>
 
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={handleSave}
-            className="w-full py-3.5 rounded-xl bg-[#FFD100] text-[#0F0F23] font-bold text-base mt-2"
+            className="w-full py-3.5 rounded-xl bg-[#00E5FF] text-[#020408] font-bold text-base mt-2"
           >
             保存设置
           </motion.button>

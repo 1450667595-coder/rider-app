@@ -7,7 +7,7 @@ import {
   Weather,
   ShiftType,
 } from "@/types";
-import { loadStorage, saveStorage, generateDemoData } from "@/utils/storage";
+import { loadStorage, saveStorage, saveStorageImmediate, generateDemoData, validateAndRepair, startDataHeartbeat, stopDataHeartbeat } from "@/utils/storage";
 import { today, getCurrentMonth } from "@/utils/date";
 import {
   isSupabaseConfigured,
@@ -17,7 +17,30 @@ import {
   scheduleSync,
 } from "@/services/supabase";
 
+// 带超时的 Promise 包装器
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+import {
+  getDeviceId,
+  fetchRecords,
+  saveRecord as apiSaveRecord,
+  deleteRecord as apiDeleteRecord,
+  fetchSettings,
+  saveSettings as apiSaveSettings,
+  checkServerHealth,
+  batchSaveRecords,
+} from "@/services/api";
+
+export type SyncStatus = "idle" | "syncing" | "synced" | "error" | "offline";
+
 interface AppState extends AppStorage {
+  // Sync status
+  syncStatus: SyncStatus;
+
   // Actions
   loadData: () => void;
   saveRecord: (record: DailyRecord) => void;
@@ -39,44 +62,176 @@ interface AppState extends AppStorage {
   getLastNDaysRecords: (n: number) => DailyRecord[];
 }
 
+// Extract only data fields for persistence (exclude methods)
+const toStorageData = (state: AppState): AppStorage => ({
+  version: state.version,
+  records: state.records,
+  settings: state.settings,
+  achievements: state.achievements,
+});
+
+// API sync helpers
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleApiSync(state: AppState) {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(async () => {
+    const userId = getDeviceId();
+    const serverOnline = await checkServerHealth();
+    if (!serverOnline) {
+      // 不要覆盖 Supabase 的同步状态（Vercel 部署时 API 服务器不可用是正常的）
+      return;
+    }
+    useStore.setState({ syncStatus: "syncing" });
+    try {
+      const s = state;
+      const records = Object.values(s.records);
+      if (records.length > 0) {
+        await apiSaveSettings(userId, {
+          riderName: s.settings.riderName,
+          monthlyGoal: s.settings.monthlyGoal,
+          dailyGoal: s.settings.dailyGoal,
+          basePrice: s.settings.basePrice,
+          bonusPrice: s.settings.bonusPrice,
+          bonusThreshold: s.settings.bonusThreshold,
+          workDaysPerWeek: s.settings.workDaysPerWeek,
+          currentShift: s.settings.currentShift,
+        });
+        await batchSaveRecords(userId, records.map(r => ({
+          date: r.date,
+          orders: r.orders,
+          income: r.income,
+          workHours: r.workHours,
+          weather: r.weather,
+          note: r.note,
+        })));
+      }
+      useStore.setState({ syncStatus: "synced" });
+    } catch {
+      // 不要覆盖 Supabase 的状态
+    }
+  }, 1000);
+}
+
 const useStore = create<AppState>((set, get) => {
   const initialData = loadStorage();
 
   return {
     ...initialData,
+    syncStatus: "idle",
 
     loadData: () => {
       const data = loadStorage();
-      set(data);
+      // 验证并修复数据完整性
+      const { issues } = validateAndRepair(data);
+      if (issues.length > 0) {
+        console.warn("数据修复:", issues);
+      }
+      set((s) => ({ ...s, ...data }));
 
-      // Pull from cloud and merge (cloud wins for conflicts)
+      // 启动数据持久化心跳
+      startDataHeartbeat(() => {
+        const state = get();
+        return { version: state.version, records: state.records, settings: state.settings, achievements: state.achievements };
+      });
+
+      // 优先从 Supabase 云端拉取数据（Vercel 部署的主要数据源）
+      // 添加 5 秒超时，避免 VPN 下 Supabase 连接慢阻塞页面
       if (isSupabaseConfigured()) {
-        syncFromCloud().then(({ records, settings }) => {
-          if (records || settings) {
+        set({ syncStatus: "syncing" });
+        withTimeout(syncFromCloud(), 5000, { records: null, settings: null }).then(({ records: cloudRecords, settings: cloudSettings }) => {
+          if (cloudRecords || cloudSettings) {
             set((state) => {
               const merged = { ...state };
-              if (records) {
-                // Merge: cloud records take priority, cast weather type
+              if (cloudRecords) {
                 const typedRecords: Record<string, DailyRecord> = {};
-                for (const [date, r] of Object.entries(records)) {
+                for (const [date, r] of Object.entries(cloudRecords)) {
                   typedRecords[date] = {
-                    ...r,
+                    date: r.date,
+                    orders: r.orders,
+                    income: r.income,
+                    workHours: r.workHours,
                     weather: (r.weather || "sunny") as Weather,
+                    note: r.note || "",
+                  };
+                }
+                // 云端数据优先，合并本地独有的数据
+                merged.records = { ...state.records, ...typedRecords };
+              }
+              if (cloudSettings) {
+                merged.settings = {
+                  ...state.settings,
+                  ...cloudSettings,
+                  currentShift: (cloudSettings.currentShift || "early_mid") as ShiftType,
+                };
+              }
+              saveStorageImmediate(toStorageData(merged));
+              set({ syncStatus: "synced" });
+              return merged;
+            });
+          } else {
+            set({ syncStatus: "synced" });
+          }
+        }).catch(() => {
+          // Supabase 不可用时，尝试 API 服务器
+          set({ syncStatus: "offline" });
+          tryApiServerFallback();
+        });
+      } else {
+        // 没有 Supabase 配置，尝试 API 服务器
+        tryApiServerFallback();
+      }
+
+      function tryApiServerFallback() {
+        const userId = getDeviceId();
+        withTimeout(
+          Promise.all([
+            fetchRecords(userId),
+            fetchSettings(userId),
+            checkServerHealth(),
+          ]),
+          4000,
+          [null, null, false]
+        ).then(([serverRecords, serverSettings, serverOnline]) => {
+          if (!serverOnline) {
+            set({ syncStatus: "offline" });
+            return;
+          }
+          set({ syncStatus: "syncing" });
+
+          if (serverRecords || serverSettings) {
+            set((state) => {
+              const merged = { ...state };
+              if (serverRecords) {
+                const typedRecords: Record<string, DailyRecord> = {};
+                for (const [date, r] of Object.entries(serverRecords)) {
+                  typedRecords[date] = {
+                    date: r.date,
+                    orders: r.orders,
+                    income: r.income,
+                    workHours: r.workHours,
+                    weather: (r.weather || "sunny") as Weather,
+                    note: r.note || "",
                   };
                 }
                 merged.records = { ...state.records, ...typedRecords };
               }
-              if (settings) {
+              if (serverSettings) {
                 merged.settings = {
                   ...state.settings,
-                  ...settings,
-                  currentShift: (settings.currentShift || "early_mid") as ShiftType,
+                  ...serverSettings,
+                  currentShift: (serverSettings.currentShift || "early_mid") as ShiftType,
                 };
               }
-              saveStorage(merged);
+              saveStorageImmediate(toStorageData(merged));
+              set({ syncStatus: "synced" });
               return merged;
             });
+          } else {
+            set({ syncStatus: "synced" });
           }
+        }).catch(() => {
+          set({ syncStatus: "offline" });
         });
       }
     },
@@ -108,10 +263,15 @@ const useStore = create<AppState>((set, get) => {
         });
 
         const newState = { ...state, records: newRecords };
-        saveStorage(newState);
+        saveStorage(toStorageData(newState));
 
-        // Sync to cloud
-        scheduleSync(newRecords, newState.settings);
+        // 优先同步到 Supabase 云端
+        if (isSupabaseConfigured()) {
+          scheduleSync(newRecords, newState.settings);
+        }
+
+        // 同时尝试同步到 API 服务器（如果可用）
+        scheduleApiSync(newState);
 
         return { records: newRecords };
       });
@@ -122,12 +282,19 @@ const useStore = create<AppState>((set, get) => {
       set((state) => {
         const newRecords = { ...state.records };
         delete newRecords[date];
-        const newState = { ...state, records: newRecords };
-        saveStorage(newState);
 
-        // Sync to cloud
-        deleteRecordFromCloud(date);
-        scheduleSync(newRecords, newState.settings);
+        // Delete from API server (if available)
+        const userId = getDeviceId();
+        apiDeleteRecord(userId, date);
+
+        const newState = { ...state, records: newRecords };
+        saveStorage(toStorageData(newState));
+
+        // 优先同步到 Supabase 云端
+        if (isSupabaseConfigured()) {
+          deleteRecordFromCloud(date);
+          scheduleSync(newRecords, newState.settings);
+        }
 
         return { records: newRecords };
       });
@@ -137,10 +304,15 @@ const useStore = create<AppState>((set, get) => {
       set((state) => {
         const newSettings = { ...state.settings, ...settings };
         const newState = { ...state, settings: newSettings };
-        saveStorage(newState);
+        saveStorage(toStorageData(newState));
 
-        // Sync to cloud
-        scheduleSync(newState.records, newSettings);
+        // 优先同步到 Supabase 云端
+        if (isSupabaseConfigured()) {
+          scheduleSync(newState.records, newSettings);
+        }
+
+        // 同时尝试同步到 API 服务器（如果可用）
+        scheduleApiSync(newState);
 
         return { settings: newSettings };
       });
@@ -201,7 +373,7 @@ const useStore = create<AppState>((set, get) => {
       if (changed) {
         set((state) => {
           const newState = { ...state, achievements: newAchievements };
-          saveStorage(newState);
+          saveStorage(toStorageData(newState));
           return { achievements: newAchievements };
         });
       }
@@ -209,8 +381,9 @@ const useStore = create<AppState>((set, get) => {
 
     loadDemoData: () => {
       const data = generateDemoData();
-      set(data);
-      saveStorage(data);
+      // Zustand v5: use spread to merge instead of replace
+      set((s) => ({ ...s, ...data }));
+      saveStorage(toStorageData({ ...get(), ...data }));
       get().checkAchievements();
     },
 
@@ -221,7 +394,8 @@ const useStore = create<AppState>((set, get) => {
         records: {},
         achievements: data.achievements.map((a) => ({ ...a, unlocked: false, unlockedAt: null })),
       };
-      set(empty);
+      // Zustand v5: use spread to merge instead of replace
+      set((s) => ({ ...s, ...empty }));
       saveStorage(empty);
     },
 

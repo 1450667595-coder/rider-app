@@ -9,7 +9,6 @@ export default function ShiftBadge() {
   const updateSettings = useStore((s) => s.updateSettings);
 
   const currentShift = SHIFT_MAP[settings.currentShift] || SHIFT_DEFINITIONS[0];
-
   const shiftIndex = SHIFT_DEFINITIONS.findIndex((s) => s.type === currentShift.type);
 
   const switchShift = useCallback(
@@ -28,25 +27,29 @@ export default function ShiftBadge() {
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass rounded-2xl p-4 flex items-center justify-between"
+      className="holo-card rounded-[22px] p-4 flex items-center justify-between"
     >
       <button
         onClick={() => switchShift("prev")}
-        className="w-8 h-8 flex items-center justify-center rounded-full glass-subtle hover:bg-white/10 transition-colors"
+        className="tap-cyber w-8 h-8 flex items-center justify-center rounded-full"
+        style={{
+          background: "rgba(0,229,255,0.04)",
+          border: "1px solid rgba(0,229,255,0.1)",
+        }}
       >
-        <ChevronLeft size={16} className="text-white/60" />
+        <ChevronLeft size={16} className="text-[#E0E0E0]/45" />
       </button>
 
       <div className="flex items-center gap-3 flex-1 justify-center">
         <span className="text-2xl">{currentShift.emoji}</span>
         <div>
-          <p className="text-white font-bold text-sm">{currentShift.name}</p>
-          <p className="text-white/50 text-xs flex items-center gap-1">
+          <p className="text-[#E0E0E0] font-bold text-sm">{currentShift.name}</p>
+          <p className="terminal-text text-[10px] flex items-center gap-1">
             <Clock size={10} />
             {currentShift.timeRange}
           </p>
           {currentShift.restTime && (
-            <p className="text-white/40 text-xs flex items-center gap-1 mt-0.5">
+            <p className="terminal-text text-[9px] text-[#E0E0E0]/25 flex items-center gap-1 mt-0.5">
               <Coffee size={10} />
               休息 {currentShift.restTime}
             </p>
@@ -56,9 +59,13 @@ export default function ShiftBadge() {
 
       <button
         onClick={() => switchShift("next")}
-        className="w-8 h-8 flex items-center justify-center rounded-full glass-subtle hover:bg-white/10 transition-colors"
+        className="tap-cyber w-8 h-8 flex items-center justify-center rounded-full"
+        style={{
+          background: "rgba(0,229,255,0.04)",
+          border: "1px solid rgba(0,229,255,0.1)",
+        }}
       >
-        <ChevronRight size={16} className="text-white/60" />
+        <ChevronRight size={16} className="text-[#E0E0E0]/45" />
       </button>
     </motion.div>
   );

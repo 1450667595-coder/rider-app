@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, AlertCircle, X } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
 interface ToastMessage {
   id: number;
@@ -41,18 +41,25 @@ export default function ToastContainer() {
             initial={{ opacity: 0, y: -20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#16213E] border border-white/10 shadow-lg backdrop-blur-sm"
+            className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-2xl"
+            style={{
+              background: "rgba(4, 6, 16, 0.9)",
+              backdropFilter: "blur(30px) saturate(180%)",
+              WebkitBackdropFilter: "blur(30px) saturate(180%)",
+              border: "1px solid rgba(0, 229, 255, 0.12)",
+              boxShadow: "0 0 30px rgba(0, 229, 255, 0.08)",
+            }}
           >
             {msg.type === "success" && (
-              <CheckCircle size={18} className="text-emerald-400" />
+              <CheckCircle size={18} className="text-[#00E676]" />
             )}
             {msg.type === "error" && (
-              <AlertCircle size={18} className="text-red-400" />
+              <AlertCircle size={18} className="text-[#FF1744]" />
             )}
             {msg.type === "info" && (
-              <AlertCircle size={18} className="text-cyan-400" />
+              <AlertCircle size={18} className="text-[#00E5FF]" />
             )}
-            <span className="text-white text-sm font-medium">{msg.text}</span>
+            <span className="text-[#E0E0E0] text-sm font-medium">{msg.text}</span>
           </motion.div>
         ))}
       </AnimatePresence>
