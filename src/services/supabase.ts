@@ -1,9 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+let _supabase: SupabaseClient | null = null;
+
+function getSupabase(): SupabaseClient | null {
+  if (!isSupabaseConfigured()) return null;
+  if (!_supabase) {
+    _supabase = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return _supabase;
+}
 
 export const isSupabaseConfigured = (): boolean => {
   return supabaseUrl !== "" && supabaseAnonKey !== "" && !supabaseUrl.includes("your-project");
@@ -96,7 +104,9 @@ export async function pushRecordsToCloud(
       note: r.note || "",
     }));
 
-    const { error } = await supabase.from("daily_records").upsert(dbRecords, {
+    const client = getSupabase();
+    if (!client) return false;
+    const { error } = await client.from("daily_records").upsert(dbRecords, {
       onConflict: "user_id,date",
     });
     return !error;
@@ -113,7 +123,9 @@ export async function pushSingleRecordToCloud(
   const userId = getDeviceId();
 
   try {
-    const { error } = await supabase.from("daily_records").upsert(
+    const client = getSupabase();
+    if (!client) return false;
+    const { error } = await client.from("daily_records").upsert(
       {
         user_id: userId,
         date: record.date,
@@ -137,7 +149,9 @@ export async function deleteRecordFromCloud(date: string): Promise<boolean> {
   const userId = getDeviceId();
 
   try {
-    const { error } = await supabase
+    const client = getSupabase();
+    if (!client) return false;
+    const { error } = await client
       .from("daily_records")
       .delete()
       .eq("user_id", userId)
@@ -163,7 +177,9 @@ export async function pushSettingsToCloud(settings: {
   const userId = getDeviceId();
 
   try {
-    const { error } = await supabase.from("user_settings").upsert(
+    const client = getSupabase();
+    if (!client) return false;
+    const { error } = await client.from("user_settings").upsert(
       {
         user_id: userId,
         rider_name: settings.riderName,
@@ -190,7 +206,9 @@ export async function pullRecordsFromCloud(): Promise<Record<string, { date: str
   const userId = getDeviceId();
 
   try {
-    const { data, error } = await supabase
+    const client = getSupabase();
+    if (!client) return null;
+    const { data, error } = await client
       .from("daily_records")
       .select("*")
       .eq("user_id", userId);
@@ -228,7 +246,9 @@ export async function pullSettingsFromCloud(): Promise<{
   const userId = getDeviceId();
 
   try {
-    const { data, error } = await supabase
+    const client = getSupabase();
+    if (!client) return null;
+    const { data, error } = await client
       .from("user_settings")
       .select("*")
       .eq("user_id", userId)
