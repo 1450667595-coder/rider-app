@@ -13,6 +13,8 @@ import {
   isSupabaseConfigured,
   syncFromCloud,
   pushSingleRecordToCloud,
+  pushRecordsToCloud,
+  pushSettingsToCloud,
   deleteRecordFromCloud,
   scheduleSync,
 } from "@/services/supabase";
@@ -187,21 +189,55 @@ const useStore = create<AppState>((set, get) => {
         set({ syncStatus: "syncing" });
         const currentSyncKey = data.settings.syncKey || "";
         withTimeout(syncFromCloud(currentSyncKey), 5000, { records: null, settings: null }).then(
-          ({ records: cloudRecords, settings: cloudSettings }) => {
+          async ({ records: cloudRecords, settings: cloudSettings }) => {
             if (cloudRecords || cloudSettings) {
+              // 云端有数据 → 合并云端数据到本地
               set((state) => {
                 const merged = mergeCloudData(state, cloudRecords, cloudSettings);
                 saveStorageImmediate(toStorageData(merged));
-                set({ syncStatus: "synced" });
-                return merged;
+                return { ...merged, syncStatus: "synced" };
               });
-            } else {
-              // 云端无数据，把本地数据推上去
+              // 合并后把本地多余的数据也推上云端（确保云端有完整数据）
               set((state) => {
-                scheduleSync(state.records, state.settings as any);
-                set({ syncStatus: "synced" });
+                const localOnly: Record<string, any> = {};
+                const cloudKeys = new Set(cloudRecords ? Object.keys(cloudRecords) : []);
+                for (const [date, rec] of Object.entries(state.records)) {
+                  if (!cloudKeys.has(date)) {
+                    localOnly[date] = rec;
+                  }
+                }
+                if (Object.keys(localOnly).length > 0) {
+                  pushRecordsToCloud(localOnly, currentSyncKey);
+                }
                 return state;
               });
+            } else {
+              // 云端无数据 → 立即把本地数据全部推上去（不等防抖，确保首次同步）
+              const state = get();
+              if (Object.keys(state.records).length > 0) {
+                set({ syncStatus: "syncing" });
+                try {
+                  const [recordsOk] = await Promise.all([
+                    pushRecordsToCloud(state.records, currentSyncKey),
+                    pushSettingsToCloud({
+                      riderName: state.settings.riderName,
+                      monthlyGoal: state.settings.monthlyGoal,
+                      dailyGoal: state.settings.dailyGoal,
+                      basePrice: state.settings.basePrice,
+                      bonusPrice: state.settings.bonusPrice,
+                      bonusThreshold: state.settings.bonusThreshold,
+                      workDaysPerWeek: state.settings.workDaysPerWeek,
+                      currentShift: state.settings.currentShift,
+                      syncKey: state.settings.syncKey,
+                    }),
+                  ]);
+                  set({ syncStatus: recordsOk ? "synced" : "error" });
+                } catch {
+                  set({ syncStatus: "error" });
+                }
+              } else {
+                set({ syncStatus: "synced" });
+              }
             }
           }
         ).catch(() => {
@@ -305,22 +341,38 @@ const useStore = create<AppState>((set, get) => {
           scheduleSync(newState.records, newSettings);
         }
 
-        // syncKey 变化时：先推本地数据，再拉云端数据合并
+        // syncKey 变化时：先立即推送本地数据，再拉取云端数据合并
         const oldSyncKey = state.settings.syncKey || "";
         const newSyncKey = newSettings.syncKey || "";
         if (oldSyncKey !== newSyncKey) {
           set({ syncStatus: "syncing" });
-          // 先把本地数据推到新 syncKey 下
-          scheduleSync(newState.records, newSettings);
-          // 再拉取新 syncKey 下的云端数据
-          withTimeout(syncFromCloud(newSyncKey), 5000, { records: null, settings: null }).then(
+          // 第一步：立即推送本地数据到新 syncKey（不等防抖）
+          const pushPromise = (async () => {
+            if (Object.keys(newState.records).length > 0) {
+              await pushRecordsToCloud(newState.records, newSyncKey);
+            }
+            await pushSettingsToCloud({
+              riderName: newSettings.riderName,
+              monthlyGoal: newSettings.monthlyGoal,
+              dailyGoal: newSettings.dailyGoal,
+              basePrice: newSettings.basePrice,
+              bonusPrice: newSettings.bonusPrice,
+              bonusThreshold: newSettings.bonusThreshold,
+              workDaysPerWeek: newSettings.workDaysPerWeek,
+              currentShift: newSettings.currentShift,
+              syncKey: newSettings.syncKey,
+            });
+          })();
+          // 第二步：推送完成后拉取云端数据合并
+          pushPromise.then(() => {
+            return withTimeout(syncFromCloud(newSyncKey), 5000, { records: null, settings: null });
+          }).then(
             ({ records: cloudRecords, settings: cloudSettings }) => {
               if (cloudRecords || cloudSettings) {
                 set((s) => {
                   const merged = mergeCloudData(s, cloudRecords, cloudSettings);
                   saveStorageImmediate(toStorageData(merged));
-                  set({ syncStatus: "synced" });
-                  return merged;
+                  return { ...merged, syncStatus: "synced" };
                 });
               } else {
                 set({ syncStatus: "synced" });
