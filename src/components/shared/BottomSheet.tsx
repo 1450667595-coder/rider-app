@@ -29,8 +29,8 @@ export default function BottomSheet({
             className="fixed bottom-0 left-0 right-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-[28px]"
             style={{
               background: "rgba(4, 6, 16, 0.92)",
-              backdropFilter: "blur(40px) saturate(200%)",
-              WebkitBackdropFilter: "blur(40px) saturate(200%)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
               borderTop: "1px solid rgba(0, 229, 255, 0.1)",
               borderLeft: "1px solid rgba(0, 229, 255, 0.04)",
               borderRight: "1px solid rgba(0, 229, 255, 0.04)",

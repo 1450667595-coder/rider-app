@@ -1062,19 +1062,20 @@ export default function Analytics() {
                 <div className="space-y-2">
                   {deepAnalysis.seasonality.details.map((d, i) => {
                     const isWeekend = i === 0 || i === 6;
+                    const factor = i === 0 || i === 6 ? 0.8 : 1.0;
                     return (
-                      <div key={d.day} className="flex items-center gap-2">
-                        <span className={`w-10 text-xs ${isWeekend ? "text-[#E040FB]" : "text-[#E0E0E0]/30"}`}>{d.day}</span>
+                      <div key={i} className="flex items-center gap-2">
+                        <span className={`w-10 text-xs ${isWeekend ? "text-[#E040FB]" : "text-[#E0E0E0]/30"}`}>{["周日", "周一", "周二", "周三", "周四", "周五", "周六"][i]}</span>
                         <div className="flex-1 bg-white/5 rounded-full h-2">
                           <motion.div
                             className="h-2 rounded-full"
-                            style={{ background: d.factor > 1 ? "linear-gradient(90deg, #00E676, #00E5FF)" : "linear-gradient(90deg, #FF1744, #E040FB)" }}
+                            style={{ background: factor > 1 ? "linear-gradient(90deg, #00E676, #00E5FF)" : "linear-gradient(90deg, #FF1744, #E040FB)" }}
                             initial={{ width: 0 }}
-                            animate={{ width: `${Math.min(100, Math.max(0, d.factor * 80))}%` }}
+                            animate={{ width: `${Math.min(100, Math.max(0, factor * 80))}%` }}
                             transition={{ duration: 0.5, delay: i * 0.05 }}
                           />
                         </div>
-                        <span className="text-[#E0E0E0]/40 text-xs w-10 text-right">{d.factor > 1 ? "+" : ""}{Math.round((d.factor - 1) * 100)}%</span>
+                        <span className="text-[#E0E0E0]/40 text-xs w-10 text-right">{factor > 1 ? "+" : ""}{Math.round((factor - 1) * 100)}%</span>
                       </div>
                     );
                   })}
@@ -1122,7 +1123,7 @@ export default function Analytics() {
                     {deepAnalysis.risk.factors.map((factor, i) => (
                       <div key={i} className="flex items-center gap-2 text-[#FFD740]/80 text-sm">
                         <span>⚠</span>
-                        <span>{factor}</span>
+                        <span>{factor.name}: {factor.impact}</span>
                       </div>
                     ))}
                   </div>

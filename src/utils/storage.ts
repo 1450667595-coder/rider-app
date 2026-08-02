@@ -31,7 +31,6 @@ const DEFAULT_SETTINGS: UserSettings = {
   bonusThreshold: 1500,
   workDaysPerWeek: 6,
   currentShift: "early_mid",
-  syncKey: "",
 };
 
 function getDefaultStorage(): AppStorage {
@@ -274,48 +273,17 @@ export function startDataHeartbeat(getData: () => AppStorage): void {
     try {
       const data = getData();
       const recordCount = Object.keys(data.records).length;
-      // 验证 localStorage 中的数据是否与内存一致
       const stored = loadFromLocalStorage();
       if (stored) {
         const storedCount = Object.keys(stored.records).length;
-        // 如果内存中数据更多，同步到存储
         if (recordCount > storedCount) {
           saveStorageImmediate(data);
-          console.log(`[心跳] 数据同步: 内存 ${recordCount} 条 > 存储 ${storedCount} 条，已同步`);
         }
-        // 深度完整性检查：验证每条记录的数据完整性
-        let integrityIssues = 0;
-        for (const [date, record] of Object.entries(data.records)) {
-          if (!record || typeof record.orders !== "number" || isNaN(record.orders)) {
-            integrityIssues++;
-          }
-          if (!record.date || record.date !== date) {
-            integrityIssues++;
-          }
-        }
-        if (integrityIssues > 0) {
-          console.warn(`[心跳] 检测到 ${integrityIssues} 条数据完整性问题，正在修复...`);
-          const { repaired } = validateAndRepair(data);
-          if (repaired) {
-            saveStorageImmediate(data);
-            console.log(`[心跳] 数据修复完成`);
-          }
-        }
-        // 验证 IndexedDB 同步状态
-        loadFromIndexedDB().then((idbData) => {
-          if (idbData) {
-            const idbCount = Object.keys(idbData.records).length;
-            if (idbCount < recordCount) {
-              saveToIndexedDB(data);
-              console.log(`[心跳] IndexedDB 同步: ${idbCount} → ${recordCount} 条`);
-            }
-          }
-        });
       }
     } catch {
       // 静默处理
     }
-  }, 30000); // 每30秒检查一次
+  }, 120000); // 每2分钟检查一次（原30秒）
 }
 
 export function stopDataHeartbeat(): void {

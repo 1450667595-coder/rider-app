@@ -51,7 +51,7 @@ export default function BottomNav() {
 
   const activeIdx = leftActiveIdx >= 0 ? leftActiveIdx : rightActiveIdx;
 
-  // 计算活动项发光跟踪位置
+  // 简化发光跟踪 - 减少计算开销
   useEffect(() => {
     if (activeIdx < 0 || !navRef.current) {
       setGlowStyle((s) => ({ ...s, opacity: 0 }));
@@ -68,7 +68,7 @@ export default function BottomNav() {
         opacity: 1,
       });
     }
-  }, [activeIdx, location.pathname]);
+  }, [activeIdx]);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30">

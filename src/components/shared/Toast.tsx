@@ -44,8 +44,8 @@ export default function ToastContainer() {
             className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-2xl"
             style={{
               background: "rgba(4, 6, 16, 0.9)",
-              backdropFilter: "blur(30px) saturate(180%)",
-              WebkitBackdropFilter: "blur(30px) saturate(180%)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
               border: "1px solid rgba(0, 229, 255, 0.12)",
               boxShadow: "0 0 30px rgba(0, 229, 255, 0.08)",
             }}
