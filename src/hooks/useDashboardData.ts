@@ -167,7 +167,10 @@ export function useDashboardData(realWeather: Weather): DashboardData {
     for (let i = 0; i < 30; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const ds = d.toISOString().slice(0, 10);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const ds = `${y}-${m}-${dd}`;
       if (i < 7) last7Days.push(ds);
       last30Days.push(ds);
     }

@@ -20,46 +20,13 @@ function useClock() {
   return time;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  系统启动画面 — 极速加载（非阻塞，硬件加速）
-// ═══════════════════════════════════════════════════════════
-function BootScreen({ onComplete }: { onComplete: () => void }) {
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    // 极速启动：仅180ms，确保不阻塞UI渲染
-    const timer = setTimeout(() => {
-      setVisible(false);
-      // 使用 requestAnimationFrame 确保平滑过渡
-      requestAnimationFrame(() => onComplete());
-    }, 180);
-    return () => clearTimeout(timer);
-  }, [onComplete]);
-
-  if (!visible) return null;
-
-  return (
-    <div className="boot-screen">
-      <div className="boot-logo">RIDER WORKBENCH</div>
-      <div className="boot-progress">
-        <div className="boot-progress-fill boot-progress-fast" />
-      </div>
-    </div>
-  );
-}
-
 export default function Layout() {
   const loadData = useStore((s) => s.loadData);
   const clock = useClock();
   const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline">("synced");
-  const [bootDone, setBootDone] = useState(false);
 
   useEffect(() => {
     loadData();
-  }, []);
-
-  const handleBootComplete = useCallback(() => {
-    setBootDone(true);
   }, []);
 
   const triggerSync = useCallback(() => {
@@ -69,9 +36,6 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen min-h-dvh text-[#E0E0E0] relative">
-      {/* 系统启动画面 */}
-      {!bootDone && <BootScreen onComplete={handleBootComplete} />}
-
       {/* 扫描线 */}
       <div className="scanlines-overlay" />
 

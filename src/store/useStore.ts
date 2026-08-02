@@ -348,7 +348,10 @@ const useStore = create<AppState>((set, get) => {
       for (let i = 0; i < 365; i++) {
         const d = new Date(todayDate);
         d.setDate(d.getDate() - i);
-        const ds = d.toISOString().slice(0, 10);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        const ds = `${y}-${m}-${dd}`;
         if (state.records[ds] && state.records[ds].orders > 0) {
           streak++;
         } else if (streak > 0) {
@@ -419,7 +422,10 @@ const useStore = create<AppState>((set, get) => {
       const todayDate = new Date(today());
       for (let i = 0; i < 365; i++) {
         const d = new Date(todayDate); d.setDate(d.getDate() - i);
-        const ds = d.toISOString().slice(0, 10);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        const ds = `${y}-${m}-${dd}`;
         if (records[ds] && records[ds].orders > 0) {
           streak++;
         } else if (streak > 0) {
@@ -433,7 +439,10 @@ const useStore = create<AppState>((set, get) => {
       const result: DailyRecord[] = [];
       for (let i = n - 1; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
-        const ds = d.toISOString().slice(0, 10);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        const ds = `${y}-${m}-${dd}`;
         if (records[ds]) result.push(records[ds]);
       }
       return result;

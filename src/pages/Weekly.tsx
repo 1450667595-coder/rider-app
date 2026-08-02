@@ -184,7 +184,8 @@ export default function Weekly() {
       <motion.div variants={item} className="space-y-2">
         <h3 className="cyber-section-title text-sm font-medium tracking-tight">每日明细</h3>
         {thisWeekData.map((day, i) => {
-          const isToday = day.date === new Date().toISOString().slice(0, 10);
+          const d = new Date();
+          const isToday = day.date === `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
           const maxOrders = Math.max(...thisWeekData.map((d) => d.orders), 1);
           const barWidth = (day.orders / maxOrders) * 100;
           return (

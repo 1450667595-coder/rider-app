@@ -428,7 +428,7 @@ export default function Analytics() {
                 {weekData.map((entry, index) => (
                   <Cell
                     key={index}
-                    fill={entry.date === new Date().toISOString().slice(0, 10) ? "#00E5FF" : entry.day === "六" || entry.day === "日" ? "#E040FB" : "#00E5FF"}
+                    fill={entry.date === today() ? "#00E5FF" : entry.day === "六" || entry.day === "日" ? "#E040FB" : "#00E5FF"}
                   />
                 ))}
               </Bar>

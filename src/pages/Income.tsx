@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { DollarSign, TrendingUp, TrendingDown, ArrowUpRight, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import useStore from "@/store/useStore";
 import AnimatedNumber from "@/components/shared/AnimatedNumber";
-import { getCurrentMonth, getMonthDateRange } from "@/utils/date";
+import { getCurrentMonth, getMonthDateRange, today } from "@/utils/date";
 import { predictMonthlyAI } from "@/utils/aiPrediction";
 import {
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -105,7 +105,7 @@ export default function Income() {
 
   const chartData = useMemo(() => {
     const dateRange = getMonthDateRange(currentYear, currentMonth);
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = today();
     return dateRange
       .filter((d) => d <= todayStr)
       .map((date) => {
@@ -123,7 +123,7 @@ export default function Income() {
   // Heatmap data
   const heatmapData = useMemo(() => {
     const dateRange = getMonthDateRange(currentYear, currentMonth);
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = today();
     const maxIncome = Math.max(...dateRange.map((d) => records[d]?.income || 0), 1);
     const firstDay = new Date(dateRange[0]).getDay();
     const weeks: { day: number; date: string; income: number; orders: number; weather: Weather }[][] = [];

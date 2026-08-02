@@ -23,7 +23,7 @@ export function predictTomorrow(
   const todayStr = today();
   const tomorrow = new Date(todayStr);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+  const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
 
   const recordValues = Object.values(records);
   if (recordValues.length < 3) {
@@ -55,7 +55,7 @@ export function predictTomorrow(
   // 上周同日
   const lastWeekSameDay = new Date(todayStr);
   lastWeekSameDay.setDate(lastWeekSameDay.getDate() - 6);
-  const lastWeekStr = lastWeekSameDay.toISOString().slice(0, 10);
+  const lastWeekStr = `${lastWeekSameDay.getFullYear()}-${String(lastWeekSameDay.getMonth() + 1).padStart(2, "0")}-${String(lastWeekSameDay.getDate()).padStart(2, "0")}`;
   const lastWeekRecord = records[lastWeekStr];
   const lastWeekOrders = lastWeekRecord ? lastWeekRecord.orders : avg7;
 

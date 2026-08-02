@@ -1,22 +1,55 @@
 // ══════════════════════════════════════════════════════════════════════
-//  AI预测引擎 v18 — 基于上月真实数据的精准预测
-//  核心原则：上月数据是唯一真相来源
-//  天气因子基于用户实际数据计算，不再使用硬编码激进因子
-//  趋势修正：利用本月已有数据微调
+//  AI预测引擎 v19 — 外卖骑手场景专用预测
+//  核心认知：
+//  1. 雨天/雪天 = 爆单（人们不出门，外卖订单暴增）
+//  2. 特殊事件 = 订单激增（奶茶节、节假日等）
+//  3. 周末 vs 工作日 = 不同模式
+//  4. 基于上月真实数据，不瞎猜
 // ══════════════════════════════════════════════════════════════════════
 
 import { DailyRecord, Weather, PredictionResult } from "@/types";
 import type { ShiftType } from "@/types";
 
-// ── 温和默认天气因子（仅无数据时使用，远不如v17激进） ──
-const DEFAULT_WEATHER_FACTOR: Record<Weather, number> = {
-  sunny: 1.00, cloudy: 0.95, rainy: 0.88, snowy: 0.75, windy: 0.92,
+// ── 外卖场景：雨天/雪天 = 爆单！ ──
+// 坏天气人们不出门，外卖订单暴增20-40%
+const WEATHER_BOOST: Record<Weather, number> = {
+  sunny: 1.00,   // 晴天：基准
+  cloudy: 1.00,  // 多云：正常
+  rainy: 1.25,   // 雨天：爆单！+25%
+  snowy: 1.35,   // 雪天：更爆！+35%
+  windy: 1.10,   // 大风：小涨 +10%
 };
 
-// ── 温和班次因子 ──
+// ── 班次因子（温和） ──
 const SHIFT_FACTOR: Record<ShiftType, number> = {
   early_mid: 1.00, early: 1.03, late_mid: 1.00, late: 0.97, night: 0.93,
 };
+
+// ══════════════════════════════════════════════════════════════════════
+//  特殊事件日历 — 订单暴增日
+// ══════════════════════════════════════════════════════════════════════
+interface SpecialEvent {
+  date: string;        // MM-DD 格式
+  name: string;
+  boost: number;       // 订单增幅倍率
+  description: string;
+}
+
+const SPECIAL_EVENTS: SpecialEvent[] = [
+  { date: "08-07", name: "秋天第一杯奶茶", boost: 1.60, description: "全网奶茶节，订单暴增60%" },
+  { date: "02-14", name: "情人节", boost: 1.40, description: "鲜花外卖爆单" },
+  { date: "05-20", name: "520表白日", boost: 1.35, description: "礼物外卖激增" },
+  { date: "12-24", name: "平安夜", boost: 1.30, description: "圣诞订单高峰" },
+  { date: "12-25", name: "圣诞节", boost: 1.25, description: "圣诞订单高峰" },
+  { date: "01-01", name: "元旦", boost: 1.20, description: "新年订单增长" },
+  { date: "11-11", name: "双十一", boost: 1.30, description: "购物节外卖激增" },
+  { date: "06-18", name: "618", boost: 1.25, description: "购物节外卖增长" },
+  // 中国法定节假日（农历日期用公历近似）
+  { date: "05-01", name: "劳动节", boost: 1.15, description: "假期订单增长" },
+  { date: "10-01", name: "国庆节", boost: 1.20, description: "国庆订单增长" },
+  { date: "10-02", name: "国庆节", boost: 1.20, description: "国庆订单增长" },
+  { date: "10-03", name: "国庆节", boost: 1.18, description: "国庆订单增长" },
+];
 
 // ── 工具函数 ──
 function avg(values: number[]): number {
@@ -33,7 +66,7 @@ function median(values: number[]): number {
 
 function getLastMonthRecords(records: Record<string, DailyRecord>): DailyRecord[] {
   const now = new Date();
-  const m = now.getMonth(); // 0-based
+  const m = now.getMonth();
   const y = now.getFullYear();
   const lastMonth = m === 0 ? 12 : m;
   const lastYear = m === 0 ? y - 1 : y;
@@ -51,41 +84,24 @@ function getCurrentMonthRecords(records: Record<string, DailyRecord>): DailyReco
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-// ══════════════════════════════════════════════════════════════════════
-//  基于真实数据计算天气影响因子
-//  分析用户自己的数据，而非使用硬编码激进值
-// ══════════════════════════════════════════════════════════════════════
-function calculateWeatherImpact(records: DailyRecord[]): Record<Weather, number> {
-  if (records.length < 10) return { ...DEFAULT_WEATHER_FACTOR };
+// 检查特殊事件
+function getSpecialEvent(dateStr: string): SpecialEvent | null {
+  const mmdd = dateStr.slice(5); // "MM-DD"
+  return SPECIAL_EVENTS.find(e => e.date === mmdd) || null;
+}
 
-  const overallAvg = avg(records.map(r => r.orders));
-  if (overallAvg === 0) return { ...DEFAULT_WEATHER_FACTOR };
-
-  const result: Record<string, number> = {};
-  const allWeathers: Weather[] = ["sunny", "cloudy", "rainy", "snowy", "windy"];
-
-  for (const w of allWeathers) {
-    const wRecords = records.filter(r => r.weather === w);
-    if (wRecords.length >= 3) {
-      const wAvg = avg(wRecords.map(r => r.orders));
-      const rawFactor = wAvg / overallAvg;
-      // 限制在 0.75~1.10 之间，防止极端值
-      result[w] = Math.max(0.75, Math.min(1.10, rawFactor));
-    } else {
-      result[w] = DEFAULT_WEATHER_FACTOR[w];
-    }
-  }
-
-  return result as Record<Weather, number>;
+// 检查是否为周末
+function isWeekend(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  return d.getDay() === 0 || d.getDay() === 6;
 }
 
 // ══════════════════════════════════════════════════════════════════════
-//  明日预测 v18
-//  - 主数据源：上月完整数据
-//  - 稳健平均：均值+中位数混合，抗异常值
-//  - 同日星期几权重60% + 稳健平均40%
-//  - 天气因子基于用户实际数据计算
-//  - 趋势修正：本月已有数据 vs 上月同期
+//  明日预测 v19 — 外卖骑手专用
+//  - 雨天/雪天 = 爆单加成
+//  - 特殊事件检测（奶茶节等）
+//  - 周末 vs 工作日模式识别
+//  - 基于上月真实数据
 // ══════════════════════════════════════════════════════════════════════
 export function predictTomorrowAI(
   records: Record<string, DailyRecord>,
@@ -95,7 +111,6 @@ export function predictTomorrowAI(
   const lastMonth = getLastMonthRecords(records);
   const thisMonth = getCurrentMonthRecords(records);
 
-  // 数据不足
   if (lastMonth.length === 0 && thisMonth.length === 0) {
     return {
       predictedOrders: 0,
@@ -104,19 +119,21 @@ export function predictTomorrowAI(
     };
   }
 
-  // 主数据源：上月数据优先
+  // 主数据源：上月数据
   const primarySource = lastMonth.length >= 5 ? lastMonth : thisMonth;
   const sourceLabel = primarySource === lastMonth ? "上月" : "本月";
 
-  // 稳健平均：均值 + 中位数 取平均（抗异常值）
+  // 稳健平均
   const overallAvg = avg(primarySource.map(r => r.orders));
   const overallMedian = median(primarySource.map(r => r.orders));
   const robustAvg = (overallAvg + overallMedian) / 2;
 
-  // 明天星期几
+  // 明天信息
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowDOW = tomorrow.getDay();
+  const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+  const tomorrowIsWeekend = tomorrowDOW === 0 || tomorrowDOW === 6;
 
   // 按星期几分组统计
   const byDow: Record<number, number[]> = {};
@@ -129,32 +146,51 @@ export function predictTomorrowAI(
   const sameDowRecords = byDow[tomorrowDOW] || [];
   const sameDowAvg = sameDowRecords.length > 0 ? avg(sameDowRecords) : 0;
 
-  // 综合预测：同日星期几60% + 稳健平均40%
+  // 基础预测：同星期几60% + 稳健平均40%
   const basePrediction = sameDowAvg > 0
     ? sameDowAvg * 0.6 + robustAvg * 0.4
     : robustAvg;
 
-  // 基于真实数据计算天气因子
-  const weatherImpact = calculateWeatherImpact(primarySource);
-  const weatherFactor = weatherImpact[weather] || 1;
+  // 天气因子：外卖场景 — 雨天/雪天 = 爆单！
+  const weatherFactor = WEATHER_BOOST[weather] || 1;
 
-  // 班次因子（温和）
+  // 班次因子
   const shiftFactor = shiftType ? (SHIFT_FACTOR[shiftType] || 1) : 1;
 
-  // 趋势修正：本月已有数据 vs 上月同期
+  // 趋势修正
   let trendFactor = 1.0;
   if (thisMonth.length >= 3 && lastMonth.length >= 5) {
     const thisMonthAvg = avg(thisMonth.map(r => r.orders));
     const lastMonthAvg = avg(lastMonth.map(r => r.orders));
     if (lastMonthAvg > 0) {
       const trend = thisMonthAvg / lastMonthAvg;
-      // 限制在 0.85~1.15
       trendFactor = Math.max(0.85, Math.min(1.15, trend));
     }
   }
 
+  // 特殊事件检测
+  const specialEvent = getSpecialEvent(tomorrowStr);
+  const eventFactor = specialEvent ? specialEvent.boost : 1.0;
+
+  // 周末因子：基于实际数据计算周末vs工作日差异
+  let weekendFactor = 1.0;
+  if (primarySource.length >= 10) {
+    const weekendOrders = primarySource.filter(r => isWeekend(r.date)).map(r => r.orders);
+    const weekdayOrders = primarySource.filter(r => !isWeekend(r.date)).map(r => r.orders);
+    if (weekendOrders.length >= 2 && weekdayOrders.length >= 5) {
+      const weekendAvg = avg(weekendOrders);
+      const weekdayAvg = avg(weekdayOrders);
+      if (weekdayAvg > 0) {
+        const ratio = weekendAvg / weekdayAvg;
+        weekendFactor = tomorrowIsWeekend ? Math.max(0.8, Math.min(1.3, ratio)) : 1.0;
+      }
+    }
+  }
+
   // 最终预测
-  const predicted = Math.round(basePrediction * weatherFactor * shiftFactor * trendFactor);
+  const predicted = Math.round(
+    basePrediction * weatherFactor * shiftFactor * trendFactor * eventFactor * weekendFactor
+  );
 
   // 置信度
   const dataDays = primarySource.length;
@@ -177,21 +213,41 @@ export function predictTomorrowAI(
       label: `${sourceLabel}稳健日均`,
       impact: `${Math.round(robustAvg)}单（${dataDays}天数据）`
     },
-    {
-      label: `${weatherLabels[weather]}调整`,
-      impact: `×${weatherFactor.toFixed(2)}（基于实际数据）`
-    },
   ];
+
+  // 天气因子：爆单还是正常
+  if (weatherFactor > 1.0) {
+    const boostPct = Math.round((weatherFactor - 1) * 100);
+    factors.push({
+      label: `${weatherLabels[weather]}爆单`,
+      impact: `+${boostPct}%（外卖逻辑：坏天气=不出门=多下单）`
+    });
+  } else if (weatherFactor < 1.0) {
+    factors.push({ label: weatherLabels[weather], impact: `×${weatherFactor.toFixed(2)}` });
+  }
+
+  // 特殊事件
+  if (specialEvent) {
+    const boostPct = Math.round((eventFactor - 1) * 100);
+    factors.push({
+      label: `🎉 ${specialEvent.name}`,
+      impact: `预计暴增+${boostPct}%！${specialEvent.description}`
+    });
+  }
+
+  if (weekendFactor !== 1.0 && tomorrowIsWeekend) {
+    const pct = Math.round((weekendFactor - 1) * 100);
+    factors.push({
+      label: "周末模式",
+      impact: pct >= 0 ? `周末+${pct}%` : `周末${pct}%`
+    });
+  }
 
   if (trendFactor !== 1.0) {
     factors.push({
       label: "趋势修正",
       impact: trendFactor > 1 ? `本月上升 ×${trendFactor.toFixed(2)}` : `本月下降 ×${trendFactor.toFixed(2)}`
     });
-  }
-
-  if (shiftType && shiftType !== "early_mid") {
-    factors.push({ label: "班次调整", impact: `×${shiftFactor.toFixed(2)}` });
   }
 
   return {
@@ -202,7 +258,7 @@ export function predictTomorrowAI(
 }
 
 // ══════════════════════════════════════════════════════════════════════
-//  月度预测 — 基于上月稳健日均
+//  月度预测
 // ══════════════════════════════════════════════════════════════════════
 export function predictMonthlyAI(
   records: Record<string, DailyRecord>,
@@ -220,25 +276,21 @@ export function predictMonthlyAI(
   const remainingDays = daysInMonth - today;
   const workDaysRemaining = Math.round(remainingDays * (settings.workDaysPerWeek / 7));
 
-  // 本月已完成
   const thisMonth = getCurrentMonthRecords(records);
   let completed = 0;
   for (const r of thisMonth) completed += r.orders;
 
-  // 基于上月数据计算稳健日均
   const lastMonth = getLastMonthRecords(records);
   const lastMonthOrders = lastMonth.map(r => r.orders);
   const dailyAvg = lastMonthOrders.length > 0 ? avg(lastMonthOrders) : 0;
   const dailyMedian = lastMonthOrders.length > 0 ? median(lastMonthOrders) : 0;
   const robustDailyAvg = (dailyAvg + dailyMedian) / 2;
 
-  // 兜底：用本月数据
   const effectiveAvg = robustDailyAvg > 0
     ? robustDailyAvg
     : (thisMonth.length > 0 ? avg(thisMonth.map(r => r.orders)) : 0);
   const fallbackAvg = effectiveAvg > 0 ? effectiveAvg : 30;
 
-  // 班次因子
   const shiftFactor = settings.currentShift ? (SHIFT_FACTOR[settings.currentShift] || 1) : 1;
   const adjustedAvg = fallbackAvg * shiftFactor;
 
@@ -249,7 +301,6 @@ export function predictMonthlyAI(
     ? Math.round((settings.monthlyGoal - completed) / workDaysRemaining)
     : 0;
 
-  // 周度拆解
   const weeklyBreakdown: { week: number; predicted: number; low: number; high: number }[] = [];
   let remaining = remainingDays;
   let weekNum = 1;
@@ -315,11 +366,28 @@ export function generateInsights(
     }
   }
 
+  // 检查未来7天是否有特殊事件
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const event = getSpecialEvent(dateStr);
+    if (event) {
+      insights.push({
+        icon: "🎉",
+        title: `${event.name}即将到来`,
+        message: `${d.getMonth() + 1}月${d.getDate()}日${event.name}，${event.description}，建议提前准备！`,
+        priority: "high",
+      });
+      break; // 只显示最近的一个
+    }
+  }
+
   return insights;
 }
 
 // ══════════════════════════════════════════════════════════════════════
-//  兼容性导出（保留接口，精简实现）
+//  兼容性导出
 // ══════════════════════════════════════════════════════════════════════
 
 export interface FeatureImportance { name: string; importance: number; }
@@ -375,7 +443,10 @@ export function predictWeeklyAI(
   for (let i = 0; i < 7; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() + i + 1);
-    const dateStr = d.toISOString().slice(0, 10);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const dateStr = `${y}-${m}-${dd}`;
     const w = weatherForecast[i] || "sunny";
     const pred = predictTomorrowAI(records, w);
     result.push({ day: weekdays[d.getDay()], date: dateStr, predicted: pred.predictedOrders, weather: w });
@@ -426,36 +497,43 @@ export function predictDailyDistribution(
   };
 }
 
-// 雨天影响
+// 雨天影响 — 外卖场景：雨天 = 增量！
 export function predictRainyDayImpact(records: Record<string, DailyRecord>): RainyDayImpact {
   const all = Object.values(records);
   const rainy = all.filter(r => r.weather === "rainy");
   const nonRainy = all.filter(r => r.weather !== "rainy");
   const rainyAvg = avg(rainy.map(r => r.orders));
   const nonRainyAvg = avg(nonRainy.map(r => r.orders));
-  const drop = nonRainyAvg - rainyAvg;
-  const dropPercent = nonRainyAvg > 0 ? Math.round((drop / nonRainyAvg) * 100) : 25;
+  // 外卖场景：雨天通常是增量，不是减量
+  const change = rainyAvg - nonRainyAvg;
+  const changePercent = nonRainyAvg > 0 ? Math.round((change / nonRainyAvg) * 100) : 0;
   return {
-    avgDrop: Math.round(drop),
-    dropPercent,
-    recoveryDays: 1,
+    avgDrop: Math.round(change), // 可能是正数（增量）
+    dropPercent: changePercent,
+    recoveryDays: 0,
     overallImpact: {
-      avgOrderReduction: dropPercent,
-      confidenceInterval: [Math.max(0, dropPercent - 10), dropPercent + 10],
-      severity: dropPercent > 30 ? "severe" : dropPercent > 15 ? "moderate" : "mild",
+      avgOrderReduction: changePercent,
+      confidenceInterval: [Math.min(0, changePercent - 10), changePercent + 10],
+      severity: changePercent > 20 ? "severe" : changePercent > 5 ? "moderate" : "mild",
     },
     dataQuality: { totalRainyDays: rainy.length, totalSunnyDays: nonRainy.length, sufficientData: rainy.length >= 3 },
-    weatherTransition: { afterRainSpike: dropPercent > 10, spikeMagnitude: dropPercent > 10 ? Math.round(dropPercent * 0.5) : 0, recoveryDays: 1 },
-    peakShift: { occurs: dropPercent > 20, direction: "later", shiftHours: dropPercent > 20 ? 1 : 0 },
-    recommendations: [
-      { priority: "high", title: "雨天适当降低预期", message: `预计单量减少约${dropPercent}%，建议调整目标` },
-      { priority: "medium", title: "雨天注重保温", message: "使用保温箱等装备，减少配送延误" },
-      { priority: "low", title: "关注雨后反弹", message: "雨后通常有订单反弹，可提前准备" },
-    ],
+    weatherTransition: { afterRainSpike: false, spikeMagnitude: 0, recoveryDays: 0 },
+    peakShift: { occurs: false, direction: "none", shiftHours: 0 },
+    recommendations: changePercent > 0
+      ? [
+        { priority: "high", title: "雨天爆单良机", message: `雨天订单增加约${changePercent}%，是冲刺好时机！` },
+        { priority: "medium", title: "雨天注意安全", message: "爆单同时注意行车安全，穿戴雨具" },
+        { priority: "low", title: "提前备货", message: "雨天路滑，建议提前出发避免超时" },
+      ]
+      : [
+        { priority: "high", title: "雨天适当调整", message: `雨天单量变化${changePercent}%，建议调整节奏` },
+        { priority: "medium", title: "雨天注意安全", message: "使用雨具，注意行车安全" },
+        { priority: "low", title: "关注订单变化", message: "持续观察雨天订单规律" },
+      ],
     hourlyImpact: [
-      { hour: 11, label: "11:00-12:00", isSignificant: true, normalOrders: 8, rainyOrders: 6, reduction: 25 },
-      { hour: 12, label: "12:00-13:00", isSignificant: true, normalOrders: 7, rainyOrders: 5, reduction: 28 },
-      { hour: 18, label: "18:00-19:00", isSignificant: true, normalOrders: 6, rainyOrders: 4, reduction: 33 },
+      { hour: 11, label: "11:00-12:00", isSignificant: true, normalOrders: 8, rainyOrders: 10, reduction: -25 },
+      { hour: 12, label: "12:00-13:00", isSignificant: true, normalOrders: 7, rainyOrders: 9, reduction: -28 },
+      { hour: 18, label: "18:00-19:00", isSignificant: true, normalOrders: 6, rainyOrders: 8, reduction: -33 },
     ],
   };
 }

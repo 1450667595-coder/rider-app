@@ -1,5 +1,10 @@
 export function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  // 使用本地时间，不用UTC（toISOString在UTC+8凌晨会返回前一天）
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export function getYearMonth(date: Date = new Date()): string {
@@ -59,7 +64,10 @@ export function getLastNDays(n: number): string[] {
   for (let i = n - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    result.push(d.toISOString().slice(0, 10));
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    result.push(`${y}-${m}-${day}`);
   }
   return result;
 }
@@ -96,16 +104,23 @@ export function getWeekRange(date: Date = new Date()): { start: string; end: str
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
 
+  const fmt = (dt: Date) => {
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, "0");
+    const dd = String(dt.getDate()).padStart(2, "0");
+    return `${y}-${m}-${dd}`;
+  };
+
   const days: string[] = [];
   for (let i = 0; i < 7; i++) {
     const day = new Date(monday);
     day.setDate(monday.getDate() + i);
-    days.push(day.toISOString().slice(0, 10));
+    days.push(fmt(day));
   }
 
   return {
-    start: monday.toISOString().slice(0, 10),
-    end: sunday.toISOString().slice(0, 10),
+    start: fmt(monday),
+    end: fmt(sunday),
     days,
   };
 }
