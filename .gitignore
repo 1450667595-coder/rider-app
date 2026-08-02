@@ -1,3 +1,6 @@
 node_modules
 dist
 .env
+fashion/node_modules
+fashion/dist
+fashion/server/node_modules
