@@ -157,6 +157,9 @@ const useStore = create<AppState>((set, get) => {
       }
       set((s) => ({ ...s, ...data }));
 
+      // 加载数据后立即检查成就（解决历史连续出勤不识别问题）
+      setTimeout(() => get().checkAchievements(), 100);
+
       startDataHeartbeat(() => {
         const state = get();
         return { version: state.version, records: state.records, settings: state.settings, achievements: state.achievements };
