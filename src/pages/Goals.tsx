@@ -13,12 +13,12 @@ import { SHIFT_DEFINITIONS, type ShiftType } from "@/types";
 
 const container = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
+  show: { opacity: 1 },
 };
 
 const child = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 },
+  hidden: { opacity: 0 },
+  show: { opacity: 1 },
 };
 
 function getProgressColor(pct: number): string {

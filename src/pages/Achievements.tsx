@@ -1,32 +1,34 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Award, Flame, Zap, Star, Lock } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import useStore from "@/store/useStore";
 import AnimatedNumber from "@/components/shared/AnimatedNumber";
 import { Achievement } from "@/types";
 
 const container = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
-
-const item = {
-  hidden: { opacity: 0, scale: 0.9 },
-  show: { opacity: 1, scale: 1 },
+  show: { opacity: 1 },
 };
 
 export default function Achievements() {
   const achievements = useStore((s) => s.achievements);
-  const records = useStore((s) => s.records);
   const streak = useStore((s) => s.getStreak());
+  const [, recordsDigest] = useStore(useShallow((s) => {
+    const keys = Object.keys(s.records);
+    const len = keys.length;
+    const last = len > 0 ? keys[len - 1] : "";
+    const r = last ? s.records[last] : null;
+    return [len, `${len}|${last}|${r?.orders}|${r?.income}`];
+  }));
 
   const stats = useMemo(() => {
+    const records = useStore.getState().records;
     const allRecords = Object.values(records);
     const totalOrders = allRecords.reduce((s, r) => s + r.orders, 0);
     const totalIncome = allRecords.reduce((s, r) => s + r.income, 0);
     const maxDaily = allRecords.reduce((max, r) => Math.max(max, r.orders), 0);
 
-    // Find max monthly
     let maxMonthly = 0;
     const monthMap: Record<string, number> = {};
     allRecords.forEach((r) => {
@@ -38,7 +40,7 @@ export default function Achievements() {
     });
 
     return { totalOrders, totalIncome, maxDaily, maxMonthly };
-  }, [records]);
+  }, [recordsDigest]);
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
@@ -67,15 +69,15 @@ export default function Achievements() {
       initial="hidden"
       animate="show"
     >
-      <motion.div variants={item}>
+      <div>
         <h1 className="text-2xl font-bold text-[#E0E0E0] flex items-center gap-2 tracking-[-0.01em]">
           <Award size={24} className="text-[#00E5FF] icon-glow-cyan" />
           成就系统
         </h1>
-      </motion.div>
+      </div>
 
       {/* Stats Row */}
-      <motion.div variants={item} className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="holo-card rounded-[26px] p-3 text-center">
           <Award size={20} className="text-[#00E5FF] mx-auto mb-1 icon-glow-cyan" />
           <span className="text-lg font-bold text-[#E0E0E0]">{unlockedCount}</span>
@@ -91,10 +93,10 @@ export default function Achievements() {
           <AnimatedNumber value={stats.totalOrders} className="text-lg font-bold text-[#E0E0E0]" />
           <span className="terminal-text text-[10px] block">累计单量</span>
         </div>
-      </motion.div>
+      </div>
 
       {/* Personal Records */}
-      <motion.div variants={item} className="holo-card rounded-[26px] p-4">
+      <div className="holo-card rounded-[26px] p-4">
         <h3 className="cyber-section-title flex items-center gap-2">
           <Star size={16} className="text-[#00E5FF] icon-glow-cyan" />
           个人纪录
@@ -115,16 +117,15 @@ export default function Achievements() {
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Badge Grid */}
-      <motion.div variants={item}>
+      <div>
         <h3 className="cyber-section-title">徽章墙</h3>
         <div className="grid grid-cols-2 gap-3">
           {achievements.map((achievement) => (
-            <motion.div
+            <div
               key={achievement.id}
-              variants={item}
               className={`tap-cyber rounded-2xl p-4 border transition-all ${
                 achievement.unlocked
                   ? "holo-card"
@@ -154,10 +155,10 @@ export default function Achievements() {
                   解锁于 {achievement.unlockedAt}
                 </p>
               )}
-            </motion.div>
+            </div>
           ))}
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

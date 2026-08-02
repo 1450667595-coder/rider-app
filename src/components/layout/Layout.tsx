@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef, useCallback } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
+import { Outlet } from "react-router-dom";
 import BottomNav from "./BottomNav";
 import ToastContainer from "@/components/shared/Toast";
 import useStore from "@/store/useStore";
@@ -21,80 +21,60 @@ function useClock() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  系统启动画面 — 赛博终端风格
+//  系统启动画面 — 极速赛博终端风格
 // ═══════════════════════════════════════════════════════════
 const BOOT_SEQUENCE = [
-  { text: "RIDER WORKBENCH v3.0", delay: 200 },
-  { text: "INITIALIZING SYSTEM CORE", delay: 400 },
+  { text: "INITIALIZING SYSTEM", delay: 350 },
   { text: "LOADING DATA ENGINES", delay: 300 },
-  { text: "CONNECTING TO NEURAL NETWORK", delay: 500 },
-  { text: "CALIBRATING AI PREDICTION", delay: 400 },
-  { text: "SYNCING QUANTUM DATABASE", delay: 300 },
+  { text: "CALIBRATING AI CORE", delay: 350 },
   { text: "SYSTEM READY", delay: 200, highlight: true },
 ];
 
 function BootScreen({ onComplete }: { onComplete: () => void }) {
-  const [step, setStep] = useState(-1);
+  const [step, setStep] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [hide, setHide] = useState(false);
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    let currentStep = 0;
-    let totalDelay = 0;
+    let mounted = true;
+    let total = 0;
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
-    const runSequence = () => {
-      const seq = BOOT_SEQUENCE[currentStep];
-      if (!seq) {
-        // 完成，延迟后隐藏
-        setTimeout(() => setHide(true), 300);
-        setTimeout(() => onComplete(), 900);
-        return;
-      }
+    BOOT_SEQUENCE.forEach((seq, i) => {
+      const t = setTimeout(() => {
+        if (!mounted) return;
+        setStep(i + 1);
+        setProgress(Math.round(((i + 1) / BOOT_SEQUENCE.length) * 100));
+      }, total);
+      timers.push(t);
+      total += seq.delay;
+    });
 
-      setTimeout(() => {
-        setStep(currentStep);
-        setProgress(((currentStep + 1) / BOOT_SEQUENCE.length) * 100);
+    const done = setTimeout(() => {
+      if (!mounted) return;
+      setVisible(false);
+      setTimeout(() => { if (mounted) onComplete(); }, 400);
+    }, total + 200);
+    timers.push(done);
 
-        currentStep++;
-        if (currentStep < BOOT_SEQUENCE.length) {
-          totalDelay += seq.delay;
-          runSequence();
-        } else {
-          // 最后一步
-          setTimeout(() => {
-            setStep(BOOT_SEQUENCE.length - 1);
-            setProgress(100);
-            setTimeout(() => setHide(true), 400);
-            setTimeout(() => onComplete(), 1000);
-          }, seq.delay);
-        }
-      }, totalDelay);
-
-      totalDelay += seq.delay;
+    return () => {
+      mounted = false;
+      timers.forEach(clearTimeout);
     };
-
-    // 初始延迟
-    const initTimer = setTimeout(() => {
-      setStep(0);
-      setProgress((1 / BOOT_SEQUENCE.length) * 100);
-      currentStep = 1;
-      totalDelay = BOOT_SEQUENCE[0].delay;
-      runSequence();
-    }, 300);
-
-    return () => clearTimeout(initTimer);
   }, [onComplete]);
 
+  if (!visible) return null;
+
   return (
-    <div className={`boot-screen ${hide ? "hide" : ""}`}>
+    <div className="boot-screen">
       <div className="boot-logo">RIDER WORKBENCH</div>
       <div className="boot-progress">
         <div className="boot-progress-fill" style={{ width: `${progress}%` }} />
       </div>
       <div className="boot-log">
-        {step >= 0 && step < BOOT_SEQUENCE.length && (
-          <span className={BOOT_SEQUENCE[step].highlight ? "highlight" : ""}>
-            [{step >= BOOT_SEQUENCE.length - 1 ? "OK" : "..."}] {BOOT_SEQUENCE[step].text}
+        {step > 0 && step <= BOOT_SEQUENCE.length && (
+          <span className={BOOT_SEQUENCE[step - 1].highlight ? "highlight" : ""}>
+            [{step >= BOOT_SEQUENCE.length ? "OK" : "..."}] {BOOT_SEQUENCE[step - 1].text}
           </span>
         )}
       </div>
@@ -105,11 +85,8 @@ function BootScreen({ onComplete }: { onComplete: () => void }) {
 export default function Layout() {
   const loadData = useStore((s) => s.loadData);
   const clock = useClock();
-  const location = useLocation();
   const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline">("synced");
-  const [pageTransition, setPageTransition] = useState(false);
   const [bootDone, setBootDone] = useState(false);
-  const prevPath = useRef(location.pathname);
 
   useEffect(() => {
     loadData();
@@ -119,22 +96,10 @@ export default function Layout() {
     setBootDone(true);
   }, []);
 
-  // 页面切换过渡动画
-  useEffect(() => {
-    if (prevPath.current !== location.pathname) {
-      setPageTransition(true);
-      const timer = setTimeout(() => setPageTransition(false), 200);
-      prevPath.current = location.pathname;
-      return () => clearTimeout(timer);
-    }
-  }, [location.pathname]);
-
   const triggerSync = useCallback(() => {
     setSyncStatus("syncing");
     setTimeout(() => setSyncStatus("synced"), 2000);
   }, []);
-
-  const [systemStatus] = useState<"正常" | "警告" | "异常">("正常");
 
   return (
     <div className="min-h-screen min-h-dvh text-[#E0E0E0] relative">
@@ -151,12 +116,8 @@ export default function Layout() {
       <div className="top-status-bar">
         <div className="status-bar-left">
           <span className="system-status-indicator">
-            <span
-              className={`system-status-dot ${
-                systemStatus === "警告" ? "warning" : systemStatus === "异常" ? "error" : ""
-              }`}
-            />
-            系统{systemStatus}
+            <span className="system-status-dot" />
+            系统正常
           </span>
           <span className="status-bar-sep" />
           <span
@@ -182,12 +143,7 @@ export default function Layout() {
       {/* Content layer */}
       <div
         className="max-w-lg mx-auto pb-28 relative z-10"
-        style={{
-          paddingTop: "44px",
-          opacity: pageTransition ? 0.4 : 1,
-          transform: pageTransition ? "translateY(8px)" : "translateY(0)",
-          transition: "opacity 0.2s ease, transform 0.2s ease",
-        }}
+        style={{ paddingTop: "44px" }}
       >
         <Outlet />
       </div>

@@ -80,11 +80,9 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    linear-gradient(rgba(0, 229, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 229, 255, 0.025) 1px, transparent 1px);
+    linear-gradient(rgba(0, 229, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.02) 1px, transparent 1px);
   background-size: 60px 60px;
-  animation: gridDrift 60s linear infinite;
-  will-change: transform;
 }
 
 body::after {
@@ -94,20 +92,9 @@ body::after {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(224, 64, 251, 0.04) 0%, transparent 40%),
-    radial-gradient(ellipse at 20% 80%, rgba(0, 229, 255, 0.03) 0%, transparent 40%);
-  animation: glowBreathe 8s ease-in-out infinite;
-}
-
-@keyframes gridDrift {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(60px, 60px); }
-}
-
-@keyframes glowBreathe {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+    radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(224, 64, 251, 0.03) 0%, transparent 40%),
+    radial-gradient(ellipse at 20% 80%, rgba(0, 229, 255, 0.02) 0%, transparent 40%);
 }
 
 #root {
@@ -139,19 +126,19 @@ body::after {
    ═══════════════════════════════ */
 .hud-scan-line {
   position: fixed;
-  top: 0;
+  top: 36px;
   left: 0;
   right: 0;
   z-index: 20;
   height: 1px;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.2) 20%, rgba(0,229,255,0.2) 80%, transparent);
-  animation: hudScan 4s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.15) 20%, rgba(0,229,255,0.15) 80%, transparent);
+  animation: hudScan 6s ease-in-out infinite;
 }
 
 @keyframes hudScan {
-  0%, 100% { opacity: 0.3; top: 36px; }
-  50% { opacity: 0.8; }
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.6; }
 }
 
 /* ═══════════════════════════════
@@ -167,12 +154,12 @@ body::after {
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  transition: opacity 0.6s ease, visibility 0.6s ease;
+  opacity: 1;
+  transition: opacity 0.3s ease;
 }
 
 .boot-screen.hide {
   opacity: 0;
-  visibility: hidden;
   pointer-events: none;
 }
 
@@ -181,14 +168,8 @@ body::after {
   font-weight: 700;
   letter-spacing: 0.15em;
   color: var(--neon-cyan);
-  text-shadow: 0 0 20px rgba(0,229,255,0.6), 0 0 60px rgba(0,229,255,0.3);
+  text-shadow: 0 0 20px rgba(0,229,255,0.5), 0 0 60px rgba(0,229,255,0.2);
   margin-bottom: 24px;
-  animation: bootLogoPulse 2s ease-in-out infinite;
-}
-
-@keyframes bootLogoPulse {
-  0%, 100% { text-shadow: 0 0 20px rgba(0,229,255,0.6), 0 0 60px rgba(0,229,255,0.3); }
-  50% { text-shadow: 0 0 30px rgba(0,229,255,0.8), 0 0 80px rgba(0,229,255,0.5); }
 }
 
 .boot-progress {
