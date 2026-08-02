@@ -8,7 +8,12 @@ import { Achievement } from "@/types";
 
 const container = {
   hidden: { opacity: 0 },
-  show: { opacity: 1 },
+  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] } },
 };
 
 export default function Achievements() {
@@ -69,15 +74,15 @@ export default function Achievements() {
       initial="hidden"
       animate="show"
     >
-      <div>
+      <motion.div variants={item}>
         <h1 className="text-2xl font-bold text-[#E0E0E0] flex items-center gap-2 tracking-[-0.01em]">
           <Award size={24} className="text-[#00E5FF] icon-glow-cyan" />
           成就系统
         </h1>
-      </div>
+      </motion.div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-3">
+      <motion.div variants={item} className="grid grid-cols-3 gap-3">
         <div className="holo-card rounded-[26px] p-3 text-center">
           <Award size={20} className="text-[#00E5FF] mx-auto mb-1 icon-glow-cyan" />
           <span className="text-lg font-bold text-[#E0E0E0]">{unlockedCount}</span>
@@ -93,10 +98,10 @@ export default function Achievements() {
           <AnimatedNumber value={stats.totalOrders} className="text-lg font-bold text-[#E0E0E0]" />
           <span className="terminal-text text-[10px] block">累计单量</span>
         </div>
-      </div>
+      </motion.div>
 
       {/* Personal Records */}
-      <div className="holo-card rounded-[26px] p-4">
+      <motion.div variants={item} className="holo-card rounded-[26px] p-4">
         <h3 className="cyber-section-title flex items-center gap-2">
           <Star size={16} className="text-[#00E5FF] icon-glow-cyan" />
           个人纪录
@@ -117,10 +122,10 @@ export default function Achievements() {
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Badge Grid */}
-      <div>
+      <motion.div variants={item}>
         <h3 className="cyber-section-title">徽章墙</h3>
         <div className="grid grid-cols-2 gap-3">
           {achievements.map((achievement) => (
@@ -158,7 +163,7 @@ export default function Achievements() {
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }

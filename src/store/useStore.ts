@@ -337,8 +337,11 @@ const useStore = create<AppState>((set, get) => {
         const d = new Date(todayDate);
         d.setDate(d.getDate() - i);
         const ds = d.toISOString().slice(0, 10);
-        if (state.records[ds] && state.records[ds].orders > 0) streak++;
-        else break;
+        if (state.records[ds] && state.records[ds].orders > 0) {
+          streak++;
+        } else if (streak > 0) {
+          break;
+        }
       }
 
       let changed = false;
@@ -400,12 +403,16 @@ const useStore = create<AppState>((set, get) => {
     getTotalIncome: () => (Object.values(get().records) as DailyRecord[]).reduce((s, r) => s + r.income, 0),
     getStreak: () => {
       let streak = 0;
+      const records = get().records;
       const todayDate = new Date(today());
       for (let i = 0; i < 365; i++) {
         const d = new Date(todayDate); d.setDate(d.getDate() - i);
         const ds = d.toISOString().slice(0, 10);
-        if (get().records[ds] && get().records[ds].orders > 0) streak++;
-        else break;
+        if (records[ds] && records[ds].orders > 0) {
+          streak++;
+        } else if (streak > 0) {
+          break;
+        }
       }
       return streak;
     },
