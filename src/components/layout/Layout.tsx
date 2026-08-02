@@ -21,46 +21,19 @@ function useClock() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  系统启动画面 — 极速赛博终端风格
+//  系统启动画面 — 极速加载（非阻塞，硬件加速）
 // ═══════════════════════════════════════════════════════════
-const BOOT_SEQUENCE = [
-  { text: "INITIALIZING SYSTEM", delay: 120 },
-  { text: "LOADING ENGINES", delay: 100 },
-  { text: "AI CORE ONLINE", delay: 120 },
-  { text: "SYSTEM READY", delay: 60, highlight: true },
-];
-
 function BootScreen({ onComplete }: { onComplete: () => void }) {
-  const [step, setStep] = useState(0);
-  const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-    let total = 0;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    BOOT_SEQUENCE.forEach((seq, i) => {
-      const t = setTimeout(() => {
-        if (!mounted) return;
-        setStep(i + 1);
-        setProgress(Math.round(((i + 1) / BOOT_SEQUENCE.length) * 100));
-      }, total);
-      timers.push(t);
-      total += seq.delay;
-    });
-
-    const done = setTimeout(() => {
-      if (!mounted) return;
+    // 极速启动：仅180ms，确保不阻塞UI渲染
+    const timer = setTimeout(() => {
       setVisible(false);
-      setTimeout(() => { if (mounted) onComplete(); }, 150);
-    }, total + 50);
-    timers.push(done);
-
-    return () => {
-      mounted = false;
-      timers.forEach(clearTimeout);
-    };
+      // 使用 requestAnimationFrame 确保平滑过渡
+      requestAnimationFrame(() => onComplete());
+    }, 180);
+    return () => clearTimeout(timer);
   }, [onComplete]);
 
   if (!visible) return null;
@@ -69,14 +42,7 @@ function BootScreen({ onComplete }: { onComplete: () => void }) {
     <div className="boot-screen">
       <div className="boot-logo">RIDER WORKBENCH</div>
       <div className="boot-progress">
-        <div className="boot-progress-fill" style={{ width: `${progress}%` }} />
-      </div>
-      <div className="boot-log">
-        {step > 0 && step <= BOOT_SEQUENCE.length && (
-          <span className={BOOT_SEQUENCE[step - 1].highlight ? "highlight" : ""}>
-            [{step >= BOOT_SEQUENCE.length ? "OK" : "..."}] {BOOT_SEQUENCE[step - 1].text}
-          </span>
-        )}
+        <div className="boot-progress-fill boot-progress-fast" />
       </div>
     </div>
   );

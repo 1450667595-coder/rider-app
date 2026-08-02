@@ -1,32 +1,48 @@
 // ══════════════════════════════════════════════════════════════════════
-//  AI预测引擎 v17 — 基于上月历史数据的简洁预测
-//  删除所有复杂模型，仅用上月历史数据 + 简单统计
+//  AI预测引擎 v18 — 基于上月真实数据的精准预测
+//  核心原则：上月数据是唯一真相来源
+//  天气因子基于用户实际数据计算，不再使用硬编码激进因子
+//  趋势修正：利用本月已有数据微调
 // ══════════════════════════════════════════════════════════════════════
 
 import { DailyRecord, Weather, PredictionResult } from "@/types";
 import type { ShiftType } from "@/types";
 
-// 天气影响因子（简单固定值）
-const WEATHER_FACTOR: Record<Weather, number> = {
-  sunny: 1.00, cloudy: 0.90, rainy: 0.65, snowy: 0.45, windy: 0.78,
+// ── 温和默认天气因子（仅无数据时使用，远不如v17激进） ──
+const DEFAULT_WEATHER_FACTOR: Record<Weather, number> = {
+  sunny: 1.00, cloudy: 0.95, rainy: 0.88, snowy: 0.75, windy: 0.92,
 };
 
-// 班次因子
+// ── 温和班次因子 ──
 const SHIFT_FACTOR: Record<ShiftType, number> = {
-  early_mid: 1.00, early: 1.08, late_mid: 1.00, late: 0.92, night: 0.85,
+  early_mid: 1.00, early: 1.03, late_mid: 1.00, late: 0.97, night: 0.93,
 };
 
-// 获取上月数据
+// ── 工具函数 ──
+function avg(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((s, v) => s + v, 0) / values.length;
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
 function getLastMonthRecords(records: Record<string, DailyRecord>): DailyRecord[] {
   const now = new Date();
-  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonthKey = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, "0")}`;
+  const m = now.getMonth(); // 0-based
+  const y = now.getFullYear();
+  const lastMonth = m === 0 ? 12 : m;
+  const lastYear = m === 0 ? y - 1 : y;
+  const lastMonthKey = `${lastYear}-${String(lastMonth).padStart(2, "0")}`;
   return Object.values(records)
     .filter(r => r.date.startsWith(lastMonthKey) && r.orders > 0)
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-// 获取本月数据
 function getCurrentMonthRecords(records: Record<string, DailyRecord>): DailyRecord[] {
   const now = new Date();
   const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -35,14 +51,41 @@ function getCurrentMonthRecords(records: Record<string, DailyRecord>): DailyReco
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-// 计算平均值
-function avg(values: number[]): number {
-  if (values.length === 0) return 0;
-  return values.reduce((s, v) => s + v, 0) / values.length;
+// ══════════════════════════════════════════════════════════════════════
+//  基于真实数据计算天气影响因子
+//  分析用户自己的数据，而非使用硬编码激进值
+// ══════════════════════════════════════════════════════════════════════
+function calculateWeatherImpact(records: DailyRecord[]): Record<Weather, number> {
+  if (records.length < 10) return { ...DEFAULT_WEATHER_FACTOR };
+
+  const overallAvg = avg(records.map(r => r.orders));
+  if (overallAvg === 0) return { ...DEFAULT_WEATHER_FACTOR };
+
+  const result: Record<string, number> = {};
+  const allWeathers: Weather[] = ["sunny", "cloudy", "rainy", "snowy", "windy"];
+
+  for (const w of allWeathers) {
+    const wRecords = records.filter(r => r.weather === w);
+    if (wRecords.length >= 3) {
+      const wAvg = avg(wRecords.map(r => r.orders));
+      const rawFactor = wAvg / overallAvg;
+      // 限制在 0.75~1.10 之间，防止极端值
+      result[w] = Math.max(0.75, Math.min(1.10, rawFactor));
+    } else {
+      result[w] = DEFAULT_WEATHER_FACTOR[w];
+    }
+  }
+
+  return result as Record<Weather, number>;
 }
 
 // ══════════════════════════════════════════════════════════════════════
-//  明日预测 — 基于上月同日星期几的平均值
+//  明日预测 v18
+//  - 主数据源：上月完整数据
+//  - 稳健平均：均值+中位数混合，抗异常值
+//  - 同日星期几权重60% + 稳健平均40%
+//  - 天气因子基于用户实际数据计算
+//  - 趋势修正：本月已有数据 vs 上月同期
 // ══════════════════════════════════════════════════════════════════════
 export function predictTomorrowAI(
   records: Record<string, DailyRecord>,
@@ -52,47 +95,72 @@ export function predictTomorrowAI(
   const lastMonth = getLastMonthRecords(records);
   const thisMonth = getCurrentMonthRecords(records);
 
-  // 优先使用本月数据，不足则用上月
-  const source = thisMonth.length >= 5 ? thisMonth : lastMonth;
-
-  if (source.length === 0) {
+  // 数据不足
+  if (lastMonth.length === 0 && thisMonth.length === 0) {
     return {
-      predictedOrders: 30,
+      predictedOrders: 0,
       confidence: "low",
-      factors: [{ label: "数据不足", impact: "需要至少5天数据，默认预估30单" }],
+      factors: [{ label: "数据不足", impact: "请先记录至少5天数据" }],
     };
   }
 
-  // 计算明天是星期几
+  // 主数据源：上月数据优先
+  const primarySource = lastMonth.length >= 5 ? lastMonth : thisMonth;
+  const sourceLabel = primarySource === lastMonth ? "上月" : "本月";
+
+  // 稳健平均：均值 + 中位数 取平均（抗异常值）
+  const overallAvg = avg(primarySource.map(r => r.orders));
+  const overallMedian = median(primarySource.map(r => r.orders));
+  const robustAvg = (overallAvg + overallMedian) / 2;
+
+  // 明天星期几
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowDOW = tomorrow.getDay();
 
-  // 按星期几分组，取同日平均值
+  // 按星期几分组统计
   const byDow: Record<number, number[]> = {};
-  for (const r of source) {
+  for (const r of primarySource) {
     const dow = new Date(r.date).getDay();
     if (!byDow[dow]) byDow[dow] = [];
     byDow[dow].push(r.orders);
   }
 
-  const sameDowAvg = byDow[tomorrowDOW] ? avg(byDow[tomorrowDOW]) : 0;
-  const overallAvg = avg(source.map(r => r.orders));
+  const sameDowRecords = byDow[tomorrowDOW] || [];
+  const sameDowAvg = sameDowRecords.length > 0 ? avg(sameDowRecords) : 0;
 
-  // 综合：同日平均占70%，总体平均占30%
+  // 综合预测：同日星期几60% + 稳健平均40%
   const basePrediction = sameDowAvg > 0
-    ? sameDowAvg * 0.7 + overallAvg * 0.3
-    : overallAvg;
+    ? sameDowAvg * 0.6 + robustAvg * 0.4
+    : robustAvg;
 
-  // 应用天气和班次因子
-  const weatherFactor = WEATHER_FACTOR[weather] || 1;
+  // 基于真实数据计算天气因子
+  const weatherImpact = calculateWeatherImpact(primarySource);
+  const weatherFactor = weatherImpact[weather] || 1;
+
+  // 班次因子（温和）
   const shiftFactor = shiftType ? (SHIFT_FACTOR[shiftType] || 1) : 1;
-  const predicted = Math.round(basePrediction * weatherFactor * shiftFactor);
+
+  // 趋势修正：本月已有数据 vs 上月同期
+  let trendFactor = 1.0;
+  if (thisMonth.length >= 3 && lastMonth.length >= 5) {
+    const thisMonthAvg = avg(thisMonth.map(r => r.orders));
+    const lastMonthAvg = avg(lastMonth.map(r => r.orders));
+    if (lastMonthAvg > 0) {
+      const trend = thisMonthAvg / lastMonthAvg;
+      // 限制在 0.85~1.15
+      trendFactor = Math.max(0.85, Math.min(1.15, trend));
+    }
+  }
+
+  // 最终预测
+  const predicted = Math.round(basePrediction * weatherFactor * shiftFactor * trendFactor);
 
   // 置信度
-  const dataDays = source.length;
+  const dataDays = primarySource.length;
   let confidence: PredictionResult["confidence"] = "low";
-  if (dataDays >= 20) confidence = "high";
+  if (dataDays >= 25 && sameDowRecords.length >= 3) confidence = "high";
+  else if (dataDays >= 15 && sameDowRecords.length >= 2) confidence = "medium";
   else if (dataDays >= 10) confidence = "medium";
 
   const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -100,19 +168,41 @@ export function predictTomorrowAI(
     sunny: "晴天", cloudy: "多云", rainy: "雨天", snowy: "雪天", windy: "大风"
   };
 
+  const factors: { label: string; impact: string }[] = [
+    {
+      label: `${weekdays[tomorrowDOW]}基准`,
+      impact: `${sourceLabel}${weekdays[tomorrowDOW]}日均${Math.round(sameDowAvg || robustAvg)}单`
+    },
+    {
+      label: `${sourceLabel}稳健日均`,
+      impact: `${Math.round(robustAvg)}单（${dataDays}天数据）`
+    },
+    {
+      label: `${weatherLabels[weather]}调整`,
+      impact: `×${weatherFactor.toFixed(2)}（基于实际数据）`
+    },
+  ];
+
+  if (trendFactor !== 1.0) {
+    factors.push({
+      label: "趋势修正",
+      impact: trendFactor > 1 ? `本月上升 ×${trendFactor.toFixed(2)}` : `本月下降 ×${trendFactor.toFixed(2)}`
+    });
+  }
+
+  if (shiftType && shiftType !== "early_mid") {
+    factors.push({ label: "班次调整", impact: `×${shiftFactor.toFixed(2)}` });
+  }
+
   return {
     predictedOrders: Math.max(1, predicted),
     confidence,
-    factors: [
-      { label: `${weekdays[tomorrowDOW]}基准`, impact: `基于${source.length}天${source === lastMonth ? "上月" : "本月"}数据` },
-      { label: `${weatherLabels[weather]}影响`, impact: weatherFactor > 1 ? "利好" : weatherFactor < 1 ? "不利" : "中性" },
-      { label: "预测来源", impact: source === lastMonth ? "上月历史数据" : "本月实时数据" },
-    ],
+    factors,
   };
 }
 
 // ══════════════════════════════════════════════════════════════════════
-//  月度预测 — 基于上月日均单量
+//  月度预测 — 基于上月稳健日均
 // ══════════════════════════════════════════════════════════════════════
 export function predictMonthlyAI(
   records: Record<string, DailyRecord>,
@@ -125,33 +215,36 @@ export function predictMonthlyAI(
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
-  const prefix = `${year}-${String(month).padStart(2, "0")}`;
   const daysInMonth = new Date(year, month, 0).getDate();
   const today = now.getDate();
   const remainingDays = daysInMonth - today;
   const workDaysRemaining = Math.round(remainingDays * (settings.workDaysPerWeek / 7));
 
-  // 本月已完成的单量
+  // 本月已完成
   const thisMonth = getCurrentMonthRecords(records);
   let completed = 0;
   for (const r of thisMonth) completed += r.orders;
 
-  // 基于上月数据计算日均
+  // 基于上月数据计算稳健日均
   const lastMonth = getLastMonthRecords(records);
   const lastMonthOrders = lastMonth.map(r => r.orders);
-  const dailyAvg = lastMonth.length > 0 ? avg(lastMonthOrders) : 0;
+  const dailyAvg = lastMonthOrders.length > 0 ? avg(lastMonthOrders) : 0;
+  const dailyMedian = lastMonthOrders.length > 0 ? median(lastMonthOrders) : 0;
+  const robustDailyAvg = (dailyAvg + dailyMedian) / 2;
 
-  // 如果没有上月数据，用本月数据
-  const effectiveAvg = dailyAvg > 0 ? dailyAvg : (thisMonth.length > 0 ? avg(thisMonth.map(r => r.orders)) : 0);
+  // 兜底：用本月数据
+  const effectiveAvg = robustDailyAvg > 0
+    ? robustDailyAvg
+    : (thisMonth.length > 0 ? avg(thisMonth.map(r => r.orders)) : 0);
   const fallbackAvg = effectiveAvg > 0 ? effectiveAvg : 30;
 
-  // 应用班次因子
+  // 班次因子
   const shiftFactor = settings.currentShift ? (SHIFT_FACTOR[settings.currentShift] || 1) : 1;
   const adjustedAvg = fallbackAvg * shiftFactor;
 
   const predicted = Math.round(completed + adjustedAvg * workDaysRemaining);
-  const lowEstimate = Math.round(completed + adjustedAvg * 0.8 * workDaysRemaining);
-  const highEstimate = Math.round(completed + adjustedAvg * 1.2 * workDaysRemaining);
+  const lowEstimate = Math.round(completed + adjustedAvg * 0.85 * workDaysRemaining);
+  const highEstimate = Math.round(completed + adjustedAvg * 1.15 * workDaysRemaining);
   const dailyNeeded = workDaysRemaining > 0
     ? Math.round((settings.monthlyGoal - completed) / workDaysRemaining)
     : 0;
@@ -167,8 +260,8 @@ export function predictMonthlyAI(
     weeklyBreakdown.push({
       week: weekNum,
       predicted: wp,
-      low: Math.round(adjustedAvg * 0.8 * workDays),
-      high: Math.round(adjustedAvg * 1.2 * workDays),
+      low: Math.round(adjustedAvg * 0.85 * workDays),
+      high: Math.round(adjustedAvg * 1.15 * workDays),
     });
     remaining -= weekDays;
     weekNum++;

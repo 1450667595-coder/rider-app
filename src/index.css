@@ -218,6 +218,16 @@ body::after {
   box-shadow: 0 0 10px rgba(0,229,255,0.4);
 }
 
+.boot-progress-fast {
+  width: 100% !important;
+  animation: bootFastFill 0.15s ease-out forwards;
+}
+
+@keyframes bootFastFill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
 .boot-log {
   font-size: 11px;
   color: rgba(0,229,255,0.5);

@@ -142,6 +142,8 @@ function scheduleApiSync(state: AppState) {
   }, 1000);
 }
 
+let heartbeatStarted = false;
+
 const useStore = create<AppState>((set, get) => {
   const initialData = loadStorage();
 
@@ -160,10 +162,14 @@ const useStore = create<AppState>((set, get) => {
       // 数据加载后立即检查成就
       get().checkAchievements();
 
-      startDataHeartbeat(() => {
-        const state = get();
-        return { version: state.version, records: state.records, settings: state.settings, achievements: state.achievements };
-      });
+      // 防止重复启动 heartbeat
+      if (!heartbeatStarted) {
+        heartbeatStarted = true;
+        startDataHeartbeat(() => {
+          const state = get();
+          return { version: state.version, records: state.records, settings: state.settings, achievements: state.achievements };
+        });
+      }
 
       // 从 Supabase 云端拉取数据（使用共享用户ID，自动同步）
       if (isSupabaseConfigured()) {
