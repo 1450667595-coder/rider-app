@@ -80,10 +80,12 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    linear-gradient(rgba(0, 229, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 229, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(rgba(0, 229, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.045) 1px, transparent 1px);
   background-size: 60px 60px;
   animation: gridDrift 60s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 body::after {
@@ -93,10 +95,12 @@ body::after {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(224, 64, 251, 0.06) 0%, transparent 40%),
-    radial-gradient(ellipse at 20% 80%, rgba(0, 229, 255, 0.05) 0%, transparent 40%);
+    radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(224, 64, 251, 0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 20% 80%, rgba(0, 229, 255, 0.06) 0%, transparent 40%);
   animation: glowBreathe 8s ease-in-out infinite;
+  will-change: opacity;
+  transform: translateZ(0);
 }
 
 @keyframes gridDrift {
@@ -128,9 +132,11 @@ body::after {
     0deg,
     transparent,
     transparent 2px,
-    rgba(0, 229, 255, 0.005) 2px,
-    rgba(0, 229, 255, 0.005) 3px
+    rgba(0, 229, 255, 0.008) 2px,
+    rgba(0, 229, 255, 0.008) 3px
   );
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 /* ═══════════════════════════════
@@ -144,9 +150,11 @@ body::after {
   z-index: 20;
   height: 2px;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.3) 20%, rgba(0,229,255,0.4) 50%, rgba(0,229,255,0.3) 80%, transparent);
-  box-shadow: 0 0 8px rgba(0,229,255,0.3), 0 0 20px rgba(0,229,255,0.15);
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.4) 20%, rgba(0,229,255,0.5) 50%, rgba(0,229,255,0.4) 80%, transparent);
+  box-shadow: 0 0 10px rgba(0,229,255,0.4), 0 0 30px rgba(0,229,255,0.2);
   animation: hudScan 4s ease-in-out infinite;
+  will-change: top, opacity;
+  transform: translateZ(0);
 }
 
 @keyframes hudScan {
@@ -168,7 +176,8 @@ body::after {
   justify-content: center;
   font-family: var(--font-mono);
   opacity: 1;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.15s ease;
+  will-change: opacity;
 }
 
 .boot-screen.hide {
@@ -184,6 +193,7 @@ body::after {
   text-shadow: 0 0 20px rgba(0,229,255,0.7), 0 0 60px rgba(0,229,255,0.4), 0 0 100px rgba(0,229,255,0.2);
   margin-bottom: 24px;
   animation: bootLogoPulse 1.5s ease-in-out infinite;
+  will-change: text-shadow;
 }
 
 @keyframes bootLogoPulse {

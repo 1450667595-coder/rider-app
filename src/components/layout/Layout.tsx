@@ -24,10 +24,10 @@ function useClock() {
 //  系统启动画面 — 极速赛博终端风格
 // ═══════════════════════════════════════════════════════════
 const BOOT_SEQUENCE = [
-  { text: "INITIALIZING SYSTEM", delay: 180 },
-  { text: "LOADING DATA ENGINES", delay: 150 },
-  { text: "CALIBRATING AI CORE", delay: 180 },
-  { text: "SYSTEM READY", delay: 100, highlight: true },
+  { text: "INITIALIZING SYSTEM", delay: 120 },
+  { text: "LOADING ENGINES", delay: 100 },
+  { text: "AI CORE ONLINE", delay: 120 },
+  { text: "SYSTEM READY", delay: 60, highlight: true },
 ];
 
 function BootScreen({ onComplete }: { onComplete: () => void }) {
@@ -53,8 +53,8 @@ function BootScreen({ onComplete }: { onComplete: () => void }) {
     const done = setTimeout(() => {
       if (!mounted) return;
       setVisible(false);
-      setTimeout(() => { if (mounted) onComplete(); }, 250);
-    }, total + 100);
+      setTimeout(() => { if (mounted) onComplete(); }, 150);
+    }, total + 50);
     timers.push(done);
 
     return () => {

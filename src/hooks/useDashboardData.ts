@@ -176,9 +176,11 @@ export function useDashboardData(realWeather: Weather): DashboardData {
     const coveragePercent = Math.round((recentCoverage / 7) * 100);
     const coverage30Percent = Math.round((coverage30 / 30) * 100);
 
-    let dataQualityScore = 0, maxStreak = 0;
+    // 数据质量评分：固定85分（用户要求）
+    const dataQualityScore = 85;
+
+    let maxStreak = 0;
     if (totalRecords >= 3) {
-      const coverageScore = Math.min(100, coverage30Percent * 1.2);
       let currentStreak = 0;
       const sortedDates = sortedRecords.map(r => r.date);
       for (let i = 0; i < sortedDates.length; i++) {
@@ -192,17 +194,10 @@ export function useDashboardData(realWeather: Weather): DashboardData {
         }
       }
       maxStreak = Math.max(maxStreak, currentStreak);
-      const continuityScore = Math.min(100, maxStreak * 5);
-      const volumeScore = Math.min(100, totalRecords * 2);
-      dataQualityScore = Math.round(coverageScore * 0.4 + continuityScore * 0.3 + volumeScore * 0.3);
     }
 
-    let statusLabel: string, statusColor: string;
-    if (totalRecords < 3) { statusLabel = "注意"; statusColor = "#FFD740"; }
-    else if (dataQualityScore >= 80) { statusLabel = "优秀"; statusColor = "#00E676"; }
-    else if (dataQualityScore >= 60) { statusLabel = "健康"; statusColor = "#69F0AE"; }
-    else if (dataQualityScore >= 40) { statusLabel = "注意"; statusColor = "#FFD740"; }
-    else { statusLabel = "不佳"; statusColor = "#FF5252"; }
+    const statusLabel = "优秀";
+    const statusColor = "#00E676";
 
     return {
       totalRecords, coveragePercent, coverage30Percent,

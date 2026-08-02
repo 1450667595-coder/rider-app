@@ -157,8 +157,8 @@ const useStore = create<AppState>((set, get) => {
       }
       set((s) => ({ ...s, ...data }));
 
-      // 加载数据后立即检查成就（解决历史连续出勤不识别问题）
-      setTimeout(() => get().checkAchievements(), 100);
+      // 数据加载后立即检查成就
+      get().checkAchievements();
 
       startDataHeartbeat(() => {
         const state = get();
@@ -179,6 +179,8 @@ const useStore = create<AppState>((set, get) => {
                 saveStorageImmediate(toStorageData(merged));
                 return { ...merged, syncStatus: "synced" };
               });
+              // 合并后立即检查成就（云端数据可能包含新的历史记录）
+              get().checkAchievements();
               // 合并后把本地多余的数据也推上云端
               set((state) => {
                 const localOnly: Record<string, any> = {};
@@ -235,6 +237,8 @@ const useStore = create<AppState>((set, get) => {
               set({ syncStatus: "synced" });
               return merged;
             });
+            // 服务器数据合并后检查成就
+            get().checkAchievements();
           } else {
             set({ syncStatus: "synced" });
           }
@@ -280,8 +284,7 @@ const useStore = create<AppState>((set, get) => {
         scheduleApiSync(newState);
         return { records: newRecords };
       });
-      // 延迟成就检查，避免阻塞点击响应
-      setTimeout(() => get().checkAchievements(), 0);
+      get().checkAchievements();
     },
 
     deleteRecord: (date: string) => {
@@ -319,7 +322,7 @@ const useStore = create<AppState>((set, get) => {
         scheduleApiSync(newState);
         return { settings: newSettings };
       });
-      setTimeout(() => get().checkAchievements(), 0);
+      get().checkAchievements();
     },
 
     checkAchievements: () => {
