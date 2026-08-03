@@ -1,3 +1,9 @@
+// 将 YYYY-MM-DD 解析为本地时间中午，避免时区导致日期偏移
+export function parseLocalDate(date: string): Date {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, 12, 0, 0);
+}
+
 export function today(): string {
   // 使用本地时间，不用UTC（toISOString在UTC+8凌晨会返回前一天）
   const d = new Date();
@@ -20,22 +26,22 @@ export function getFirstDayOfMonth(year: number, month: number): number {
 }
 
 export function formatDate(date: string): string {
-  const d = new Date(date);
+  const d = parseLocalDate(date);
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
 export function formatDateShort(date: string): string {
-  const d = new Date(date);
+  const d = parseLocalDate(date);
   return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export function getDayOfWeek(date: string): string {
   const days = ["日", "一", "二", "三", "四", "五", "六"];
-  return days[new Date(date).getDay()];
+  return days[parseLocalDate(date).getDay()];
 }
 
 export function isWeekend(date: string): boolean {
-  const d = new Date(date);
+  const d = parseLocalDate(date);
   return d.getDay() === 0 || d.getDay() === 6;
 }
 

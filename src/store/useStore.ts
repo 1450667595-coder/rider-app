@@ -67,6 +67,19 @@ const toStorageData = (state: AppState): AppStorage => ({
   achievements: state.achievements,
 });
 
+// 确保今天有一条空记录，避免首页把昨天的数据当成今天
+function ensureTodayRecord(records: Record<string, DailyRecord>): boolean {
+  const todayStr = today();
+  if (!records[todayStr]) {
+    records[todayStr] = {
+      date: todayStr, orders: 0, income: 0, workHours: 0,
+      weather: "sunny", note: "",
+    };
+    return true;
+  }
+  return false;
+}
+
 // 云端数据同步配置
 function toSyncSettings(s: UserSettings) {
   return {
@@ -146,6 +159,11 @@ let heartbeatStarted = false;
 
 const useStore = create<AppState>((set, get) => {
   const initialData = loadStorage();
+  // 应用启动时立即补 today's record，避免首屏渲染到昨天的数据
+  const createdToday = ensureTodayRecord(initialData.records);
+  if (createdToday) {
+    saveStorageImmediate(initialData);
+  }
 
   return {
     ...initialData,
@@ -158,15 +176,7 @@ const useStore = create<AppState>((set, get) => {
         console.warn("数据修复:", issues);
       }
       // 凌晨/新的一天自动创建今日空记录，避免首页显示昨日数据
-      const todayStr = today();
-      let createdToday = false;
-      if (!data.records[todayStr]) {
-        data.records[todayStr] = {
-          date: todayStr, orders: 0, income: 0, workHours: 0,
-          weather: "sunny", note: "",
-        };
-        createdToday = true;
-      }
+      const createdToday = ensureTodayRecord(data.records);
       set((s) => ({ ...s, ...data }));
       if (createdToday) {
         saveStorageImmediate(data);

@@ -10,6 +10,7 @@ import {
   BarChart3,
   Award,
 } from "lucide-react";
+import { prefetchPage } from "@/App";
 
 interface NavItem {
   to: string;
@@ -17,20 +18,21 @@ interface NavItem {
   label: string;
   badge?: number;
   badgeDot?: boolean;
+  prefetch?: () => Promise<unknown>;
 }
 
 const leftItems: NavItem[] = [
   { to: "/", icon: LayoutDashboard, label: "仪表盘" },
-  { to: "/records", icon: CalendarDays, label: "记录" },
-  { to: "/income", icon: TrendingUp, label: "收入" },
-  { to: "/predict", icon: LineChart, label: "预测", badge: 3 },
+  { to: "/records", icon: CalendarDays, label: "记录", prefetch: prefetchPage.records },
+  { to: "/income", icon: TrendingUp, label: "收入", prefetch: prefetchPage.income },
+  { to: "/predict", icon: LineChart, label: "预测", badge: 3, prefetch: prefetchPage.predict },
 ];
 
 const rightItems: NavItem[] = [
-  { to: "/weekly", icon: FileText, label: "周报", badgeDot: true },
-  { to: "/goals", icon: Target, label: "目标" },
-  { to: "/analytics", icon: BarChart3, label: "看板" },
-  { to: "/achievements", icon: Award, label: "成就" },
+  { to: "/weekly", icon: FileText, label: "周报", badgeDot: true, prefetch: prefetchPage.weekly },
+  { to: "/goals", icon: Target, label: "目标", prefetch: prefetchPage.goals },
+  { to: "/analytics", icon: BarChart3, label: "看板", prefetch: prefetchPage.analytics },
+  { to: "/achievements", icon: Award, label: "成就", prefetch: prefetchPage.achievements },
 ];
 
 function useActiveIndex(items: { to: string }[], offset: number) {
@@ -70,6 +72,16 @@ function BottomNav() {
     }
   }, [activeIdx]);
 
+  // 空闲时预加载所有非首屏页面，让后续导航秒开
+  useEffect(() => {
+    const id = setTimeout(() => {
+      Object.values(prefetchPage).forEach((fn) => {
+        try { fn(); } catch { /* ignore */ }
+      });
+    }, 2500);
+    return () => clearTimeout(id);
+  }, []);
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30">
       <div className="cyber-nav relative overflow-visible">
@@ -93,6 +105,8 @@ function BottomNav() {
               key={item.to}
               to={item.to}
               data-nav-item
+              onPointerEnter={() => item.prefetch?.()}
+              onTouchStart={() => item.prefetch?.()}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full transition-all duration-300 tap-cyber nav-tap-haptic ${
                   isActive ? "nav-cyber-active" : ""
@@ -150,6 +164,8 @@ function BottomNav() {
               key={item.to}
               to={item.to}
               data-nav-item
+              onPointerEnter={() => item.prefetch?.()}
+              onTouchStart={() => item.prefetch?.()}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full transition-all duration-300 tap-cyber nav-tap-haptic ${
                   isActive ? "nav-cyber-active" : ""

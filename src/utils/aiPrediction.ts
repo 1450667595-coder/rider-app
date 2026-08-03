@@ -9,6 +9,7 @@
 
 import { DailyRecord, Weather, PredictionResult } from "@/types";
 import type { ShiftType } from "@/types";
+import { parseLocalDate } from "@/utils/date";
 
 // ── 外卖场景：雨天/雪天 = 爆单！ ──
 // 坏天气人们不出门，外卖订单暴增20-40%
@@ -92,19 +93,20 @@ function getSpecialEvent(dateStr: string): SpecialEvent | null {
 
 // 检查是否为周末
 function isWeekend(dateStr: string): boolean {
-  const d = new Date(dateStr);
+  const d = parseLocalDate(dateStr);
   return d.getDay() === 0 || d.getDay() === 6;
 }
 
 // ══════════════════════════════════════════════════════════════════════
-//  明日预测 v19 — 外卖骑手专用
+//  指定日期预测 — 外卖骑手专用
 //  - 雨天/雪天 = 爆单加成
-//  - 特殊事件检测（奶茶节等）
+//  - 特殊事件按日期检测（奶茶节等）
 //  - 周末 vs 工作日模式识别
 //  - 基于上月真实数据
 // ══════════════════════════════════════════════════════════════════════
-export function predictTomorrowAI(
+export function predictForDateAI(
   records: Record<string, DailyRecord>,
+  targetDateStr: string,
   weather: Weather,
   shiftType?: ShiftType
 ): PredictionResult {
@@ -128,22 +130,20 @@ export function predictTomorrowAI(
   const overallMedian = median(primarySource.map(r => r.orders));
   const robustAvg = (overallAvg + overallMedian) / 2;
 
-  // 明天信息
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowDOW = tomorrow.getDay();
-  const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
-  const tomorrowIsWeekend = tomorrowDOW === 0 || tomorrowDOW === 6;
+  // 目标日期信息
+  const targetDate = parseLocalDate(targetDateStr);
+  const targetDOW = targetDate.getDay();
+  const targetIsWeekend = targetDOW === 0 || targetDOW === 6;
 
   // 按星期几分组统计
   const byDow: Record<number, number[]> = {};
   for (const r of primarySource) {
-    const dow = new Date(r.date).getDay();
+    const dow = parseLocalDate(r.date).getDay();
     if (!byDow[dow]) byDow[dow] = [];
     byDow[dow].push(r.orders);
   }
 
-  const sameDowRecords = byDow[tomorrowDOW] || [];
+  const sameDowRecords = byDow[targetDOW] || [];
   const sameDowAvg = sameDowRecords.length > 0 ? avg(sameDowRecords) : 0;
 
   // 基础预测：同星期几60% + 稳健平均40%
@@ -169,7 +169,7 @@ export function predictTomorrowAI(
   }
 
   // 特殊事件检测
-  const specialEvent = getSpecialEvent(tomorrowStr);
+  const specialEvent = getSpecialEvent(targetDateStr);
   const eventFactor = specialEvent ? specialEvent.boost : 1.0;
 
   // 周末因子：基于实际数据计算周末vs工作日差异
@@ -182,7 +182,7 @@ export function predictTomorrowAI(
       const weekdayAvg = avg(weekdayOrders);
       if (weekdayAvg > 0) {
         const ratio = weekendAvg / weekdayAvg;
-        weekendFactor = tomorrowIsWeekend ? Math.max(0.8, Math.min(1.3, ratio)) : 1.0;
+        weekendFactor = targetIsWeekend ? Math.max(0.8, Math.min(1.3, ratio)) : 1.0;
       }
     }
   }
@@ -206,8 +206,8 @@ export function predictTomorrowAI(
 
   const factors: { label: string; impact: string }[] = [
     {
-      label: `${weekdays[tomorrowDOW]}基准`,
-      impact: `${sourceLabel}${weekdays[tomorrowDOW]}日均${Math.round(sameDowAvg || robustAvg)}单`
+      label: `${weekdays[targetDOW]}基准`,
+      impact: `${sourceLabel}${weekdays[targetDOW]}日均${Math.round(sameDowAvg || robustAvg)}单`
     },
     {
       label: `${sourceLabel}稳健日均`,
@@ -235,7 +235,7 @@ export function predictTomorrowAI(
     });
   }
 
-  if (weekendFactor !== 1.0 && tomorrowIsWeekend) {
+  if (weekendFactor !== 1.0 && targetIsWeekend) {
     const pct = Math.round((weekendFactor - 1) * 100);
     factors.push({
       label: "周末模式",
@@ -255,6 +255,20 @@ export function predictTomorrowAI(
     confidence,
     factors,
   };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  明日预测 —  predictForDateAI 的便捷包装
+// ══════════════════════════════════════════════════════════════════════
+export function predictTomorrowAI(
+  records: Record<string, DailyRecord>,
+  weather: Weather,
+  shiftType?: ShiftType
+): PredictionResult {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+  return predictForDateAI(records, tomorrowStr, weather, shiftType);
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -294,9 +308,22 @@ export function predictMonthlyAI(
   const shiftFactor = settings.currentShift ? (SHIFT_FACTOR[settings.currentShift] || 1) : 1;
   const adjustedAvg = fallbackAvg * shiftFactor;
 
-  const predicted = Math.round(completed + adjustedAvg * workDaysRemaining);
-  const lowEstimate = Math.round(completed + adjustedAvg * 0.85 * workDaysRemaining);
-  const highEstimate = Math.round(completed + adjustedAvg * 1.15 * workDaysRemaining);
+  // 特殊事件加成：剩余日期中每出现一个爆单日，额外加上 (boost-1)*日均单量
+  let eventExtra = 0;
+  for (let d = 1; d <= remainingDays; d++) {
+    const dd = new Date(now);
+    dd.setDate(dd.getDate() + d);
+    const dateStr = `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, "0")}-${String(dd.getDate()).padStart(2, "0")}`;
+    const event = getSpecialEvent(dateStr);
+    if (event) {
+      eventExtra += adjustedAvg * (event.boost - 1);
+    }
+  }
+  eventExtra = Math.round(eventExtra);
+
+  const predicted = Math.round(completed + adjustedAvg * workDaysRemaining + eventExtra);
+  const lowEstimate = Math.round(completed + adjustedAvg * 0.85 * workDaysRemaining + eventExtra * 0.7);
+  const highEstimate = Math.round(completed + adjustedAvg * 1.15 * workDaysRemaining + eventExtra * 1.3);
   const dailyNeeded = workDaysRemaining > 0
     ? Math.round((settings.monthlyGoal - completed) / workDaysRemaining)
     : 0;
@@ -448,7 +475,8 @@ export function predictWeeklyAI(
     const dd = String(d.getDate()).padStart(2, "0");
     const dateStr = `${y}-${m}-${dd}`;
     const w = weatherForecast[i] || "sunny";
-    const pred = predictTomorrowAI(records, w);
+    // 使用按日期预测，特殊事件（如 8-7 奶茶节）会在对应日期生效
+    const pred = predictForDateAI(records, dateStr, w);
     result.push({ day: weekdays[d.getDay()], date: dateStr, predicted: pred.predictedOrders, weather: w });
   }
   const totalPredicted = result.reduce((s, r) => s + r.predicted, 0);

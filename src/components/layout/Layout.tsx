@@ -23,16 +23,15 @@ function Clock() {
 
 export default function Layout() {
   const loadData = useStore((s) => s.loadData);
-  const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline">("synced");
+  const syncStatus = useStore((s) => s.syncStatus);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const triggerSync = useCallback(() => {
-    setSyncStatus("syncing");
-    setTimeout(() => setSyncStatus("synced"), 2000);
-  }, []);
+    loadData();
+  }, [loadData]);
 
   return (
     <div className="min-h-screen min-h-dvh text-[#E0E0E0] relative">
