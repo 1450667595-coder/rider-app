@@ -10,7 +10,7 @@ import {
   BarChart3,
   Award,
 } from "lucide-react";
-import { prefetchPage } from "@/App";
+import { prefetchPage } from "@/utils/prefetch";
 
 interface NavItem {
   to: string;
