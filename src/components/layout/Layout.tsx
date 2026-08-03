@@ -4,7 +4,8 @@ import BottomNav from "./BottomNav";
 import ToastContainer from "@/components/shared/Toast";
 import useStore from "@/store/useStore";
 
-function useClock() {
+// 独立时钟组件：状态不提升，避免 Layout 和 Outlet 每秒/每 30 秒重新渲染
+function Clock() {
   const [time, setTime] = useState("");
   useEffect(() => {
     const update = () => {
@@ -17,12 +18,11 @@ function useClock() {
     const id = setInterval(update, 30000);
     return () => clearInterval(id);
   }, []);
-  return time;
+  return <span className="status-bar-clock">{time}</span>;
 }
 
 export default function Layout() {
   const loadData = useStore((s) => s.loadData);
-  const clock = useClock();
   const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline">("synced");
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function Layout() {
           </span>
         </div>
         <div className="status-bar-right">
-          <span className="status-bar-clock">{clock}</span>
+          <Clock />
         </div>
       </div>
 

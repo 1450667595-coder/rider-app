@@ -53,7 +53,7 @@ const Sparkline = memo(function Sparkline({ data, color = "#00E5FF", height = 28
   );
 });
 
-export default function Dashboard() {
+function Dashboard() {
   const saveRecord = useStore((s) => s.saveRecord);
   const settings = useStore(useShallow((s) => s.settings));
   const [showConfetti, setShowConfetti] = useState(false);
@@ -449,3 +449,5 @@ export default function Dashboard() {
     </motion.div>
   );
 }
+
+export default memo(Dashboard);

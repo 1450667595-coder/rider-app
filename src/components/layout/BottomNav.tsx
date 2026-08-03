@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, memo, useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -39,7 +39,7 @@ function useActiveIndex(items: { to: string }[], offset: number) {
   return idx >= 0 ? idx + offset : -1;
 }
 
-export default function BottomNav() {
+function BottomNav() {
   const navRef = useRef<HTMLDivElement>(null);
   const [glowStyle, setGlowStyle] = useState<{ left: number; width: number; opacity: number }>({
     left: 0,
@@ -205,3 +205,5 @@ export default function BottomNav() {
     </nav>
   );
 }
+
+export default memo(BottomNav);

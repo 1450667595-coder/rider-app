@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -56,7 +56,7 @@ const SEVERITY_COLORS: Record<string, string> = {
   severe: "text-red-400",
 };
 
-export default function Predict() {
+function Predict() {
   const records = useStore((s) => s.records);
   const settings = useStore((s) => s.settings);
   const getEffectivePrice = useStore((s) => s.getEffectivePrice);
@@ -243,9 +243,9 @@ export default function Predict() {
         ))}
       </motion.div>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="sync">
         {activeTab === "tomorrow" && (
-          <motion.div key="tomorrow" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
+          <motion.div key="tomorrow" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.15 }} className="space-y-4">
             <div className="holo-card rounded-[26px] p-6 text-center">
               <p className="text-[#E0E0E0]/40 text-sm mb-2 flex items-center justify-center gap-2 tracking-tight">
                 <Brain size={16} className="icon-glow-cyan" />
@@ -323,7 +323,7 @@ export default function Predict() {
         )}
 
         {activeTab === "weekly" && (
-          <motion.div key="weekly" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
+          <motion.div key="weekly" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.15 }} className="space-y-4">
             <div className="holo-card rounded-[26px] p-6 text-center">
               <p className="text-[#E0E0E0]/40 text-sm mb-2 tracking-tight">本周预计总单量</p>
               <AnimatedNumber value={weeklyPrediction.totalPredicted} className="text-6xl font-bold text-[#E0E0E0] neon-cyan" />
@@ -371,7 +371,7 @@ export default function Predict() {
         )}
 
         {activeTab === "monthly" && (
-          <motion.div key="monthly" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
+          <motion.div key="monthly" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.15 }} className="space-y-4">
             <div className="holo-card rounded-[26px] p-6 text-center">
               <p className="text-[#E0E0E0]/40 text-sm mb-2 tracking-tight">AI 本月预计总单量</p>
               <AnimatedNumber value={monthlyPrediction.predicted} className="text-6xl font-bold text-[#E0E0E0] neon-cyan" />
@@ -436,7 +436,7 @@ export default function Predict() {
         )}
 
         {activeTab === "hourly" && (
-          <motion.div key="hourly" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
+          <motion.div key="hourly" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.15 }} className="space-y-4">
             <div className="holo-card rounded-[26px] p-6 text-center">
               <p className="text-[#E0E0E0]/40 text-sm mb-2 flex items-center justify-center gap-2 tracking-tight">
                 <Clock size={16} className="icon-glow-cyan" />
@@ -510,7 +510,7 @@ export default function Predict() {
         )}
 
         {activeTab === "rainy" && (
-          <motion.div key="rainy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
+          <motion.div key="rainy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.15 }} className="space-y-4">
             <div className="holo-card rounded-[26px] p-6 text-center">
               <p className="text-[#E0E0E0]/40 text-sm mb-2 flex items-center justify-center gap-2 tracking-tight">
                 <CloudRain size={16} className="icon-glow-cyan" />
@@ -584,7 +584,7 @@ export default function Predict() {
         )}
 
         {activeTab === "trend" && (
-          <motion.div key="trend" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
+          <motion.div key="trend" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.15 }} className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               <div className="holo-card rounded-[26px] p-3 text-center">
                 <span className="text-[#E0E0E0]/30 text-xs terminal-text">最高</span>
@@ -641,7 +641,7 @@ export default function Predict() {
         )}
 
         {activeTab === "accuracy" && (
-          <motion.div key="accuracy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
+          <motion.div key="accuracy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.15 }} className="space-y-4">
             <div className="holo-card rounded-[26px] p-6 text-center">
               <p className="text-[#E0E0E0]/40 text-sm mb-2 flex items-center justify-center gap-2 tracking-tight">
                 <Shield size={16} className="icon-glow-cyan" />
@@ -666,7 +666,7 @@ export default function Predict() {
         )}
 
         {activeTab === "insights" && (
-          <motion.div key="insights" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
+          <motion.div key="insights" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.15 }} className="space-y-4">
             <div className="holo-card rounded-[26px] p-4">
               <h3 className="cyber-section-title mb-3">
                 <Bug size={16} className="text-[#FFD740]" />
@@ -727,3 +727,5 @@ export default function Predict() {
     </motion.div>
   );
 }
+
+export default memo(Predict);

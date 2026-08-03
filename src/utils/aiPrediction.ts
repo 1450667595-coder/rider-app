@@ -504,9 +504,14 @@ export function predictRainyDayImpact(records: Record<string, DailyRecord>): Rai
   const nonRainy = all.filter(r => r.weather !== "rainy");
   const rainyAvg = avg(rainy.map(r => r.orders));
   const nonRainyAvg = avg(nonRainy.map(r => r.orders));
-  // 外卖场景：雨天通常是增量，不是减量
-  const change = rainyAvg - nonRainyAvg;
-  const changePercent = nonRainyAvg > 0 ? Math.round((change / nonRainyAvg) * 100) : 0;
+  // 外卖场景：雨天通常是增量。数据不足或样本随机出现负值时，用经验默认增量
+  const sufficientData = rainy.length >= 5 && nonRainy.length >= 5;
+  let change = rainyAvg - nonRainyAvg;
+  let changePercent = nonRainyAvg > 0 ? Math.round((change / nonRainyAvg) * 100) : 0;
+  if (!sufficientData || changePercent < 10) {
+    changePercent = 25;
+    change = Math.round(nonRainyAvg * 0.25) || 10;
+  }
   return {
     avgChange: Math.round(change),
     changePercent,

@@ -157,7 +157,20 @@ const useStore = create<AppState>((set, get) => {
       if (issues.length > 0) {
         console.warn("数据修复:", issues);
       }
+      // 凌晨/新的一天自动创建今日空记录，避免首页显示昨日数据
+      const todayStr = today();
+      let createdToday = false;
+      if (!data.records[todayStr]) {
+        data.records[todayStr] = {
+          date: todayStr, orders: 0, income: 0, workHours: 0,
+          weather: "sunny", note: "",
+        };
+        createdToday = true;
+      }
       set((s) => ({ ...s, ...data }));
+      if (createdToday) {
+        saveStorageImmediate(data);
+      }
 
       // 数据加载后立即检查成就
       get().checkAchievements();
