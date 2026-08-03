@@ -35,7 +35,7 @@ interface SpecialEvent {
   description: string;
 }
 
-const SPECIAL_EVENTS: SpecialEvent[] = [
+export const SPECIAL_EVENTS: SpecialEvent[] = [
   { date: "08-07", name: "秋天第一杯奶茶", boost: 1.60, description: "全网奶茶节，订单暴增60%" },
   { date: "02-14", name: "情人节", boost: 1.40, description: "鲜花外卖爆单" },
   { date: "05-20", name: "520表白日", boost: 1.35, description: "礼物外卖激增" },
@@ -412,13 +412,13 @@ export interface DailyDistribution {
   hourlyDistribution: { hour: number; predicted: number; label: string }[];
 }
 export interface RainyDayImpact {
-  avgDrop: number; dropPercent: number; recoveryDays: number;
-  overallImpact: { avgOrderReduction: number; confidenceInterval: [number, number]; severity: string };
+  avgChange: number; changePercent: number; recoveryDays: number;
+  overallImpact: { changePercent: number; confidenceInterval: [number, number]; severity: string };
   dataQuality: { totalRainyDays: number; totalSunnyDays: number; sufficientData: boolean };
   weatherTransition: { afterRainSpike: boolean; spikeMagnitude: number; recoveryDays: number };
   peakShift: { occurs: boolean; direction: string; shiftHours: number };
   recommendations: { priority: string; title: string; message: string }[];
-  hourlyImpact: { hour: number; label: string; isSignificant: boolean; normalOrders: number; rainyOrders: number; reduction: number }[];
+  hourlyImpact: { hour: number; label: string; isSignificant: boolean; normalOrders: number; rainyOrders: number; increasePercent: number }[];
 }
 export interface SpectralAnalysis {
   forecast: number;
@@ -508,13 +508,13 @@ export function predictRainyDayImpact(records: Record<string, DailyRecord>): Rai
   const change = rainyAvg - nonRainyAvg;
   const changePercent = nonRainyAvg > 0 ? Math.round((change / nonRainyAvg) * 100) : 0;
   return {
-    avgDrop: Math.round(change), // 可能是正数（增量）
-    dropPercent: changePercent,
+    avgChange: Math.round(change),
+    changePercent,
     recoveryDays: 0,
     overallImpact: {
-      avgOrderReduction: changePercent,
-      confidenceInterval: [Math.min(0, changePercent - 10), changePercent + 10],
-      severity: changePercent > 20 ? "severe" : changePercent > 5 ? "moderate" : "mild",
+      changePercent,
+      confidenceInterval: [Math.max(-50, changePercent - 10), Math.min(100, changePercent + 10)],
+      severity: Math.abs(changePercent) > 20 ? "severe" : Math.abs(changePercent) > 5 ? "moderate" : "mild",
     },
     dataQuality: { totalRainyDays: rainy.length, totalSunnyDays: nonRainy.length, sufficientData: rainy.length >= 3 },
     weatherTransition: { afterRainSpike: false, spikeMagnitude: 0, recoveryDays: 0 },
@@ -531,9 +531,9 @@ export function predictRainyDayImpact(records: Record<string, DailyRecord>): Rai
         { priority: "low", title: "关注订单变化", message: "持续观察雨天订单规律" },
       ],
     hourlyImpact: [
-      { hour: 11, label: "11:00-12:00", isSignificant: true, normalOrders: 8, rainyOrders: 10, reduction: -25 },
-      { hour: 12, label: "12:00-13:00", isSignificant: true, normalOrders: 7, rainyOrders: 9, reduction: -28 },
-      { hour: 18, label: "18:00-19:00", isSignificant: true, normalOrders: 6, rainyOrders: 8, reduction: -33 },
+      { hour: 11, label: "11:00-12:00", isSignificant: true, normalOrders: 8, rainyOrders: 10, increasePercent: 25 },
+      { hour: 12, label: "12:00-13:00", isSignificant: true, normalOrders: 7, rainyOrders: 9, increasePercent: 28 },
+      { hour: 18, label: "18:00-19:00", isSignificant: true, normalOrders: 6, rainyOrders: 8, increasePercent: 33 },
     ],
   };
 }

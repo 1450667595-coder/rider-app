@@ -2,7 +2,7 @@
   "name": "骑手工作台",
   "short_name": "骑手工作台",
   "description": "美团骑手每日单量记录、收入预测、智能分析工具",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0F0F23",
