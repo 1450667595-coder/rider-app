@@ -220,6 +220,7 @@ export default function Records() {
               const dateStr = `${monthPrefix}-${String(day).padStart(2, "0")}`;
               const record = records[dateStr];
               const orders = record?.orders || 0;
+              const isRestDay = record && record.orders === 0;
               const todayFlag = isToday(dateStr);
               return (
                 <motion.button
@@ -232,6 +233,7 @@ export default function Records() {
                 >
                   <span className={`text-xs font-medium ${todayFlag ? "text-[#00E5FF] drop-shadow-[0_0_6px_rgba(0,229,255,0.4)]" : orders > 0 ? "text-[#E0E0E0]" : "text-[#E0E0E0]/30"}`}>{day}</span>
                   {orders > 0 && <span className="text-[10px] text-[#E0E0E0]/55 font-semibold leading-none">{orders}</span>}
+                  {isRestDay && <span className="text-[8px] text-[#E040FB]/60 leading-none">休</span>}
                 </motion.button>
               );
             })}
