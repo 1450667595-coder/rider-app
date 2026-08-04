@@ -75,11 +75,12 @@ export default function Weekly() {
     const workDays = thisWeekData.filter((d) => d.orders > 0).length;
     const avgDaily = workDays > 0 ? Math.round(totalOrders / workDays) : 0;
 
-    // 单/小时：优先使用实际录入的工时；未录入时按 8 小时/天估算并标记
+    // 单/小时：工时未完整录入时按 8 小时/天估算并标记，避免虚高
     let hourlyRate = 0;
     let hourlyRateEstimated = false;
     if (workDays > 0) {
-      if (recordedHours > 0 && daysWithHours > 0) {
+      const hoursComplete = daysWithHours >= workDays;
+      if (recordedHours > 0 && hoursComplete) {
         hourlyRate = Math.round(totalOrders / recordedHours * 10) / 10;
       } else {
         hourlyRate = Math.round((totalOrders / (workDays * 8)) * 10) / 10;
