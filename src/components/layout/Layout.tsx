@@ -24,12 +24,12 @@ function Clock() {
 }
 
 function getSyncLabel(status: SyncStatus): string {
-  if (!isSupabaseConfigured()) return "点击配置云端";
+  if (!isSupabaseConfigured()) return "未配置云端";
   switch (status) {
-    case "synced": return "已同步";
-    case "syncing": return "同步中...";
-    case "error": return "同步失败";
-    case "offline": return "离线模式";
+    case "synced": return "云端已同步";
+    case "syncing": return "云端同步中...";
+    case "error": return "云端同步失败";
+    case "offline": return "云端离线";
     default: return "本地模式";
   }
 }

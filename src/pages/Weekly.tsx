@@ -106,12 +106,16 @@ export default function Weekly() {
     >
       {/* Header */}
       <motion.div variants={item} className="flex items-center justify-between">
-        <button onClick={() => setWeekOffset((o) => o + 1)} className="btn-cyber w-10 h-10 rounded-full flex items-center justify-center">
-          <ChevronLeft size={20} className="text-[#E0E0E0]/45 icon-glow-cyan" />
+        <button
+          onClick={() => setWeekOffset((o) => o + 1)}
+          className="flex items-center gap-1 px-3 py-2 rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/30 active:bg-[#00E5FF]/20 tap-cyber"
+        >
+          <ChevronLeft size={22} className="text-[#00E5FF] drop-shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
+          <span className="text-xs font-medium text-[#00E5FF]">上周</span>
         </button>
         <div className="text-center">
           <p className="terminal-text text-sm tracking-tight">周报总结</p>
-          <h1 className="text-lg font-bold text-[#E0E0E0] flex items-center gap-2 tracking-[-0.01em]">
+          <h1 className="text-lg font-bold text-[#E0E0E0] flex items-center justify-center gap-2 tracking-[-0.01em]">
             <Calendar size={18} className="icon-glow-cyan" />
             {formatDate(thisWeek.start)} - {formatDate(thisWeek.end)}
           </h1>
@@ -119,9 +123,10 @@ export default function Weekly() {
         <button
           onClick={() => setWeekOffset((o) => Math.max(0, o - 1))}
           disabled={weekOffset === 0}
-          className={`w-10 h-10 rounded-full flex items-center justify-center ${weekOffset === 0 ? "opacity-20 cursor-not-allowed" : "btn-cyber"}`}
+          className={`flex items-center gap-1 px-3 py-2 rounded-full border ${weekOffset === 0 ? "opacity-20 cursor-not-allowed border-[#E0E0E0]/10 bg-[#E0E0E0]/5" : "bg-[#00E5FF]/10 border-[#00E5FF]/30 active:bg-[#00E5FF]/20 tap-cyber"}`}
         >
-          <ChevronRight size={20} className={weekOffset === 0 ? "text-[#E0E0E0]/20" : "text-[#E0E0E0]/45 icon-glow-cyan"} />
+          <span className={`text-xs font-medium ${weekOffset === 0 ? "text-[#E0E0E0]/20" : "text-[#00E5FF]"}`}>下周</span>
+          <ChevronRight size={22} className={weekOffset === 0 ? "text-[#E0E0E0]/20" : "text-[#00E5FF] drop-shadow-[0_0_8px_rgba(0,229,255,0.6)]"} />
         </button>
       </motion.div>
 
