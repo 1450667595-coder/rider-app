@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import BottomNav from "./BottomNav";
 import ToastContainer from "@/components/shared/Toast";
 import useStore from "@/store/useStore";
+import type { SyncStatus } from "@/store/useStore";
+import { isSupabaseConfigured } from "@/services/supabase";
 
 // 独立时钟组件：状态不提升，避免 Layout 和 Outlet 每秒/每 30 秒重新渲染
 function Clock() {
@@ -21,17 +23,33 @@ function Clock() {
   return <span className="status-bar-clock">{time}</span>;
 }
 
+function getSyncLabel(status: SyncStatus): string {
+  if (!isSupabaseConfigured()) return "点击配置云端";
+  switch (status) {
+    case "synced": return "已同步";
+    case "syncing": return "同步中...";
+    case "error": return "同步失败";
+    case "offline": return "离线模式";
+    default: return "本地模式";
+  }
+}
+
 export default function Layout() {
   const loadData = useStore((s) => s.loadData);
   const syncStatus = useStore((s) => s.syncStatus);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   const triggerSync = useCallback(() => {
+    if (!isSupabaseConfigured()) {
+      navigate("/settings");
+      return;
+    }
     loadData();
-  }, [loadData]);
+  }, [loadData, navigate]);
 
   return (
     <div className="min-h-screen min-h-dvh text-[#E0E0E0] relative">
@@ -55,13 +73,7 @@ export default function Layout() {
             style={{ cursor: "pointer" }}
           >
             <span className={`sync-dot ${syncStatus}`} />
-            <span>
-              {syncStatus === "synced"
-                ? "已同步"
-                : syncStatus === "syncing"
-                ? "同步中..."
-                : "离线"}
-            </span>
+            <span>{getSyncLabel(syncStatus)}</span>
           </span>
         </div>
         <div className="status-bar-right">

@@ -193,12 +193,12 @@ export default function Records() {
     <motion.div className="px-4 pt-6 pb-24 space-y-5" variants={container} initial="hidden" animate="show">
       {/* Month Header */}
       <motion.div variants={item} className="flex items-center justify-between">
-        <button onClick={goToPrevMonth} className="btn-cyber w-10 h-10 rounded-full flex items-center justify-center">
-          <ChevronLeft size={20} className="text-[#E0E0E0]/45 icon-glow-cyan" />
+        <button onClick={goToPrevMonth} className="w-10 h-10 rounded-full flex items-center justify-center bg-[#00E5FF]/10 border border-[#00E5FF]/30 active:bg-[#00E5FF]/20 tap-cyber">
+          <ChevronLeft size={24} className="text-[#00E5FF] drop-shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
         </button>
         <h2 className="text-xl font-bold text-[#E0E0E0] neon-cyan tracking-tight">{currentYear}年{currentMonth}月</h2>
-        <button onClick={goToNextMonth} className="btn-cyber w-10 h-10 rounded-full flex items-center justify-center">
-          <ChevronRight size={20} className="text-[#E0E0E0]/45 icon-glow-cyan" />
+        <button onClick={goToNextMonth} className="w-10 h-10 rounded-full flex items-center justify-center bg-[#00E5FF]/10 border border-[#00E5FF]/30 active:bg-[#00E5FF]/20 tap-cyber">
+          <ChevronRight size={24} className="text-[#00E5FF] drop-shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
         </button>
       </motion.div>
 

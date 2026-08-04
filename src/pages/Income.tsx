@@ -216,8 +216,8 @@ export default function Income() {
     <motion.div className="px-4 pt-6 pb-24 space-y-5" variants={container} initial="hidden" animate="show">
       {/* Month Navigation */}
       <motion.div variants={item} className="flex items-center justify-between">
-        <button onClick={goToPrevMonth} className="btn-cyber w-10 h-10 rounded-full flex items-center justify-center">
-          <ChevronLeft size={20} className="text-[#E0E0E0]/45 icon-glow-cyan" />
+        <button onClick={goToPrevMonth} className="w-10 h-10 rounded-full flex items-center justify-center bg-[#00E5FF]/10 border border-[#00E5FF]/30 active:bg-[#00E5FF]/20 tap-cyber">
+          <ChevronLeft size={24} className="text-[#00E5FF] drop-shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
         </button>
         <div className="text-center">
           <h2 className="text-xl font-bold text-[#E0E0E0] neon-cyan tracking-tight">
@@ -235,9 +235,9 @@ export default function Income() {
         <button
           onClick={goToNextMonth}
           disabled={isCurrentMonth}
-          className={`w-10 h-10 rounded-full flex items-center justify-center ${isCurrentMonth ? "opacity-20 cursor-not-allowed" : "btn-cyber"}`}
+          className={`w-10 h-10 rounded-full flex items-center justify-center border ${isCurrentMonth ? "opacity-20 cursor-not-allowed border-[#E0E0E0]/10 bg-[#E0E0E0]/5" : "bg-[#00E5FF]/10 border-[#00E5FF]/30 active:bg-[#00E5FF]/20 tap-cyber"}`}
         >
-          <ChevronRight size={20} className={`${isCurrentMonth ? "text-[#E0E0E0]/20" : "text-[#E0E0E0]/45 icon-glow-cyan"}`} />
+          <ChevronRight size={24} className={isCurrentMonth ? "text-[#E0E0E0]/20" : "text-[#00E5FF] drop-shadow-[0_0_8px_rgba(0,229,255,0.6)]"} />
         </button>
       </motion.div>
 

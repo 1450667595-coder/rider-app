@@ -13,6 +13,7 @@ const Analytics = lazy(() => import(/* webpackPrefetch: true */ "@/pages/Analyti
 const Achievements = lazy(() => import(/* webpackPrefetch: true */ "@/pages/Achievements"));
 const Weekly = lazy(() => import(/* webpackPrefetch: true */ "@/pages/Weekly"));
 const WhatIf = lazy(() => import(/* webpackPrefetch: true */ "@/pages/WhatIf"));
+const Settings = lazy(() => import(/* webpackPrefetch: true */ "@/pages/Settings"));
 
 function PageLoader() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/achievements" element={<Achievements />} />
             <Route path="/whatif" element={<WhatIf />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

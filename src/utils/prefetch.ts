@@ -8,4 +8,5 @@ export const prefetchPage = {
   achievements: () => import("@/pages/Achievements"),
   weekly: () => import("@/pages/Weekly"),
   whatif: () => import("@/pages/WhatIf"),
+  settings: () => import("@/pages/Settings"),
 };

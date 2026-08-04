@@ -10,6 +10,8 @@ import { today, getCurrentMonth } from "@/utils/date";
 import {
   isSupabaseConfigured,
   SHARED_USER_ID,
+  getSyncUserId,
+  setSyncUserId,
   syncFromCloud,
   pushSingleRecordToCloud,
   pushRecordsToCloud,
@@ -25,6 +27,15 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
     promise,
     new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
   ]);
+}
+
+function ensureUserId(): string {
+  let userId = getSyncUserId();
+  if (!userId) {
+    userId = SHARED_USER_ID;
+    setSyncUserId(userId);
+  }
+  return userId;
 }
 import {
   getDeviceId,
@@ -202,7 +213,7 @@ const useStore = create<AppState>((set, get) => {
 
       // 从 Supabase 云端拉取数据（使用共享用户ID，自动同步）
       if (isSupabaseConfigured()) {
-        const userId = SHARED_USER_ID;
+        const userId = ensureUserId();
 
         set({ syncStatus: "syncing" });
         withTimeout(syncFromCloud(userId), 5000, { records: null, settings: null }).then(
@@ -303,7 +314,7 @@ const useStore = create<AppState>((set, get) => {
 
         // 立即推送到 Supabase 云端
         if (isSupabaseConfigured()) {
-          const userId = SHARED_USER_ID;
+          const userId = ensureUserId();
           const updatedRecord = newRecords[record.date];
           pushSingleRecordToCloud(userId, {
             date: updatedRecord.date,
@@ -334,7 +345,7 @@ const useStore = create<AppState>((set, get) => {
         saveStorage(toStorageData(newState));
 
         if (isSupabaseConfigured()) {
-          const authUserId = SHARED_USER_ID;
+          const authUserId = ensureUserId();
           deleteRecordFromCloud(authUserId, date);
           scheduleSync(authUserId, newRecords, toSyncSettings(newState.settings));
         }
@@ -350,7 +361,7 @@ const useStore = create<AppState>((set, get) => {
         saveStorage(toStorageData(newState));
 
         if (isSupabaseConfigured()) {
-          const userId = SHARED_USER_ID;
+          const userId = ensureUserId();
           scheduleSync(userId, newState.records, toSyncSettings(newSettings));
         }
 
@@ -428,7 +439,7 @@ const useStore = create<AppState>((set, get) => {
       saveStorage(empty);
       // 同时清理云端数据，避免下次加载时恢复旧数据
       if (isSupabaseConfigured()) {
-        clearAllCloudData(SHARED_USER_ID).catch(() => {});
+        clearAllCloudData(ensureUserId()).catch(() => {});
       }
     },
 

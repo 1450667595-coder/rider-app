@@ -1,7 +1,62 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const ENV_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const ENV_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+
+const STORAGE_KEY_URL = "rider_app_supabase_url";
+const STORAGE_KEY_ANON = "rider_app_supabase_anon";
+const STORAGE_KEY_USER_ID = "rider_app_user_id";
+
+function getStoredConfig(): { url: string; anonKey: string } {
+  try {
+    return {
+      url: localStorage.getItem(STORAGE_KEY_URL) || "",
+      anonKey: localStorage.getItem(STORAGE_KEY_ANON) || "",
+    };
+  } catch {
+    return { url: "", anonKey: "" };
+  }
+}
+
+function getSupabaseUrl(): string {
+  const stored = getStoredConfig();
+  return stored.url || ENV_SUPABASE_URL;
+}
+
+function getSupabaseAnonKey(): string {
+  const stored = getStoredConfig();
+  return stored.anonKey || ENV_SUPABASE_ANON_KEY;
+}
+
+export function setSupabaseConfig(url: string, anonKey: string) {
+  try {
+    localStorage.setItem(STORAGE_KEY_URL, url.trim());
+    localStorage.setItem(STORAGE_KEY_ANON, anonKey.trim());
+  } catch { /* ignore */ }
+  _supabase = null;
+}
+
+export function clearSupabaseConfig() {
+  try {
+    localStorage.removeItem(STORAGE_KEY_URL);
+    localStorage.removeItem(STORAGE_KEY_ANON);
+  } catch { /* ignore */ }
+  _supabase = null;
+}
+
+export function getSyncUserId(): string {
+  try {
+    return localStorage.getItem(STORAGE_KEY_USER_ID) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setSyncUserId(userId: string) {
+  try {
+    localStorage.setItem(STORAGE_KEY_USER_ID, userId.trim());
+  } catch { /* ignore */ }
+}
 
 // 共享用户ID - 所有设备共用同一个ID，实现零登录自动同步
 export const SHARED_USER_ID = "00000000-0000-0000-0000-000000000001";
@@ -11,13 +66,15 @@ let _supabase: SupabaseClient | null = null;
 function getSupabase(): SupabaseClient | null {
   if (!isSupabaseConfigured()) return null;
   if (!_supabase) {
-    _supabase = createClient(supabaseUrl, supabaseAnonKey);
+    _supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey());
   }
   return _supabase;
 }
 
 export const isSupabaseConfigured = (): boolean => {
-  return supabaseUrl !== "" && supabaseAnonKey !== "" && !supabaseUrl.includes("your-project");
+  const url = getSupabaseUrl();
+  const key = getSupabaseAnonKey();
+  return url !== "" && key !== "" && !url.includes("your-project");
 };
 
 // ── Database types ──
