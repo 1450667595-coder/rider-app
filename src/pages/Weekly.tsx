@@ -70,13 +70,26 @@ export default function Weekly() {
   const thisWeekStats = useMemo(() => {
     const totalOrders = thisWeekData.reduce((s, d) => s + d.orders, 0);
     const totalIncome = thisWeekData.reduce((s, d) => s + d.income, 0);
-    const totalHours = thisWeekData.reduce((s, d) => s + d.hours, 0);
+    const recordedHours = thisWeekData.reduce((s, d) => s + d.hours, 0);
+    const daysWithHours = thisWeekData.filter((d) => d.hours > 0).length;
     const workDays = thisWeekData.filter((d) => d.orders > 0).length;
     const avgDaily = workDays > 0 ? Math.round(totalOrders / workDays) : 0;
-    const hourlyRate = totalHours > 0 ? Math.round(totalOrders / totalHours * 10) / 10 : 0;
+
+    // 单/小时：优先使用实际录入的工时；未录入时按 8 小时/天估算并标记
+    let hourlyRate = 0;
+    let hourlyRateEstimated = false;
+    if (workDays > 0) {
+      if (recordedHours > 0 && daysWithHours > 0) {
+        hourlyRate = Math.round(totalOrders / recordedHours * 10) / 10;
+      } else {
+        hourlyRate = Math.round((totalOrders / (workDays * 8)) * 10) / 10;
+        hourlyRateEstimated = true;
+      }
+    }
+
     const maxDay = thisWeekData.reduce((max, d) => d.orders > max.orders ? d : max, thisWeekData[0]);
 
-    return { totalOrders, totalIncome, totalHours, workDays, avgDaily, hourlyRate, maxDay };
+    return { totalOrders, totalIncome, recordedHours, workDays, avgDaily, hourlyRate, hourlyRateEstimated, maxDay };
   }, [thisWeekData]);
 
   const prevWeekStats = useMemo(() => {
@@ -119,6 +132,14 @@ export default function Weekly() {
             <Calendar size={18} className="icon-glow-cyan" />
             {formatDate(thisWeek.start)} - {formatDate(thisWeek.end)}
           </h1>
+          {weekOffset > 0 && (
+            <button
+              onClick={() => setWeekOffset(0)}
+              className="text-[#00E5FF]/60 text-xs mt-1 hover:text-[#00E5FF] transition-colors"
+            >
+              返回本周
+            </button>
+          )}
         </div>
         <button
           onClick={() => setWeekOffset((o) => Math.max(0, o - 1))}
@@ -132,7 +153,7 @@ export default function Weekly() {
 
       {/* Shift Info */}
       <motion.div variants={item}>
-        <ShiftBadge />
+        <ShiftBadge weekStart={thisWeek.start} />
       </motion.div>
 
       {/* Big Numbers */}
@@ -140,7 +161,7 @@ export default function Weekly() {
         <div className="holo-card rounded-[26px] p-4">
           <div className="flex items-center gap-2 mb-1">
             <ShoppingBag size={16} className="icon-glow-cyan" />
-            <span className="terminal-text text-xs tracking-tight">本周单量</span>
+            <span className="terminal-text text-xs tracking-tight">{weekOffset === 0 ? "本周单量" : "该周单量"}</span>
           </div>
           <AnimatedNumber value={thisWeekStats.totalOrders} className="text-3xl font-bold text-[#E0E0E0] tabular-nums" />
           <span className="text-[#E0E0E0]/40 text-sm ml-1">单</span>
@@ -158,7 +179,7 @@ export default function Weekly() {
         <div className="holo-card rounded-[26px] p-4">
           <div className="flex items-center gap-2 mb-1">
             <DollarSign size={16} className="text-[#00E676]" />
-            <span className="terminal-text text-xs tracking-tight">本周收入</span>
+            <span className="terminal-text text-xs tracking-tight">{weekOffset === 0 ? "本周收入" : "该周收入"}</span>
           </div>
           <AnimatedNumber value={thisWeekStats.totalIncome} prefix="¥" className="text-3xl font-bold text-[#E0E0E0] tabular-nums" />
           <div className="flex items-center gap-1 mt-1">
@@ -179,7 +200,9 @@ export default function Weekly() {
         <div className="holo-card rounded-[26px] p-3 text-center">
           <Clock size={16} className="icon-glow-cyan mx-auto mb-1" />
           <p className="text-lg font-bold text-[#E0E0E0]">{thisWeekStats.hourlyRate}</p>
-          <p className="terminal-text text-[10px] tracking-tight">单/小时</p>
+          <p className="terminal-text text-[10px] tracking-tight">
+            {thisWeekStats.hourlyRateEstimated ? "单/小时(估)" : "单/小时"}
+          </p>
         </div>
         <div className="holo-card rounded-[26px] p-3 text-center">
           <Zap size={16} className="icon-glow-gold mx-auto mb-1" />
@@ -198,9 +221,9 @@ export default function Weekly() {
         <div className="flex items-center gap-2">
           <span className="text-2xl">🏆</span>
           <div>
-            <p className="text-[#E0E0E0] font-bold text-sm">本周最佳</p>
+            <p className="text-[#E0E0E0] font-bold text-sm">{weekOffset === 0 ? "本周最佳" : "该周最佳"}</p>
             <p className="text-[#E0E0E0]/40 text-xs">
-              {bestDayLabel} — {thisWeekStats.maxDay.orders} 单
+              {bestDayLabel} {thisWeekStats.maxDay.orders > 0 ? `— ${thisWeekStats.maxDay.orders} 单` : ""}
             </p>
           </div>
         </div>
@@ -229,8 +252,8 @@ export default function Weekly() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[#E0E0E0] text-sm font-medium">
-                      {day.orders > 0 ? `${day.orders} 单` : "休息"}
+                    <span className={`text-sm font-medium ${day.orders > 0 ? "text-[#E0E0E0]" : "text-[#E0E0E0]/30"}`}>
+                      {day.orders > 0 ? `${day.orders} 单` : "未录入"}
                     </span>
                     {day.income > 0 && (
                       <span className="text-[#00E676] text-xs">¥{day.income}</span>
