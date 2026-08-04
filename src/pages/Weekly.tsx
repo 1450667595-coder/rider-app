@@ -1,13 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar, DollarSign,
-  ShoppingBag, Clock, Award, Zap, ArrowUp, ArrowDown,
+  ShoppingBag, Clock, Award, Zap, ArrowUp, ArrowDown, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import useStore from "@/store/useStore";
 import AnimatedNumber from "@/components/shared/AnimatedNumber";
 import ShiftBadge from "@/components/shared/ShiftBadge";
-import { getWeekRange, getPreviousWeekRange, formatDate, getDayOfWeek } from "@/utils/date";
+import { getWeekRange, formatDate, getDayOfWeek, parseLocalDate } from "@/utils/date";
 import { WEATHER_LABELS } from "@/types";
 
 const WEEKDAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -25,8 +25,20 @@ const item = {
 export default function Weekly() {
   const records = useStore((s) => s.records);
 
-  const thisWeek = useMemo(() => getWeekRange(), []);
-  const prevWeek = useMemo(() => getPreviousWeekRange(), []);
+  // 支持切换不同周查看
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const thisWeek = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - weekOffset * 7);
+    return getWeekRange(d);
+  }, [weekOffset]);
+
+  const prevWeek = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - (weekOffset + 1) * 7);
+    return getWeekRange(d);
+  }, [weekOffset]);
 
   const thisWeekData = useMemo(() => {
     return thisWeek.days.map((date) => {
@@ -94,13 +106,23 @@ export default function Weekly() {
     >
       {/* Header */}
       <motion.div variants={item} className="flex items-center justify-between">
-        <div>
+        <button onClick={() => setWeekOffset((o) => o + 1)} className="btn-cyber w-10 h-10 rounded-full flex items-center justify-center">
+          <ChevronLeft size={20} className="text-[#E0E0E0]/45 icon-glow-cyan" />
+        </button>
+        <div className="text-center">
           <p className="terminal-text text-sm tracking-tight">周报总结</p>
-          <h1 className="text-2xl font-bold text-[#E0E0E0] flex items-center gap-2 tracking-[-0.01em]">
-            <Calendar size={22} className="icon-glow-cyan" />
+          <h1 className="text-lg font-bold text-[#E0E0E0] flex items-center gap-2 tracking-[-0.01em]">
+            <Calendar size={18} className="icon-glow-cyan" />
             {formatDate(thisWeek.start)} - {formatDate(thisWeek.end)}
           </h1>
         </div>
+        <button
+          onClick={() => setWeekOffset((o) => Math.max(0, o - 1))}
+          disabled={weekOffset === 0}
+          className={`w-10 h-10 rounded-full flex items-center justify-center ${weekOffset === 0 ? "opacity-20 cursor-not-allowed" : "btn-cyber"}`}
+        >
+          <ChevronRight size={20} className={weekOffset === 0 ? "text-[#E0E0E0]/20" : "text-[#E0E0E0]/45 icon-glow-cyan"} />
+        </button>
       </motion.div>
 
       {/* Shift Info */}

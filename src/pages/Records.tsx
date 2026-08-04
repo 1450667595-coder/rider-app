@@ -263,7 +263,7 @@ export default function Records() {
       {/* Edit BottomSheet */}
       <BottomSheet isOpen={selectedDate !== null} onClose={closeEditor} title={selectedDate ? `编辑记录 ${formatDate(selectedDate)} 周${getDayOfWeek(selectedDate)}` : ""}>
         {selectedDate && (
-          <div className="space-y-4 pb-4">
+          <div className="space-y-4 pb-20">
             {/* Orders */}
             <div>
               <label className="block terminal-text text-sm mb-2">单量</label>
@@ -320,29 +320,21 @@ export default function Records() {
               <label className="block terminal-text text-sm mb-2">备注</label>
               <textarea value={editForm.note} onChange={(e) => setEditForm((p) => ({ ...p, note: e.target.value }))} rows={2} placeholder="输入备注..." className="input-cyber resize-none" />
             </div>
+
+            {/* Action buttons inside BottomSheet */}
+            <div className="flex gap-3 pt-4">
+              <button onClick={handleDelete} className="btn-cyber-danger flex-1 py-3.5 rounded-xl flex items-center justify-center gap-2">
+                <Trash2 size={16} />
+                <span className="text-sm font-medium">删除</span>
+              </button>
+              <button onClick={handleSave} className="btn-cyber-primary flex-[2] py-3.5 rounded-xl font-bold flex items-center justify-center gap-2">
+                <Edit3 size={16} />
+                <span>保存</span>
+              </button>
+            </div>
           </div>
         )}
       </BottomSheet>
-
-      {/* Fixed action buttons at bottom of sheet */}
-      {selectedDate && (
-        <div className="fixed bottom-0 left-0 right-0 z-[60] px-4 pb-7 pt-3"
-          style={{
-            background: "linear-gradient(180deg, transparent, rgba(4, 6, 16, 0.96) 40%)",
-          }}
-        >
-          <div className="flex gap-3 max-w-lg mx-auto">
-            <button onClick={handleDelete} className="btn-cyber-danger flex-1 py-3.5 rounded-xl flex items-center justify-center gap-2">
-              <Trash2 size={16} />
-              <span className="text-sm font-medium">删除</span>
-            </button>
-            <button onClick={handleSave} className="btn-cyber-primary flex-[2] py-3.5 rounded-xl font-bold flex items-center justify-center gap-2">
-              <Edit3 size={16} />
-              <span>保存</span>
-            </button>
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 }
