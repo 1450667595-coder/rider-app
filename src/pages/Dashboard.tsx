@@ -11,7 +11,7 @@ import WeatherWidget from "@/components/shared/WeatherWidget";
 import ShiftBadge from "@/components/shared/ShiftBadge";
 import SyncIndicator from "@/components/shared/SyncIndicator";
 import { showToast } from "@/components/shared/Toast";
-import { today } from "@/utils/date";
+import { today, formatDateShort } from "@/utils/date";
 import { exportBackup, importBackup } from "@/utils/storage";
 import { Weather, WEATHER_LABELS } from "@/types";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -74,7 +74,7 @@ function Dashboard() {
   useEffect(() => {
     const todaysRec = data.todaysRecord;
     if (todaysRec?.weather) setRealWeather(todaysRec.weather);
-  }, []);
+  }, [data.todaysRecord]);
 
   const handleExportJSON = () => {
     const json = exportBackup();
@@ -183,7 +183,8 @@ function Dashboard() {
 
   const { todayOrders, todayIncome, todayGoalPercent, monthOrders, monthIncome, goalProgress, effectivePrice, bonusGap,
     monthlyPrediction, predictedIncome, tomorrowPrediction, insights,
-    weekComparison, monthComparison, weatherComparison, efficiencyData, dataHealth } = data;
+    weekComparison, monthComparison, weatherComparison, efficiencyData,
+    dataHealth, goalProbability, bestWorkDays } = data;
 
   return (
     <motion.div className="px-4 pt-6 pb-4 space-y-4" variants={container} initial="hidden" animate="show">
@@ -193,23 +194,63 @@ function Dashboard() {
       <motion.div variants={item} className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="terminal-text text-[10px] bg-[#00E5FF]/5 border border-[#00E5FF]/10 rounded-full px-2.5 py-0.5">系统在线</span>
+            <span className="terminal-text text-[10px] bg-[#00E5FF]/5 border border-[#00E5FF]/10 rounded-full px-2.5 py-0.5 pulse-ring flex items-center gap-1.5 data-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00E676] animate-pulse" />
+              系统在线
+            </span>
             <span className="text-[#E0E0E0]/30 text-sm tracking-tight">
-              {getGreeting()}, <span className="text-[#E0E0E0]/70 font-semibold">{settings.riderName}</span>
+              {getGreeting()}, <span className="text-[#E0E0E0]/70 font-semibold holo-text-flicker">{settings.riderName}</span>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <SyncIndicator />
           </div>
         </div>
+        <div className="relative">
+          <h1 className="text-2xl font-bold text-[#E0E0E0] tracking-[-0.02em] cyber-glitch neon-text-pulse" data-text="RIDER POWER">RIDER POWER</h1>
+          <p className="terminal-text text-[10px] text-[#00E5FF]/40 mt-1">骑手工作台 · 智能预测系统 v7.0</p>
+        </div>
         <LiveClock />
+
+        {/* 数据健康 HUD */}
+        {dataHealth.visible && (
+          <div className="holo-card rounded-2xl p-3 border border-[#00E5FF]/10 tech-grid-card">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <p className="text-[#E0E0E0]/30 text-[9px] terminal-text uppercase tracking-wider">记录数</p>
+                <p className="text-[#E0E0E0] text-sm font-bold neon-cyan">{dataHealth.totalRecords}</p>
+                <p className="text-[#E0E0E0]/20 text-[8px] terminal-text mt-0.5">{dataHealth.maxStreak} 天连记</p>
+              </div>
+              <div>
+                <p className="text-[#E0E0E0]/30 text-[9px] terminal-text uppercase tracking-wider">近7天覆盖</p>
+                <p className="text-[#00E676] text-sm font-bold">{dataHealth.coveragePercent}<span className="text-[#E0E0E0]/30 text-[9px]">%</span></p>
+                <p className="text-[#E0E0E0]/20 text-[8px] terminal-text mt-0.5">近30天 {dataHealth.coverage30Percent}%</p>
+              </div>
+              <div className="flex flex-col items-center">
+                <p className="text-[#E0E0E0]/30 text-[9px] terminal-text uppercase tracking-wider">数据质量</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-sm font-bold" style={{ color: dataHealth.statusColor }}>{dataHealth.dataQualityScore}</span>
+                  <ProgressRing progress={dataHealth.dataQualityScore} size={22} strokeWidth={2.5} color={dataHealth.statusColor} bgColor={`${dataHealth.statusColor}20`} />
+                </div>
+                <p className="text-[8px] terminal-text mt-0.5" style={{ color: dataHealth.statusColor }}>{dataHealth.statusLabel}</p>
+              </div>
+            </div>
+            <div className="cyber-scan-line mt-2" />
+          </div>
+        )}
       </motion.div>
 
       <WeatherWidget onWeatherChange={handleWeatherChange} />
       <ShiftBadge />
 
       {/* 主单量卡片 */}
-      <motion.div variants={item} className="holo-card-strong rounded-[24px] p-6 relative overflow-hidden stat-card-enhanced">
+      <motion.div variants={item} className="holo-card-strong rounded-[24px] p-6 relative overflow-hidden stat-card-enhanced corner-brackets holo-shimmer neon-flicker cyber-data-stream">
+        <div className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse at 50% 0%, rgba(0,229,255,0.08) 0%, transparent 60%)",
+          }}
+        />
+        <div className="cyber-scan-line absolute top-5 left-6 right-6 z-10" />
         <div className="flex items-center justify-between mb-5 relative z-10">
           <div className="cyber-section-title"><Zap size={15} className="icon-glow-cyan" />今日单量</div>
           <div className="flex items-center gap-2">
@@ -250,7 +291,7 @@ function Dashboard() {
 
       {/* 指标卡片 */}
       <motion.div variants={item} className="grid grid-cols-2 gap-3">
-        <div className="holo-card rounded-[22px] p-4 stat-card-enhanced">
+        <div className="holo-card rounded-[22px] p-4 stat-card-enhanced corner-brackets">
           <div className="flex items-center gap-2 mb-2"><ShoppingBag size={15} className="icon-glow-gold" /><span className="terminal-text text-[10px] text-[#E0E0E0]/30">本月单量</span></div>
           <AnimatedNumber value={monthOrders} className="text-[26px] font-bold text-[#E0E0E0] tabular-nums tracking-[-0.01em]" />
           <span className="text-[#E0E0E0]/40 text-sm ml-1">单</span>
@@ -259,25 +300,58 @@ function Dashboard() {
             {monthOrders >= settings.bonusThreshold ? `奖励已激活 ¥${settings.bonusPrice}/单` : `距奖励还差 ${bonusGap} 单`}
           </p>
         </div>
-        <div className="holo-card rounded-[22px] p-4 stat-card-enhanced">
+        <div className="holo-card rounded-[22px] p-4 stat-card-enhanced corner-brackets">
           <div className="flex items-center gap-2 mb-2"><DollarSign size={15} className="icon-glow-green" /><span className="terminal-text text-[10px] text-[#E0E0E0]/30">今日收入</span></div>
           <AnimatedNumber value={todayIncome} prefix="¥" className="text-[26px] font-bold text-[#E0E0E0] tabular-nums tracking-[-0.01em]" />
           {efficiencyData && efficiencyData.recentOrders.length >= 2 && (
             <div className="mt-1 flex justify-end"><Sparkline data={efficiencyData.recentOrders.slice(-7)} color="#00E676" height={20} width={60} /></div>
           )}
         </div>
-        <div className="holo-card rounded-[22px] p-4 stat-card-enhanced">
+        <div className="holo-card rounded-[22px] p-4 stat-card-enhanced corner-brackets">
           <div className="flex items-center gap-2 mb-2"><Target size={15} className="icon-glow-magenta" /><span className="terminal-text text-[10px] text-[#E0E0E0]/30">目标进度</span></div>
           <div className="flex items-center gap-2">
             <span className="text-[26px] font-bold text-[#E0E0E0] tracking-[-0.01em]">{goalProgress}%</span>
             <ProgressRing progress={goalProgress} size={40} strokeWidth={3} color="#00E5FF" bgColor="rgba(0,229,255,0.06)" />
           </div>
         </div>
-        <div className="holo-card rounded-[22px] p-4 stat-card-enhanced">
+        <div className="holo-card rounded-[22px] p-4 stat-card-enhanced corner-brackets">
           <div className="flex items-center gap-2 mb-2"><TrendingUp size={15} className="icon-glow-cyan" /><span className="terminal-text text-[10px] text-[#E0E0E0]/30">本月收入</span></div>
           <AnimatedNumber value={monthIncome} prefix="¥" className="text-[26px] font-bold text-[#E0E0E0] tabular-nums tracking-[-0.01em]" />
           {efficiencyData && efficiencyData.recentOrders.length >= 2 && (
             <div className="mt-1 flex justify-end"><Sparkline data={efficiencyData.recentOrders.slice(-7)} color="#00E5FF" height={20} width={60} /></div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* 智能建议 */}
+      <motion.div variants={item} className="grid grid-cols-2 gap-3">
+        <div className="holo-card rounded-[22px] p-4 stat-card-enhanced corner-brackets holo-shimmer neon-flicker">
+          <div className="flex items-center gap-2 mb-2"><Target size={15} className="icon-glow-magenta" /><span className="terminal-text text-[10px] text-[#E0E0E0]/30">目标达成概率</span></div>
+          <div className="flex items-center gap-3">
+            <AnimatedNumber value={goalProbability.probability} suffix="%" className="text-[28px] font-bold text-[#E0E0E0] tabular-nums tracking-[-0.01em] neon-magenta" />
+            <ProgressRing progress={goalProbability.probability} size={36} strokeWidth={3} color="#E040FB" bgColor="rgba(224,64,251,0.08)" />
+          </div>
+          <p className="text-[#E0E0E0]/30 text-[9px] mt-2 leading-relaxed">{goalProbability.message}</p>
+        </div>
+        <div className="holo-card rounded-[22px] p-4 stat-card-enhanced corner-brackets holo-shimmer">
+          <div className="flex items-center gap-2 mb-2"><Zap size={15} className="icon-glow-gold" /><span className="terminal-text text-[10px] text-[#E0E0E0]/30">最佳赚钱日</span></div>
+          {bestWorkDays.length > 0 ? (
+            <div className="space-y-2">
+              {bestWorkDays.slice(0, 2).map((d) => (
+                <div key={d.date} className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[#E0E0E0] text-sm font-medium">{formatDateShort(d.date)}</p>
+                    <p className="text-[#E0E0E0]/30 text-[9px]">{WEATHER_LABELS[d.weather]} · {d.reason}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[#FFD740] text-sm font-bold">{d.predictedOrders}</p>
+                    <p className="text-[#E0E0E0]/30 text-[9px]">单</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[#E0E0E0]/20 text-xs py-2">记录更多数据后解锁推荐</p>
           )}
         </div>
       </motion.div>
@@ -329,7 +403,7 @@ function Dashboard() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="holo-card rounded-[22px] p-4 stat-card-enhanced">
+          <div className="holo-card rounded-[22px] p-4 stat-card-enhanced corner-brackets holo-shimmer">
             <p className="terminal-text text-[10px] text-[#E0E0E0]/30 mb-1">明日预估</p>
             <span className="text-[32px] font-bold text-[#E0E0E0] tracking-[-0.02em] neon-cyan">{tomorrowPrediction.predictedOrders}</span>
             <span className="text-[#E0E0E0]/40 text-sm ml-1">单</span>
@@ -339,7 +413,7 @@ function Dashboard() {
               </span>
             </div>
           </div>
-          <div className="holo-card rounded-[22px] p-4 stat-card-enhanced">
+          <div className="holo-card rounded-[22px] p-4 stat-card-enhanced corner-brackets holo-shimmer">
             <p className="terminal-text text-[10px] text-[#E0E0E0]/30 mb-1">本月预估收入</p>
             <span className="text-[32px] font-bold text-[#E0E0E0] tracking-[-0.02em] neon-gold">¥{predictedIncome.toLocaleString()}</span>
             <p className="terminal-text text-[9px] text-[#E0E0E0]/20 mt-2">预计 {monthlyPrediction.predicted} 单 ({monthlyPrediction.lowEstimate}-{monthlyPrediction.highEstimate})</p>
@@ -354,7 +428,7 @@ function Dashboard() {
           <div className="space-y-2">
             {insights.slice(0, 3).map((insight, i) => (
               <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
-                className={`holo-card rounded-[22px] p-4 ${insight.priority === "high" ? "!border-[#FFD740]/20" : ""}`}>
+                className={`holo-card rounded-[22px] p-4 corner-brackets ${insight.priority === "high" ? "!border-[#FFD740]/25" : ""}`}>
                 <div className="flex items-start gap-3">
                   <span className="text-xl mt-0.5">{insight.icon}</span>
                   <div className="flex-1 min-w-0">
@@ -444,7 +518,7 @@ function Dashboard() {
             </motion.div>
           )}
         </AnimatePresence>
-        <button className="fab-button" onClick={() => setShowFab(!showFab)}>{showFab ? <X size={20} /> : <Wrench size={20} />}</button>
+        <button className="fab-button pulse-ring" onClick={() => setShowFab(!showFab)}>{showFab ? <X size={20} /> : <Wrench size={20} />}</button>
       </div>
     </motion.div>
   );

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, memo, useMemo } from "react";
+import { useRef, useEffect, useState, memo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -8,7 +8,7 @@ import {
   FileText,
   Target,
   BarChart3,
-  Award,
+  Sparkles,
 } from "lucide-react";
 import { prefetchPage } from "@/utils/prefetch";
 
@@ -32,7 +32,7 @@ const rightItems: NavItem[] = [
   { to: "/weekly", icon: FileText, label: "周报", badgeDot: true, prefetch: prefetchPage.weekly },
   { to: "/goals", icon: Target, label: "目标", prefetch: prefetchPage.goals },
   { to: "/analytics", icon: BarChart3, label: "看板", prefetch: prefetchPage.analytics },
-  { to: "/achievements", icon: Award, label: "成就", prefetch: prefetchPage.achievements },
+  { to: "/whatif", icon: Sparkles, label: "反事实", prefetch: prefetchPage.whatif },
 ];
 
 function useActiveIndex(items: { to: string }[], offset: number) {
@@ -82,6 +82,65 @@ function BottomNav() {
     return () => clearTimeout(id);
   }, []);
 
+  // 统一的导航项渲染函数
+  const renderNavItem = (item: NavItem) => (
+    <NavLink
+      key={item.to}
+      to={item.to}
+      data-nav-item
+      onPointerEnter={() => item.prefetch?.()}
+      onTouchStart={() => item.prefetch?.()}
+      className={({ isActive }) =>
+        `flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full transition-all duration-300 tap-cyber nav-tap-haptic ${
+          isActive ? "nav-cyber-active" : ""
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <div className="relative">
+            <item.icon
+              size={16}
+              strokeWidth={isActive ? 2.5 : 1.5}
+              className={`transition-all duration-300 ${
+                isActive ? "text-[#00E5FF]" : "text-[#E0E0E0]/25"
+              }`}
+              style={
+                isActive
+                  ? { filter: "drop-shadow(0 0 8px rgba(0,229,255,0.5))" }
+                  : undefined
+              }
+            />
+            {isActive && (
+              <div
+                className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                style={{
+                  background: "radial-gradient(circle, #00E5FF, #00B0D0)",
+                  boxShadow: "0 0 8px rgba(0,229,255,0.6)",
+                }}
+              />
+            )}
+            {/* 徽章 */}
+            {item.badge && (
+              <span className="nav-badge">{item.badge > 99 ? "99+" : item.badge}</span>
+            )}
+            {item.badgeDot && <span className="nav-badge-dot" />}
+          </div>
+          <span
+            className={`text-[9px] font-medium leading-none tracking-wider transition-all duration-300 ${
+              isActive ? "text-[#00E5FF]" : "text-[#E0E0E0]/25"
+            }`}
+            style={
+              isActive ? { textShadow: "0 0 8px rgba(0,229,255,0.4)" } : undefined
+            }
+          >
+            {item.label}
+          </span>
+        </>
+      )}
+    </NavLink>
+  );
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30">
       <div className="cyber-nav relative overflow-visible">
@@ -100,122 +159,13 @@ function BottomNav() {
           className="flex items-center justify-around max-w-lg mx-auto h-[62px] px-1 relative"
         >
           {/* 左侧导航项 */}
-          {leftItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              data-nav-item
-              onPointerEnter={() => item.prefetch?.()}
-              onTouchStart={() => item.prefetch?.()}
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full transition-all duration-300 tap-cyber nav-tap-haptic ${
-                  isActive ? "nav-cyber-active" : ""
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <div className="relative">
-                    <item.icon
-                      size={16}
-                      strokeWidth={isActive ? 2.5 : 1.5}
-                      className={`transition-all duration-300 ${
-                        isActive ? "text-[#00E5FF]" : "text-[#E0E0E0]/25"
-                      }`}
-                      style={
-                        isActive
-                          ? { filter: "drop-shadow(0 0 8px rgba(0,229,255,0.5))" }
-                          : undefined
-                      }
-                    />
-                    {isActive && (
-                      <div
-                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                        style={{
-                          background: "radial-gradient(circle, #00E5FF, #00B0D0)",
-                          boxShadow: "0 0 8px rgba(0,229,255,0.6)",
-                        }}
-                      />
-                    )}
-                    {/* 徽章 */}
-                    {item.badge && (
-                      <span className="nav-badge">{item.badge > 99 ? "99+" : item.badge}</span>
-                    )}
-                    {item.badgeDot && <span className="nav-badge-dot" />}
-                  </div>
-                  <span
-                    className={`text-[9px] font-medium leading-none tracking-wider transition-all duration-300 ${
-                      isActive ? "text-[#00E5FF]" : "text-[#E0E0E0]/25"
-                    }`}
-                    style={
-                      isActive ? { textShadow: "0 0 8px rgba(0,229,255,0.4)" } : undefined
-                    }
-                  >
-                    {item.label}
-                  </span>
-                </>
-              )}
-            </NavLink>
-          ))}
+          {leftItems.map(renderNavItem)}
+
+          {/* 中心分隔装饰 */}
+          <div className="cyber-divider" />
 
           {/* 右侧导航项 */}
-          {rightItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              data-nav-item
-              onPointerEnter={() => item.prefetch?.()}
-              onTouchStart={() => item.prefetch?.()}
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full transition-all duration-300 tap-cyber nav-tap-haptic ${
-                  isActive ? "nav-cyber-active" : ""
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <div className="relative">
-                    <item.icon
-                      size={16}
-                      strokeWidth={isActive ? 2.5 : 1.5}
-                      className={`transition-all duration-300 ${
-                        isActive ? "text-[#00E5FF]" : "text-[#E0E0E0]/25"
-                      }`}
-                      style={
-                        isActive
-                          ? { filter: "drop-shadow(0 0 8px rgba(0,229,255,0.5))" }
-                          : undefined
-                      }
-                    />
-                    {isActive && (
-                      <div
-                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                        style={{
-                          background: "radial-gradient(circle, #00E5FF, #00B0D0)",
-                          boxShadow: "0 0 8px rgba(0,229,255,0.6)",
-                        }}
-                      />
-                    )}
-                    {/* 徽章 */}
-                    {item.badge && (
-                      <span className="nav-badge">{item.badge > 99 ? "99+" : item.badge}</span>
-                    )}
-                    {item.badgeDot && <span className="nav-badge-dot" />}
-                  </div>
-                  <span
-                    className={`text-[9px] font-medium leading-none tracking-wider transition-all duration-300 ${
-                      isActive ? "text-[#00E5FF]" : "text-[#E0E0E0]/25"
-                    }`}
-                    style={
-                      isActive ? { textShadow: "0 0 8px rgba(0,229,255,0.4)" } : undefined
-                    }
-                  >
-                    {item.label}
-                  </span>
-                </>
-              )}
-            </NavLink>
-          ))}
+          {rightItems.map(renderNavItem)}
         </div>
       </div>
     </nav>

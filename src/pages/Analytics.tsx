@@ -12,12 +12,11 @@ import {
   gaussianProcessPredict,
   spectralResidualAnalysis,
   empiricalModeDecomposition,
-  computePredictionAccuracy,
   trackPredictionAccuracy,
   predictTomorrowAI,
 } from "@/utils/aiPrediction";
-import type { SpectralAnalysis, PredictionRecord } from "@/utils/aiPrediction";
-import { Weather, WEATHER_LABELS, DailyRecord } from "@/types";
+import type { PredictionRecord } from "@/utils/aiPrediction";
+import { Weather, WEATHER_LABELS } from "@/types";
 
 const WEEK_DAYS = ["日", "一", "二", "三", "四", "五", "六"];
 const WEEK_DAYS_FULL = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -34,6 +33,7 @@ const item = {
 
 export default function Analytics() {
   const records = useStore((s) => s.records);
+  const settings = useStore((s) => s.settings);
   const saveRecord = useStore((s) => s.saveRecord);
   const [viewMode, setViewMode] = useState<"week" | "month" | "weather" | "dow" | "anomaly" | "deep" | "trend" | "distribution" | "forecast" | "correlation">("week");
 
@@ -175,7 +175,7 @@ export default function Analytics() {
       const pastRecords = Object.fromEntries(
         sorted.slice(0, i).map(r => [r.date, r])
       );
-      const pred = predictTomorrowAI(pastRecords, sorted[i].weather);
+      const pred = predictTomorrowAI(pastRecords, sorted[i].weather, settings);
       predictionRecords.push({
         date: sorted[i].date,
         predicted: pred.predictedOrders,
@@ -189,7 +189,7 @@ export default function Analytics() {
       tracker = trackPredictionAccuracy(tracker, record);
     }
     return tracker;
-  }, [records]);
+  }, [records, settings]);
 
   // v10.0: 分布分析（分位数 + 分布形态）
   const distributionAnalysis = useMemo(() => {
@@ -395,7 +395,7 @@ export default function Analytics() {
             onClick={() => setViewMode(tab.key)}
             className={`tap-cyber shrink-0 px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
               viewMode === tab.key
-                ? "bg-[#00E5FF] text-[#020408]"
+                ? "bg-[#00E5FF] text-[#020408] shadow-[0_0_12px_rgba(0,229,255,0.4)]"
                 : "text-[#E0E0E0]/30 hover:text-[#E0E0E0]"
             }`}
           >
@@ -846,7 +846,7 @@ export default function Analytics() {
             </div>
           ) : (
             weatherStats.map((stat) => (
-              <div key={stat.weather} className="holo-card rounded-[26px] p-4 flex items-center gap-4">
+              <div key={stat.weather} className="holo-card rounded-[26px] p-4 flex items-center gap-4 stat-card-enhanced corner-brackets">
                 <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-[#E0E0E0]/30">
                   {weatherIcons[stat.weather]}
                 </div>
@@ -876,7 +876,7 @@ export default function Analytics() {
               const barWidth = maxDowOrders > 0 ? (d.avgOrders / maxDowOrders) * 100 : 0;
               const isWeekend = d.short === "六" || d.short === "日";
               return (
-                <div key={d.day} className="holo-card rounded-xl p-3">
+                <div key={d.day} className="holo-card rounded-xl p-3 stat-card-enhanced">
                   <div className="flex items-center gap-3">
                     <div className="w-10 text-center">
                       <p className={`text-xs font-bold ${isWeekend ? "text-[#E040FB]" : "text-[#E0E0E0]/30"}`}>

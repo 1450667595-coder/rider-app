@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Cloud, Wind, Droplets, RefreshCw, ChevronDown, ChevronUp, Calendar, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useWeather } from "@/hooks/useWeather";
 import { weatherCodeToOurWeather, getWeatherForecastSummary, getWeatherImpactScore } from "@/services/weather";
-import type { Weather, DailyRecord } from "@/types";
-import useStore from "@/store/useStore";
+import type { Weather } from "@/types";
 
 interface WeatherWidgetProps {
   onWeatherChange?: (weather: Weather) => void;
@@ -14,8 +13,6 @@ export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
   const { weather, forecast, loading, error, refetch } = useWeather();
   const prevWeatherRef = useRef<Weather | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const records = useStore((s) => s.records);
-  const saveRecord = useStore((s) => s.saveRecord);
 
   useEffect(() => {
     if (weather && onWeatherChange) {
@@ -58,8 +55,6 @@ export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
       </button>
     );
   }
-
-  const currentWeather = weatherCodeToOurWeather(weather.weatherCode);
 
   return (
     <motion.div

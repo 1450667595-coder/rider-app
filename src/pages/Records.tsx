@@ -5,7 +5,7 @@ import useStore from "@/store/useStore";
 import AnimatedNumber from "@/components/shared/AnimatedNumber";
 import BottomSheet from "@/components/shared/BottomSheet";
 import { showToast } from "@/components/shared/Toast";
-import { Weather, DailyRecord, WEATHER_OPTIONS, WEATHER_LABELS } from "@/types";
+import { Weather, DailyRecord, WEATHER_OPTIONS } from "@/types";
 import { fetchWeatherByCoords, weatherCodeToOurWeather, getUserLocation } from "@/services/weather";
 import {
   today,
@@ -187,17 +187,6 @@ export default function Records() {
       return;
     }
     handleOrdersChange(num);
-  };
-
-  const handleIncomeBlur = () => {
-    if (incomeInput === "") return;
-    const num = Number(incomeInput);
-    if (isNaN(num)) {
-      setIncomeInput("");
-      return;
-    }
-    setEditForm((p) => ({ ...p, income: num }));
-    setIncomeInput(String(num));
   };
 
   return (

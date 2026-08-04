@@ -43,6 +43,10 @@ export interface UserSettings {
   bonusThreshold: number;
   workDaysPerWeek: number;
   currentShift: ShiftType;
+  // 班次基准：从该周一开始，每周自动轮换
+  shiftStartDate?: string;
+  // 每周班次覆盖：key 为周一日期 YYYY-MM-DD，value 为班次
+  weeklyShifts?: Record<string, ShiftType>;
 }
 
 export interface Achievement {
@@ -67,6 +71,8 @@ export interface PredictionResult {
   predictedOrders: number;
   confidence: "high" | "medium" | "low";
   factors: { label: string; impact: string }[];
+  interval?: { low: number; high: number };
+  modelWeights?: { label: string; weight: number }[];
 }
 
 export const WEATHER_LABELS: Record<Weather, string> = {

@@ -7,7 +7,6 @@ const STORE_NAME = "app-data";
 const BACKUP_KEY = "rider-workbench-backup";
 const SAVE_COUNT_KEY = "rider-save-count";
 const LAST_SAVE_KEY = "rider-last-save";
-const DATA_VERSION_KEY = "rider-data-version";
 
 const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   { id: "total_100", name: "初出茅庐", description: "累计完成 100 单", icon: "🚴", threshold: 100, type: "total_orders", unlocked: false, unlockedAt: null },
@@ -22,6 +21,18 @@ const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   { id: "monthly_1500", name: "月入千五", description: "月度完成 1500 单", icon: "💎", threshold: 1500, type: "monthly_record", unlocked: false, unlockedAt: null },
 ];
 
+// 获取本周一（班次周起始）
+function getThisMonday(): string {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  const y = monday.getFullYear();
+  const m = String(monday.getMonth() + 1).padStart(2, "0");
+  const dd = String(monday.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
 const DEFAULT_SETTINGS: UserSettings = {
   riderName: "Power",
   monthlyGoal: 1000,
@@ -31,6 +42,8 @@ const DEFAULT_SETTINGS: UserSettings = {
   bonusThreshold: 1500,
   workDaysPerWeek: 6,
   currentShift: "early_mid",
+  shiftStartDate: getThisMonday(),
+  weeklyShifts: {},
 };
 
 function getDefaultStorage(): AppStorage {

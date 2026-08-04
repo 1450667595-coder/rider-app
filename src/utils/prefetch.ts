@@ -7,4 +7,5 @@ export const prefetchPage = {
   analytics: () => import("@/pages/Analytics"),
   achievements: () => import("@/pages/Achievements"),
   weekly: () => import("@/pages/Weekly"),
+  whatif: () => import("@/pages/WhatIf"),
 };

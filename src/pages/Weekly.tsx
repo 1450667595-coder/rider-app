@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
-  Calendar, TrendingUp, TrendingDown, DollarSign,
+  Calendar, DollarSign,
   ShoppingBag, Clock, Award, Zap, ArrowUp, ArrowDown,
 } from "lucide-react";
 import useStore from "@/store/useStore";
@@ -24,7 +24,6 @@ const item = {
 
 export default function Weekly() {
   const records = useStore((s) => s.records);
-  const settings = useStore((s) => s.settings);
 
   const thisWeek = useMemo(() => getWeekRange(), []);
   const prevWeek = useMemo(() => getPreviousWeekRange(), []);

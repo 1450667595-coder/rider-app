@@ -4,7 +4,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import path from 'path'
 
 export default defineConfig({
-  base: './',
+  base: '/rider-app/',
   build: {
     sourcemap: false,
     target: 'es2020',

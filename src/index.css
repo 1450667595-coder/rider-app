@@ -290,6 +290,11 @@ body::after {
   position: relative;
   overflow: hidden;
   box-shadow: 0 0 50px rgba(0, 229, 255, 0.04), 0 0 100px rgba(0, 229, 255, 0.01);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.holo-card-strong:hover {
+  border-color: rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 60px rgba(0, 229, 255, 0.08), 0 0 120px rgba(0, 229, 255, 0.02);
 }
 .holo-card-strong::before {
   content: '';
@@ -298,6 +303,15 @@ body::after {
   background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.5), transparent);
   pointer-events: none;
   z-index: 2;
+}
+.holo-card-strong::after {
+  content: '';
+  position: absolute;
+  top: -8px; right: -8px;
+  width: 40px; height: 40px;
+  background: radial-gradient(circle, rgba(0, 229, 255, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .holo-card-gold {
@@ -309,6 +323,11 @@ body::after {
   border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.holo-card-gold:hover {
+  border-color: rgba(255, 215, 64, 0.25);
+  box-shadow: 0 0 40px rgba(255, 215, 64, 0.06);
 }
 .holo-card-gold::before {
   content: '';
@@ -317,6 +336,15 @@ body::after {
   background: linear-gradient(90deg, transparent, rgba(255, 215, 64, 0.4), transparent);
   pointer-events: none;
   z-index: 2;
+}
+.holo-card-gold::after {
+  content: '';
+  position: absolute;
+  top: -8px; right: -8px;
+  width: 40px; height: 40px;
+  background: radial-gradient(circle, rgba(255, 215, 64, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* ═══════════════════════════════
@@ -1002,4 +1030,573 @@ body::after {
     height: 28px;
     font-size: 9px;
   }
+}
+
+/* ═══════════════════════════════
+   赛博风增强 v6.0
+   ═══════════════════════════════ */
+
+/* Glitch 故障文字 */
+.cyber-glitch {
+  position: relative;
+  color: #E0E0E0;
+}
+.cyber-glitch::before,
+.cyber-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+  pointer-events: none;
+}
+.cyber-glitch::before {
+  color: #00E5FF;
+  clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+  animation: glitchCyan 2.5s infinite linear alternate-reverse;
+}
+.cyber-glitch::after {
+  color: #E040FB;
+  clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+  animation: glitchMagenta 2.5s infinite linear alternate-reverse;
+}
+@keyframes glitchCyan {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 1px); }
+  40% { transform: translate(2px, -1px); }
+  60% { transform: translate(-1px, 0); }
+  80% { transform: translate(1px, 1px); }
+  100% { transform: translate(0); }
+}
+@keyframes glitchMagenta {
+  0% { transform: translate(0); }
+  20% { transform: translate(2px, -1px); }
+  40% { transform: translate(-2px, 1px); }
+  60% { transform: translate(1px, 0); }
+  80% { transform: translate(-1px, -1px); }
+  100% { transform: translate(0); }
+}
+
+/* 霓虹边框闪烁 */
+.neon-flicker {
+  animation: neonFlicker 3s infinite;
+}
+@keyframes neonFlicker {
+  0%, 100% { box-shadow: 0 0 10px rgba(0, 229, 255, 0.15), inset 0 0 10px rgba(0, 229, 255, 0.05); }
+  50% { box-shadow: 0 0 25px rgba(0, 229, 255, 0.25), inset 0 0 15px rgba(0, 229, 255, 0.08); }
+}
+
+/* 数据流动画背景 */
+.cyber-data-stream {
+  position: relative;
+  overflow: hidden;
+}
+.cyber-data-stream::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 20px,
+    rgba(0, 229, 255, 0.02) 20px,
+    rgba(0, 229, 255, 0.02) 21px
+  );
+  animation: dataStream 8s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes dataStream {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(21px); }
+}
+
+/* 全息闪烁覆盖 */
+.holo-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.holo-shimmer::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 40%,
+    rgba(0, 229, 255, 0.04) 50%,
+    transparent 60%
+  );
+  animation: holoShimmer 4s infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+@keyframes holoShimmer {
+  0% { transform: translate(-30%, -30%) rotate(45deg); }
+  100% { transform: translate(30%, 30%) rotate(45deg); }
+}
+
+/* 角标装饰 */
+.corner-brackets {
+  position: relative;
+}
+.corner-brackets::before,
+.corner-brackets::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: rgba(0, 229, 255, 0.35);
+  border-style: solid;
+  pointer-events: none;
+  z-index: 3;
+}
+.corner-brackets::before {
+  top: 6px;
+  left: 6px;
+  border-width: 1px 0 0 1px;
+}
+.corner-brackets::after {
+  bottom: 6px;
+  right: 6px;
+  border-width: 0 1px 1px 0;
+}
+
+/* 脉冲环 */
+.pulse-ring {
+  position: relative;
+}
+.pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  animation: pulseRing 2s infinite;
+  pointer-events: none;
+}
+@keyframes pulseRing {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.05); opacity: 0; }
+}
+
+/* 终端光标 */
+.terminal-cursor::after {
+  content: '_';
+  animation: terminalCursor 1s step-end infinite;
+  color: var(--neon-cyan);
+  margin-left: 2px;
+}
+@keyframes terminalCursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* 科技感网格卡片 */
+.tech-grid-card {
+  background:
+    linear-gradient(135deg, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+    linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 20px 20px, 20px 20px;
+  border: 1px solid rgba(0, 229, 255, 0.1);
+  border-radius: var(--radius-lg);
+}
+
+/* 卡片内部扫描线 */
+.cyber-scan-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.35), transparent);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+  animation: scanLinePulse 2.5s ease-in-out infinite;
+}
+@keyframes scanLinePulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* 霓虹悬浮增强 */
+.cyber-glow-hover {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+.cyber-glow-hover:hover {
+  border-color: rgba(0, 229, 255, 0.35);
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.08), inset 0 0 20px rgba(0, 229, 255, 0.03);
+  transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════
+   赛博风增强 v7.0 - 粒子与全息效果
+   ═══════════════════════════════ */
+
+/* 粒子背景效果 */
+.cyber-particles {
+  position: relative;
+  overflow: hidden;
+}
+.cyber-particles::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(0, 229, 255, 0.15) 1px, transparent 1px),
+    radial-gradient(circle at 80% 70%, rgba(224, 64, 251, 0.12) 1px, transparent 1px),
+    radial-gradient(circle at 40% 80%, rgba(255, 215, 64, 0.1) 1px, transparent 1px),
+    radial-gradient(circle at 60% 20%, rgba(0, 230, 118, 0.08) 1px, transparent 1px);
+  background-size: 100px 100px, 120px 120px, 80px 80px, 90px 90px;
+  animation: particleFloat 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+@keyframes particleFloat {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(-50px, -50px) rotate(360deg); }
+}
+
+/* 全息彩虹边框 */
+.holo-rainbow-border {
+  position: relative;
+  background: linear-gradient(135deg,
+    rgba(0, 229, 255, 0.04) 0%,
+    rgba(224, 64, 251, 0.03) 50%,
+    rgba(255, 215, 64, 0.02) 100%);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.holo-rainbow-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(0, 229, 255, 0.4),
+    rgba(224, 64, 251, 0.3),
+    rgba(255, 215, 64, 0.2),
+    rgba(0, 230, 118, 0.3),
+    rgba(0, 229, 255, 0.4));
+  background-size: 300% 300%;
+  animation: holoRainbow 6s ease infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+@keyframes holoRainbow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* 数据脉冲效果 */
+.data-pulse {
+  position: relative;
+  overflow: hidden;
+}
+.data-pulse::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 229, 255, 0.6),
+    transparent);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+  animation: dataPulse 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+@keyframes dataPulse {
+  0% { left: -100%; opacity: 0; }
+  50% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+
+/* 科技感六边形网格 */
+.hex-grid-bg {
+  background:
+    linear-gradient(135deg, rgba(0, 229, 255, 0.02) 0%, transparent 50%),
+    repeating-linear-gradient(
+      60deg,
+      transparent,
+      transparent 20px,
+      rgba(0, 229, 255, 0.03) 20px,
+      rgba(0, 229, 255, 0.03) 21px
+    ),
+    repeating-linear-gradient(
+      -60deg,
+      transparent,
+      transparent 20px,
+      rgba(224, 64, 251, 0.02) 20px,
+      rgba(224, 64, 251, 0.02) 21px
+    );
+  animation: hexGridShift 30s linear infinite;
+}
+@keyframes hexGridShift {
+  0% { background-position: 0 0, 0 0, 0 0; }
+  100% { background-position: 60px 60px, 60px 60px, 60px 60px; }
+}
+
+/* 全息投影效果 */
+.holo-projection {
+  position: relative;
+  background: linear-gradient(135deg,
+    rgba(0, 229, 255, 0.06) 0%,
+    rgba(224, 64, 251, 0.04) 50%,
+    rgba(255, 215, 64, 0.03) 100%);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 0 30px rgba(0, 229, 255, 0.1),
+    0 0 60px rgba(224, 64, 251, 0.05),
+    inset 0 0 40px rgba(0, 229, 255, 0.03);
+  animation: holoProjection 4s ease-in-out infinite;
+}
+@keyframes holoProjection {
+  0%, 100% {
+    box-shadow:
+      0 0 30px rgba(0, 229, 255, 0.1),
+      0 0 60px rgba(224, 64, 251, 0.05),
+      inset 0 0 40px rgba(0, 229, 255, 0.03);
+  }
+  50% {
+    box-shadow:
+      0 0 40px rgba(0, 229, 255, 0.15),
+      0 0 80px rgba(224, 64, 251, 0.08),
+      inset 0 0 50px rgba(0, 229, 255, 0.05);
+  }
+}
+
+/* 赛博故障闪烁 */
+.cyber-flicker {
+  animation: cyberFlicker 0.3s ease-in-out infinite alternate;
+}
+@keyframes cyberFlicker {
+  0% { opacity: 1; }
+  50% { opacity: 0.85; }
+  100% { opacity: 1; }
+}
+
+/* 数据流光效果 */
+.data-stream-glow {
+  position: relative;
+  overflow: hidden;
+}
+.data-stream-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 229, 255, 0.08),
+    transparent);
+  animation: dataStreamGlow 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes dataStreamGlow {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* 霓虹文字脉冲 */
+.neon-text-pulse {
+  animation: neonTextPulse 2s ease-in-out infinite;
+}
+@keyframes neonTextPulse {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.6),
+                 0 0 30px rgba(0, 229, 255, 0.3),
+                 0 0 60px rgba(0, 229, 255, 0.15);
+  }
+  50% {
+    text-shadow: 0 0 15px rgba(0, 229, 255, 0.8),
+                 0 0 45px rgba(0, 229, 255, 0.5),
+                 0 0 90px rgba(0, 229, 255, 0.25);
+  }
+}
+
+/* 科技感边框动画 */
+.tech-border-animated {
+  position: relative;
+  overflow: hidden;
+}
+.tech-border-animated::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(0, 229, 255, 0.5) 50%,
+    transparent 100%);
+  background-size: 200% 100%;
+  animation: techBorderMove 3s linear infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+@keyframes techBorderMove {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 全息数据卡片 */
+.holo-data-card {
+  background: linear-gradient(135deg,
+    rgba(0, 229, 255, 0.05) 0%,
+    rgba(224, 64, 251, 0.03) 50%,
+    rgba(255, 215, 64, 0.02) 100%);
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    0 0 30px rgba(0, 229, 255, 0.05),
+    inset 0 0 30px rgba(0, 229, 255, 0.02);
+}
+.holo-data-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 229, 255, 0.5),
+    transparent);
+  animation: holoDataScan 2s ease-in-out infinite;
+}
+@keyframes holoDataScan {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(2px); }
+}
+
+/* 赛博网格背景增强 */
+.cyber-grid-enhanced {
+  background:
+    linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 50%, rgba(0, 229, 255, 0.08) 0%, transparent 70%);
+  background-size: 40px 40px, 40px 40px, 100% 100%;
+  animation: cyberGridPulse 8s ease-in-out infinite;
+}
+@keyframes cyberGridPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* 全息闪烁文字 */
+.holo-text-flicker {
+  position: relative;
+  color: #E0E0E0;
+  animation: holoTextFlicker 3s infinite;
+}
+@keyframes holoTextFlicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.8; }
+  94% { opacity: 1; }
+  96% { opacity: 0.9; }
+  97% { opacity: 1; }
+}
+
+/* 科技感进度条增强 */
+.progress-tech {
+  background: rgba(0, 229, 255, 0.04);
+  border-radius: 100px;
+  overflow: hidden;
+  height: 6px;
+  border: 1px solid rgba(0, 229, 255, 0.08);
+  position: relative;
+}
+.progress-tech::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 4px,
+    rgba(0, 229, 255, 0.05) 4px,
+    rgba(0, 229, 255, 0.05) 5px
+  );
+  pointer-events: none;
+}
+.progress-tech-fill {
+  background: linear-gradient(90deg, #00E5FF, #E040FB, #FFD740);
+  background-size: 200% 100%;
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.6s ease;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+  animation: progressTechGlow 2s ease infinite;
+}
+@keyframes progressTechGlow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* 赛博卡片悬浮效果 */
+.cyber-card-float {
+  transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+              box-shadow 0.3s ease;
+}
+.cyber-card-float:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(0, 229, 255, 0.1),
+    inset 0 0 30px rgba(0, 229, 255, 0.03);
+}
+
+/* 全息数据流背景 */
+.holo-data-bg {
+  position: relative;
+  overflow: hidden;
+}
+.holo-data-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 30px,
+      rgba(0, 229, 255, 0.015) 30px,
+      rgba(0, 229, 255, 0.015) 31px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 30px,
+      rgba(224, 64, 251, 0.01) 30px,
+      rgba(224, 64, 251, 0.01) 31px
+    );
+  animation: holoDataBgMove 15s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes holoDataBgMove {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(30px, 30px); }
 }

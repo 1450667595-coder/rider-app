@@ -11,6 +11,7 @@ interface ToastMessage {
 let toastId = 0;
 const listeners: Set<(msg: ToastMessage) => void> = new Set();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function showToast(text: string, type: "success" | "error" | "info" = "success") {
   const msg: ToastMessage = { id: ++toastId, text, type };
   listeners.forEach((fn) => fn(msg));

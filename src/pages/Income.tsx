@@ -200,7 +200,7 @@ export default function Income() {
     setCurrentMonth(currentDate.month);
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) => {
     if (!active || !payload?.length) return null;
     return (
       <div className="holo-card rounded-lg px-3 py-2">

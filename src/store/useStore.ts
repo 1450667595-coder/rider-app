@@ -3,11 +3,9 @@ import {
   AppStorage,
   DailyRecord,
   UserSettings,
-  Achievement,
-  Weather,
   ShiftType,
 } from "@/types";
-import { loadStorage, saveStorage, saveStorageImmediate, generateDemoData, validateAndRepair, startDataHeartbeat, stopDataHeartbeat } from "@/utils/storage";
+import { loadStorage, saveStorage, saveStorageImmediate, generateDemoData, validateAndRepair, startDataHeartbeat } from "@/utils/storage";
 import { today, getCurrentMonth } from "@/utils/date";
 import {
   isSupabaseConfigured,
@@ -17,6 +15,7 @@ import {
   pushRecordsToCloud,
   pushSettingsToCloud,
   deleteRecordFromCloud,
+  clearAllCloudData,
   scheduleSync,
 } from "@/services/supabase";
 
@@ -30,7 +29,6 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
 import {
   getDeviceId,
   fetchRecords,
-  saveRecord as apiSaveRecord,
   deleteRecord as apiDeleteRecord,
   fetchSettings,
   saveSettings as apiSaveSettings,
@@ -80,7 +78,7 @@ function ensureTodayRecord(records: Record<string, DailyRecord>): boolean {
   return false;
 }
 
-// 云端数据同步配置
+// 云端数据同步配置（必须包含班次相关字段，否则自定义覆盖会丢失）
 function toSyncSettings(s: UserSettings) {
   return {
     riderName: s.riderName,
@@ -91,6 +89,8 @@ function toSyncSettings(s: UserSettings) {
     bonusThreshold: s.bonusThreshold,
     workDaysPerWeek: s.workDaysPerWeek,
     currentShift: s.currentShift,
+    shiftStartDate: s.shiftStartDate,
+    weeklyShifts: s.weeklyShifts,
   };
 }
 
@@ -101,7 +101,7 @@ function mergeCloudData(
   cloudSettings: {
     riderName: string; monthlyGoal: number; dailyGoal: number; basePrice: number;
     bonusPrice: number; bonusThreshold: number; workDaysPerWeek: number;
-    currentShift: string;
+    currentShift: string; shiftStartDate?: string; weeklyShifts?: Record<string, string>;
   } | null
 ): AppState {
   const merged = { ...state };
@@ -110,7 +110,7 @@ function mergeCloudData(
     for (const [date, r] of Object.entries(cloudRecords)) {
       typedRecords[date] = {
         date: r.date, orders: r.orders, income: r.income,
-        workHours: r.workHours, weather: (r.weather || "sunny") as Weather,
+        workHours: r.workHours, weather: (r.weather || "sunny") as import("@/types").Weather,
         note: r.note || "",
       };
     }
@@ -120,6 +120,10 @@ function mergeCloudData(
     merged.settings = {
       ...state.settings, ...cloudSettings,
       currentShift: (cloudSettings.currentShift || "early_mid") as ShiftType,
+      shiftStartDate: cloudSettings.shiftStartDate,
+      weeklyShifts: cloudSettings.weeklyShifts ? Object.fromEntries(
+        Object.entries(cloudSettings.weeklyShifts).map(([k, v]) => [k, v as ShiftType])
+      ) : undefined,
     };
   }
   return merged;
@@ -144,6 +148,8 @@ function scheduleApiSync(state: AppState) {
           dailyGoal: s.settings.dailyGoal, basePrice: s.settings.basePrice,
           bonusPrice: s.settings.bonusPrice, bonusThreshold: s.settings.bonusThreshold,
           workDaysPerWeek: s.settings.workDaysPerWeek, currentShift: s.settings.currentShift,
+          shiftStartDate: s.settings.shiftStartDate,
+          weeklyShifts: s.settings.weeklyShifts,
         });
         await batchSaveRecords(userId, records.map(r => ({
           date: r.date, orders: r.orders, income: r.income,
@@ -212,7 +218,7 @@ const useStore = create<AppState>((set, get) => {
               get().checkAchievements();
               // 合并后把本地多余的数据也推上云端
               set((state) => {
-                const localOnly: Record<string, any> = {};
+                const localOnly: Record<string, DailyRecord> = {};
                 const cloudKeys = new Set(cloudRecords ? Object.keys(cloudRecords) : []);
                 for (const [date, rec] of Object.entries(state.records)) {
                   if (!cloudKeys.has(date)) {
@@ -261,7 +267,7 @@ const useStore = create<AppState>((set, get) => {
           set({ syncStatus: "syncing" });
           if (serverRecords || serverSettings) {
             set((state) => {
-              const merged = mergeCloudData(state, serverRecords as any, serverSettings as any);
+              const merged = mergeCloudData(state, serverRecords as Parameters<typeof mergeCloudData>[1], serverSettings as Parameters<typeof mergeCloudData>[2]);
               saveStorageImmediate(toStorageData(merged));
               set({ syncStatus: "synced" });
               return merged;
@@ -420,6 +426,10 @@ const useStore = create<AppState>((set, get) => {
       };
       set((s) => ({ ...s, ...empty }));
       saveStorage(empty);
+      // 同时清理云端数据，避免下次加载时恢复旧数据
+      if (isSupabaseConfigured()) {
+        clearAllCloudData(SHARED_USER_ID).catch(() => {});
+      }
     },
 
     getEffectivePrice: (monthOrders: number) => {

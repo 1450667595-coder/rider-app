@@ -27,7 +27,7 @@ export default function Layout() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const triggerSync = useCallback(() => {
     loadData();

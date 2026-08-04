@@ -12,11 +12,24 @@ const Goals = lazy(() => import(/* webpackPrefetch: true */ "@/pages/Goals"));
 const Analytics = lazy(() => import(/* webpackPrefetch: true */ "@/pages/Analytics"));
 const Achievements = lazy(() => import(/* webpackPrefetch: true */ "@/pages/Achievements"));
 const Weekly = lazy(() => import(/* webpackPrefetch: true */ "@/pages/Weekly"));
+const WhatIf = lazy(() => import(/* webpackPrefetch: true */ "@/pages/WhatIf"));
 
 function PageLoader() {
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
       <div className="w-8 h-8 rounded-full border-2 border-[#00E5FF]/20 border-t-[#00E5FF] animate-spin" />
+    </div>
+  );
+}
+
+function NotFound() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold text-[#00E5FF] neon-cyan">404</h1>
+        <p className="text-[#E0E0E0]/60">页面不存在</p>
+        <a href="/" className="text-[#00E5FF] hover:underline">返回首页</a>
+      </div>
     </div>
   );
 }
@@ -35,6 +48,8 @@ export default function App() {
             <Route path="/weekly" element={<Weekly />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/achievements" element={<Achievements />} />
+            <Route path="/whatif" element={<WhatIf />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </Suspense>

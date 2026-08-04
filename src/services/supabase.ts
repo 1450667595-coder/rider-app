@@ -46,6 +46,8 @@ export interface DbSettings {
   bonus_threshold: number;
   work_days_per_week: number;
   current_shift: string;
+  shift_start_date?: string;
+  weekly_shifts?: string;
   updated_at?: string;
 }
 
@@ -81,6 +83,8 @@ export interface SyncSettings {
   bonusThreshold: number;
   workDaysPerWeek: number;
   currentShift: string;
+  shiftStartDate?: string;
+  weeklyShifts?: Record<string, string>;
 }
 
 // ── Push to Cloud ──
@@ -157,6 +161,23 @@ export async function deleteRecordFromCloud(userId: string, date: string): Promi
   }
 }
 
+// 清空用户所有云端数据（用于 resetData）
+export async function clearAllCloudData(userId: string): Promise<boolean> {
+  if (!isSupabaseConfigured() || !userId) return false;
+
+  try {
+    const client = getSupabase();
+    if (!client) return false;
+    const [{ error: rErr }, { error: sErr }] = await Promise.all([
+      client.from("daily_records").delete().eq("user_id", userId),
+      client.from("user_settings").delete().eq("user_id", userId),
+    ]);
+    return !rErr && !sErr;
+  } catch {
+    return false;
+  }
+}
+
 export async function pushSettingsToCloud(userId: string, settings: SyncSettings): Promise<boolean> {
   if (!isSupabaseConfigured() || !userId) return false;
 
@@ -174,6 +195,8 @@ export async function pushSettingsToCloud(userId: string, settings: SyncSettings
         bonus_threshold: settings.bonusThreshold,
         work_days_per_week: settings.workDaysPerWeek,
         current_shift: settings.currentShift,
+        shift_start_date: settings.shiftStartDate,
+        weekly_shifts: settings.weeklyShifts ? JSON.stringify(settings.weeklyShifts) : undefined,
       },
       { onConflict: "user_id" }
     );
@@ -230,6 +253,13 @@ export async function pullSettingsFromCloud(userId: string): Promise<SyncSetting
     if (error || !data) return null;
 
     const s = data as DbSettings;
+    let weeklyShifts: Record<string, string> | undefined;
+    if (s.weekly_shifts) {
+      try {
+        const parsed = JSON.parse(s.weekly_shifts);
+        if (parsed && typeof parsed === "object") weeklyShifts = parsed;
+      } catch { /* ignore */ }
+    }
     return {
       riderName: s.rider_name,
       monthlyGoal: s.monthly_goal,
@@ -239,6 +269,8 @@ export async function pullSettingsFromCloud(userId: string): Promise<SyncSetting
       bonusThreshold: s.bonus_threshold,
       workDaysPerWeek: s.work_days_per_week,
       currentShift: s.current_shift || "early_mid",
+      shiftStartDate: s.shift_start_date,
+      weeklyShifts,
     };
   } catch {
     return null;

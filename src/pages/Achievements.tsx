@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Award, Flame, Zap, Star, Lock } from "lucide-react";
-import { useShallow } from "zustand/react/shallow";
 import useStore from "@/store/useStore";
 import AnimatedNumber from "@/components/shared/AnimatedNumber";
 import { Achievement } from "@/types";
@@ -19,16 +18,9 @@ const item = {
 export default function Achievements() {
   const achievements = useStore((s) => s.achievements);
   const streak = useStore((s) => s.getStreak());
-  const [, recordsDigest] = useStore(useShallow((s) => {
-    const keys = Object.keys(s.records);
-    const len = keys.length;
-    const last = len > 0 ? keys[len - 1] : "";
-    const r = last ? s.records[last] : null;
-    return [len, `${len}|${last}|${r?.orders}|${r?.income}`];
-  }));
+  const records = useStore((s) => s.records);
 
   const stats = useMemo(() => {
-    const records = useStore.getState().records;
     const allRecords = Object.values(records);
     const totalOrders = allRecords.reduce((s, r) => s + r.orders, 0);
     const totalIncome = allRecords.reduce((s, r) => s + r.income, 0);
@@ -45,7 +37,7 @@ export default function Achievements() {
     });
 
     return { totalOrders, totalIncome, maxDaily, maxMonthly };
-  }, [recordsDigest]);
+  }, [records]);
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 

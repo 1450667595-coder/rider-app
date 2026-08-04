@@ -1,21 +1,9 @@
 // API service for communicating with the backend server
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
-// Generate persistent device ID
+// 部署版：统一使用恢复后的共享账号，确保网站访问者都能看到历史数据
 export function getDeviceId(): string {
-  const key = "rider-device-id";
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id = typeof crypto !== "undefined" && crypto.randomUUID
-      ? crypto.randomUUID()
-      : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-          const r = (Math.random() * 16) | 0;
-          const v = c === "x" ? r : (r & 0x3) | 0x8;
-          return v.toString(16);
-        });
-    localStorage.setItem(key, id);
-  }
-  return id;
+  return "rider-user";
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T | null> {
@@ -98,6 +86,8 @@ export interface ApiSettings {
   bonusThreshold: number;
   workDaysPerWeek: number;
   currentShift: string;
+  shiftStartDate?: string;
+  weeklyShifts?: Record<string, string>;
 }
 
 export async function fetchSettings(userId: string): Promise<ApiSettings | null> {
@@ -117,6 +107,8 @@ export async function saveSettings(userId: string, settings: ApiSettings): Promi
       bonusThreshold: settings.bonusThreshold,
       workDaysPerWeek: settings.workDaysPerWeek,
       currentShift: settings.currentShift,
+      shiftStartDate: settings.shiftStartDate,
+      weeklyShifts: settings.weeklyShifts,
     }),
   });
   return data?.success ?? false;

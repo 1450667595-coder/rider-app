@@ -6,6 +6,7 @@ export interface WeatherData {
   windSpeed: number;
   humidity: number;
   forecast: WeatherForecastDay[];
+  cityName?: string;
 }
 
 export interface WeatherForecastDay {
@@ -149,7 +150,7 @@ export async function fetchWeatherByCity(city: string): Promise<WeatherData | nu
     const { latitude, longitude, name } = geoData.results[0];
     const weather = await fetchWeatherByCoords(latitude, longitude);
     if (weather) {
-      (weather as any).cityName = name;
+      weather.cityName = name;
     }
     return weather;
   } catch {
@@ -361,7 +362,7 @@ export function weatherTrendAnalysis(weather: WeatherData): TrendAnalysis {
 /**
  * bindWeatherToRecord – auto-match today's weather to a data record
  */
-export function bindWeatherToRecord<T extends Record<string, any>>(
+export function bindWeatherToRecord<T extends Record<string, unknown>>(
   record: T,
   weather: WeatherData
 ): T & {

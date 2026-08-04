@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Area, AreaChart, BarChart, Bar, Cell,
 } from "recharts";
 import { Sparkles, TrendingUp, Calendar, Cloud, AlertCircle, Target, Brain, Zap, Bug, Activity, Clock, CloudRain, Shield } from "lucide-react";
@@ -16,12 +16,12 @@ import {
   generateInsights,
   predictDailyDistribution,
   predictRainyDayImpact,
-  trackPredictionAccuracy,
-  computePredictionAccuracy,
+  backtestPredictionModel,
   SPECIAL_EVENTS,
 } from "@/utils/aiPrediction";
-import type { PredictionRecord } from "@/utils/aiPrediction";
-import { today, getLastNDays, formatDateShort, getDayOfWeek } from "@/utils/date";
+import { getLastNDays, formatDateShort, getDayOfWeek } from "@/utils/date";
+import { useWeather } from "@/hooks/useWeather";
+import { weatherCodeToOurWeather } from "@/services/weather";
 import { Weather, WEATHER_OPTIONS, WEATHER_LABELS } from "@/types";
 
 const container = {
@@ -33,8 +33,6 @@ const item = {
   hidden: { opacity: 0, y: 4 },
   show: { opacity: 1, y: 0, transition: { duration: 0.08, ease: [0.25, 0.1, 0.25, 1] } },
 };
-
-const WEEKDAYS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
 const DISTRIBUTION_TYPE_LABELS: Record<string, string> = {
   morning_peak: "上午高峰型",
@@ -50,12 +48,6 @@ const SEVERITY_LABELS: Record<string, string> = {
   severe: "严重影响",
 };
 
-const SEVERITY_COLORS: Record<string, string> = {
-  mild: "text-emerald-400",
-  moderate: "text-amber-400",
-  severe: "text-red-400",
-};
-
 function Predict() {
   const records = useStore((s) => s.records);
   const settings = useStore((s) => s.settings);
@@ -63,21 +55,34 @@ function Predict() {
   const [activeTab, setActiveTab] = useState<"tomorrow" | "weekly" | "monthly" | "trend" | "insights" | "hourly" | "rainy" | "accuracy">("tomorrow");
   const [selectedWeather, setSelectedWeather] = useState<Weather>("sunny");
   const [realWeather, setRealWeather] = useState<Weather>("sunny");
+  const { weather, forecast } = useWeather();
 
   const handleWeatherChange = useCallback((w: Weather) => {
     setRealWeather(w);
     setSelectedWeather(w);
   }, []);
 
+  const tomorrowTemp = weather?.temperature;
   const prediction = useMemo(
-    () => predictTomorrowAI(records, selectedWeather),
-    [records, selectedWeather]
+    () => predictTomorrowAI(records, selectedWeather, settings, { temperature: tomorrowTemp }),
+    [records, selectedWeather, settings, tomorrowTemp]
   );
 
+  const weeklyForecast = useMemo(() => {
+    if (forecast.length > 0) {
+      return forecast.slice(0, 7).map((d) => ({
+        date: d.date,
+        weather: weatherCodeToOurWeather(d.weatherCode),
+        maxTemp: d.maxTemp,
+        minTemp: d.minTemp,
+      }));
+    }
+    return Array(7).fill(realWeather);
+  }, [forecast, realWeather]);
+
   const weeklyPrediction = useMemo(() => {
-    const forecast: Weather[] = Array(7).fill(realWeather);
-    return predictWeeklyAI(records, forecast);
-  }, [records, realWeather]);
+    return predictWeeklyAI(records, weeklyForecast, settings);
+  }, [records, weeklyForecast, settings]);
 
   const monthlyPrediction = useMemo(
     () => predictMonthlyAI(records, settings),
@@ -116,27 +121,10 @@ function Predict() {
     return events;
   }, []);
 
-  const accuracyTracker = useMemo(() => {
-    const sorted = Object.values(records).sort(
-      (a, b) => a.date.localeCompare(b.date)
-    );
-    if (sorted.length < 3) return null;
-
-    const predictionRecords: PredictionRecord[] = [];
-    for (let i = 3; i < sorted.length; i++) {
-      const pastRecords = Object.fromEntries(
-        sorted.slice(0, i).map(r => [r.date, r])
-      );
-      const pred = predictTomorrowAI(pastRecords, sorted[i].weather);
-      predictionRecords.push({
-        date: sorted[i].date,
-        predicted: pred.predictedOrders,
-        actual: sorted[i].orders,
-        weather: sorted[i].weather,
-      });
-    }
-    return computePredictionAccuracy(predictionRecords);
-  }, [records]);
+  const backtest = useMemo(
+    () => backtestPredictionModel(records, settings),
+    [records, settings]
+  );
 
   const { year, month } = (() => {
     const now = new Date();
@@ -207,11 +195,11 @@ function Predict() {
       animate="show"
     >
       <motion.div variants={item}>
-        <h1 className="text-2xl font-bold text-[#E0E0E0] flex items-center gap-2 neon-cyan tracking-[-0.01em]">
+        <h1 className="text-2xl font-bold text-[#E0E0E0] flex items-center gap-2 tracking-[-0.01em]">
           <Brain size={24} className="icon-glow-cyan" />
-          AI 智能预测
+          <span className="cyber-glitch" data-text="AI 智能预测">AI 智能预测</span>
         </h1>
-        <p className="text-[#E0E0E0]/30 text-xs mt-1 tracking-tight terminal-text">基于真实历史数据 · 天气因子 · 特殊事件</p>
+        <p className="text-[#E0E0E0]/30 text-xs mt-1 tracking-tight terminal-text">基于真实历史数据 · 天气因子 · 特殊事件 · AR(1) 残差修正</p>
       </motion.div>
 
       <WeatherWidget onWeatherChange={handleWeatherChange} />
@@ -246,13 +234,18 @@ function Predict() {
       <AnimatePresence mode="sync">
         {activeTab === "tomorrow" && (
           <motion.div key="tomorrow" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.15 }} className="space-y-4">
-            <div className="holo-card rounded-[26px] p-6 text-center">
+            <div className="holo-card-strong rounded-[26px] p-6 text-center corner-brackets holo-shimmer neon-flicker">
               <p className="text-[#E0E0E0]/40 text-sm mb-2 flex items-center justify-center gap-2 tracking-tight">
                 <Brain size={16} className="icon-glow-cyan" />
                 AI 明日预测单量
               </p>
               <AnimatedNumber value={prediction.predictedOrders} className="text-6xl font-bold text-[#E0E0E0] neon-cyan" />
               <span className="text-[#E0E0E0]/50 text-lg ml-2">单</span>
+              {prediction.interval && (
+                <p className="text-[#E0E0E0]/30 text-xs mt-2 terminal-text">
+                  预测区间 {prediction.interval.low} - {prediction.interval.high} 单
+                </p>
+              )}
               <div className="flex items-center justify-center gap-2 mt-3">
                 <span className={`text-xs px-2.5 py-1 rounded-full ${
                   prediction.confidence === "high" ? "badge-cyber-green" :
@@ -264,6 +257,34 @@ function Predict() {
                 </span>
               </div>
             </div>
+
+            {prediction.modelWeights && prediction.modelWeights.some(w => w.weight > 0) && (
+              <div className="holo-card rounded-[26px] p-4">
+                <h3 className="cyber-section-title mb-3">
+                  <Activity size={16} />
+                  模型权重
+                </h3>
+                <div className="space-y-2.5">
+                  {prediction.modelWeights.filter(w => w.weight > 0).map((w) => (
+                    <div key={w.label} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[#E0E0E0]/40">{w.label}</span>
+                        <span className="text-[#E0E0E0]/70">{w.weight}%</span>
+                      </div>
+                      <div className="progress-cyber h-1.5">
+                        <motion.div
+                          className="progress-cyber-fill h-1.5"
+                          style={{ background: w.label === "同星期几" ? "#00E5FF" : w.label === "近期趋势" ? "#E040FB" : "#FFD740" }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${w.weight}%` }}
+                          transition={{ duration: 0.5 }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {upcomingEvents.length > 0 && (
               <div className="holo-card rounded-[26px] p-4 space-y-2">
@@ -562,7 +583,7 @@ function Predict() {
               </h3>
               <div className="space-y-2">
                 {rainyDayImpact.recommendations.map((rec, i) => (
-                  <div key={i} className="holo-card rounded-xl p-3">
+                  <div key={i} className="holo-card rounded-xl p-3 stat-card-enhanced corner-brackets">
                     <div className="flex items-start gap-2">
                       <span className={`text-xs px-1.5 py-0.5 rounded-full mt-0.5 ${
                         rec.priority === "high" ? "badge-cyber" :
@@ -645,23 +666,71 @@ function Predict() {
             <div className="holo-card rounded-[26px] p-6 text-center">
               <p className="text-[#E0E0E0]/40 text-sm mb-2 flex items-center justify-center gap-2 tracking-tight">
                 <Shield size={16} className="icon-glow-cyan" />
-                预测准确率
+                模型回测准确率
               </p>
-              {accuracyTracker ? (
+              {backtest.totalDays > 0 ? (
                 <>
                   <AnimatedNumber
-                    value={Math.max(0, 100 - accuracyTracker.overallAccuracy.mape)}
+                    value={Math.max(0, 100 - backtest.mape)}
                     className="text-5xl font-bold text-[#E0E0E0] neon-cyan"
                   />
                   <span className="text-[#E0E0E0]/50 text-lg ml-1">%</span>
                   <p className="text-[#E0E0E0]/30 text-xs mt-2 terminal-text">
-                    MAPE {accuracyTracker.overallAccuracy.mape}% · RMSE {accuracyTracker.overallAccuracy.rmse}
+                    MAPE {backtest.mape}% · RMSE {backtest.rmse} · R² {backtest.r2}
+                  </p>
+                  <p className="text-[#E0E0E0]/30 text-[10px] mt-1">
+                    基于近 {backtest.totalDays} 天 Walk-forward 回测 · 区间覆盖率 {backtest.coverage80}%
                   </p>
                 </>
               ) : (
-                <p className="text-[#E0E0E0]/20 text-sm py-4">需要更多预测数据来评估准确率（至少 3 天）</p>
+                <p className="text-[#E0E0E0]/20 text-sm py-4">需要至少 28 天历史数据才能进行模型回测</p>
               )}
             </div>
+
+            {backtest.totalDays > 0 && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="holo-card rounded-[26px] p-4 text-center">
+                    <span className="text-[#E0E0E0]/30 text-xs terminal-text">平均绝对误差</span>
+                    <p className="text-2xl font-bold text-[#E0E0E0] neon-cyan mt-1">{backtest.mae}</p>
+                    <span className="text-[#E0E0E0]/30 text-[10px]">单</span>
+                  </div>
+                  <div className="holo-card rounded-[26px] p-4 text-center">
+                    <span className="text-[#E0E0E0]/30 text-xs terminal-text">近期 MAPE</span>
+                    <p className="text-2xl font-bold text-[#E0E0E0] neon-cyan mt-1">{backtest.recentMape}%</p>
+                    <span className="text-[#E0E0E0]/30 text-[10px]">近14天</span>
+                  </div>
+                </div>
+
+                {Object.keys(backtest.byWeather).length > 0 && (
+                  <div className="holo-card rounded-[26px] p-4">
+                    <h3 className="cyber-section-title mb-3">按天气准确率</h3>
+                    <div className="space-y-2">
+                      {Object.entries(backtest.byWeather).map(([w, d]) => (
+                        <div key={w} className="flex items-center justify-between py-2 border-b border-[#E0E0E0]/5 last:border-0">
+                          <span className="text-[#E0E0E0]/50 text-sm">{WEATHER_LABELS[w as Weather] || w}</span>
+                          <span className="text-[#E0E0E0]/70 text-xs">{d.count} 天 · MAPE {d.mape}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {Object.keys(backtest.byDOW).length > 0 && (
+                  <div className="holo-card rounded-[26px] p-4">
+                    <h3 className="cyber-section-title mb-3">按星期准确率</h3>
+                    <div className="space-y-2">
+                      {Object.entries(backtest.byDOW).map(([d, s]) => (
+                        <div key={d} className="flex items-center justify-between py-2 border-b border-[#E0E0E0]/5 last:border-0">
+                          <span className="text-[#E0E0E0]/50 text-sm">{d}</span>
+                          <span className="text-[#E0E0E0]/70 text-xs">{s.count} 天 · MAPE {s.mape}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </motion.div>
         )}
 
