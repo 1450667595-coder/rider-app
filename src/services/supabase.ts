@@ -1,7 +1,11 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const ENV_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
-const ENV_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+// 用户提供的 Supabase 项目配置（publishable key 可安全放在前端）
+const DEFAULT_SUPABASE_URL = "https://hcackbvjrzirfdcwqqen.supabase.co";
+const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_4LCNjLh63D0lvfMcmkl-XQ_Uqr5NDQb";
+
+const ENV_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+const ENV_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
 const STORAGE_KEY_URL = "rider_app_supabase_url";
 const STORAGE_KEY_ANON = "rider_app_supabase_anon";
