@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Minus, TrendingUp, Target, DollarSign, ShoppingBag, Zap, Download, Upload, Cpu, Activity, Shield, Database, Clock, BarChart3, Compass, ArrowUpRight, ArrowDownRight, Layers, Wrench, PenTool, X, Brain, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Minus, TrendingUp, Target, DollarSign, ShoppingBag, Zap, Download, Upload, Cpu, Activity, Shield, Database, Clock, BarChart3, Compass, ArrowUpRight, ArrowDownRight, Layers, Wrench, PenTool, X, Brain, Calendar, CloudOff, ChevronRight } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import useStore from "@/store/useStore";
 import AnimatedNumber from "@/components/shared/AnimatedNumber";
@@ -15,6 +16,7 @@ import { today, formatDateShort } from "@/utils/date";
 import { exportBackup, importBackup } from "@/utils/storage";
 import { Weather, WEATHER_LABELS } from "@/types";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { isSupabaseConfigured } from "@/services/supabase";
 
 // ── 动画配置 ──
 const container = {
@@ -54,6 +56,7 @@ const Sparkline = memo(function Sparkline({ data, color = "#00E5FF", height = 28
 });
 
 function Dashboard() {
+  const navigate = useNavigate();
   const saveRecord = useStore((s) => s.saveRecord);
   const settings = useStore(useShallow((s) => s.settings));
   const [showConfetti, setShowConfetti] = useState(false);
@@ -388,6 +391,29 @@ function Dashboard() {
               <p className="terminal-text text-[9px] text-[#E0E0E0]/20 mt-1">{efficiencyData.trend >= 5 ? "上升趋势" : efficiencyData.trend <= -5 ? "下降趋势" : "趋势平稳"}</p>
             </div>
           </div>
+        </motion.div>
+      )}
+
+      {/* 云端同步 */}
+      {!isSupabaseConfigured() && (
+        <motion.div variants={item}>
+          <button
+            onClick={() => navigate("/settings")}
+            className="w-full holo-card rounded-[22px] p-4 corner-brackets data-pulse text-left tap-cyber"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center">
+                  <CloudOff size={20} className="text-[#00E5FF]" />
+                </div>
+                <div>
+                  <p className="text-[#E0E0E0] font-medium text-sm">未配置云端同步</p>
+                  <p className="text-[#E0E0E0]/40 text-xs mt-0.5">点击配置 Supabase，实现全平台数据自动同步</p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-[#E0E0E0]/30" />
+            </div>
+          </button>
         </motion.div>
       )}
 
