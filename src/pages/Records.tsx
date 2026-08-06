@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Edit3, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit3, Trash2, Coffee } from "lucide-react";
 import useStore from "@/store/useStore";
 import AnimatedNumber from "@/components/shared/AnimatedNumber";
 import BottomSheet from "@/components/shared/BottomSheet";
@@ -172,6 +172,19 @@ export default function Records() {
     closeEditor();
   };
 
+  const handleRest = () => {
+    setEditForm((p) => ({ ...p, note: p.note === "休息" ? "" : "休息" }));
+  };
+
+  const todayStr = today();
+  const todayRecord = records[todayStr];
+  const isTodayUnrecorded =
+    todayRecord &&
+    todayRecord.orders === 0 &&
+    todayRecord.income === 0 &&
+    todayRecord.workHours === 0 &&
+    todayRecord.note === "";
+
   const handleOrdersChange = (orders: number) => {
     setEditForm((p) => ({ ...p, orders, income: Math.round(orders * effectivePrice) }));
     setOrdersInput(String(orders));
@@ -204,6 +217,14 @@ export default function Records() {
         </button>
       </motion.div>
 
+      {/* 今日未记录提示 */}
+      {isTodayUnrecorded && (
+        <motion.div variants={item} className="holo-card rounded-[26px] p-4 flex items-center justify-center gap-2 text-[#E0E0E0]/80">
+          <span className="inline-block w-2 h-2 rounded-full bg-[#00E5FF] animate-pulse" />
+          <span className="text-sm font-medium">今日跑单尚未结束，暂未记录</span>
+        </motion.div>
+      )}
+
       {/* Calendar Section */}
       <motion.div variants={item}>
         <h3 className="cyber-section-title mb-3">日历视图</h3>
@@ -222,7 +243,7 @@ export default function Records() {
               const dateStr = `${monthPrefix}-${String(day).padStart(2, "0")}`;
               const record = records[dateStr];
               const orders = record?.orders || 0;
-              const isRestDay = record && record.orders === 0;
+              const isRestDay = record?.note === "休息";
               const todayFlag = isToday(dateStr);
               return (
                 <motion.button
@@ -326,14 +347,25 @@ export default function Records() {
             </div>
 
             {/* Action buttons inside BottomSheet */}
-            <div className="flex gap-3 pt-4">
-              <button onClick={handleDelete} className="btn-cyber-danger flex-1 py-3.5 rounded-xl flex items-center justify-center gap-2">
-                <Trash2 size={16} />
-                <span className="text-sm font-medium">删除</span>
+            <div className="flex gap-2 pt-4">
+              <button onClick={handleDelete} className="btn-cyber-danger flex-1 py-3 rounded-xl flex items-center justify-center gap-1.5">
+                <Trash2 size={15} />
+                <span className="text-xs font-medium">删除</span>
               </button>
-              <button onClick={handleSave} className="btn-cyber-primary flex-[2] py-3.5 rounded-xl font-bold flex items-center justify-center gap-2">
-                <Edit3 size={16} />
-                <span>保存</span>
+              <button
+                onClick={handleRest}
+                className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-1.5 border transition-colors ${
+                  editForm.note === "休息"
+                    ? "bg-[#FFD740]/20 text-[#FFD740] border-[#FFD740]/40"
+                    : "bg-[#E0E0E0]/5 text-[#E0E0E0]/70 border-[#E0E0E0]/10 hover:bg-[#E0E0E0]/10"
+                }`}
+              >
+                <Coffee size={15} />
+                <span className="text-xs font-medium">{editForm.note === "休息" ? "已休息" : "休息"}</span>
+              </button>
+              <button onClick={handleSave} className="btn-cyber-primary flex-[1.5] py-3 rounded-xl font-bold flex items-center justify-center gap-1.5">
+                <Edit3 size={15} />
+                <span className="text-sm">保存</span>
               </button>
             </div>
           </div>

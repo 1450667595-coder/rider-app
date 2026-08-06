@@ -172,6 +172,15 @@ app.get("/api/settings", (req, res) => {
         currentShift: "early_mid",
       });
     }
+
+    let weeklyShifts = undefined;
+    if (row.weekly_shifts) {
+      try {
+        const parsed = JSON.parse(row.weekly_shifts);
+        if (parsed && typeof parsed === "object") weeklyShifts = parsed;
+      } catch { /* ignore */ }
+    }
+
     res.json({
       riderName: row.rider_name,
       monthlyGoal: row.monthly_goal,
@@ -181,6 +190,9 @@ app.get("/api/settings", (req, res) => {
       bonusThreshold: row.bonus_threshold,
       workDaysPerWeek: row.work_days_per_week,
       currentShift: row.current_shift,
+      shiftStartDate: row.shift_start_date || undefined,
+      weeklyShifts,
+      weeklyShiftsUpdatedAt: row.weekly_shifts_updated_at || undefined,
     });
   } catch (err) {
     console.error("Error fetching settings:", err);
@@ -201,6 +213,9 @@ app.put("/api/settings", (req, res) => {
       bonusThreshold,
       workDaysPerWeek,
       currentShift,
+      shiftStartDate,
+      weeklyShifts,
+      weeklyShiftsUpdatedAt,
     } = req.body;
     if (!user_id) {
       return res.status(400).json({ error: "user_id is required" });
@@ -215,6 +230,9 @@ app.put("/api/settings", (req, res) => {
       bonus_threshold: bonusThreshold ?? 1500,
       work_days_per_week: workDaysPerWeek ?? 6,
       current_shift: currentShift || "early_mid",
+      shift_start_date: shiftStartDate || null,
+      weekly_shifts: weeklyShifts ? JSON.stringify(weeklyShifts) : null,
+      weekly_shifts_updated_at: weeklyShiftsUpdatedAt ?? null,
     });
     res.json({ success: true });
   } catch (err) {
@@ -246,17 +264,23 @@ app.get("/api/stats", (req, res) => {
 
 // ── Serve static frontend in production ──
 const distPath = path.join(__dirname, "..", "dist");
-app.use(express.static(distPath));
+const APP_BASE = "/rider-app";
 
-// SPA fallback: serve index.html for all non-API routes
-app.get("*", (req, res) => {
-  if (!req.path.startsWith("/api")) {
-    res.sendFile(path.join(distPath, "index.html"));
-  }
+// Serve static assets under the app base path
+app.use(APP_BASE, express.static(distPath));
+
+// Redirect root to the app base path
+app.get("/", (_req, res) => {
+  res.redirect(APP_BASE + "/");
+});
+
+// SPA fallback: serve index.html for all app-base routes
+app.get(`${APP_BASE}/*`, (_req, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
 });
 
 app.listen(PORT, () => {
   console.log(`🚀 Rider Workbench Server running on http://localhost:${PORT}`);
   console.log(`   API: http://localhost:${PORT}/api/health`);
-  console.log(`   Frontend: http://localhost:${PORT}`);
+  console.log(`   Frontend: http://localhost:${PORT}${APP_BASE}/`);
 });

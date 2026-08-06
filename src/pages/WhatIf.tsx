@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Cloud, Sun, CloudRain, Snowflake, Wind, Briefcase, RotateCcw } from "lucide-react";
+import { Sparkles, Cloud, Sun, CloudRain, Snowflake, Wind, Briefcase } from "lucide-react";
 import useStore from "@/store/useStore";
 import AnimatedNumber from "@/components/shared/AnimatedNumber";
-import { whatIfAnalysis, type WhatIfScenario } from "@/utils/aiPrediction";
+import { whatIfAnalysis } from "@/utils/aiPrediction";
 import { Weather, WEATHER_LABELS, SHIFT_DEFINITIONS, type ShiftType } from "@/types";
 import { today } from "@/utils/date";
 

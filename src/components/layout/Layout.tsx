@@ -52,7 +52,7 @@ export default function Layout() {
   }, [loadData, navigate]);
 
   return (
-    <div className="min-h-screen min-h-dvh text-[#E0E0E0] relative">
+    <div className="min-h-screen min-h-dvh text-[#E0E0E0] relative cyber-particles">
       {/* 扫描线 */}
       <div className="scanlines-overlay" />
 
@@ -83,7 +83,7 @@ export default function Layout() {
 
       {/* Content layer */}
       <div
-        className="max-w-lg mx-auto pb-28 relative z-10"
+        className="max-w-lg mx-auto pb-28 relative z-10 holo-data-bg"
         style={{ paddingTop: "44px" }}
       >
         <Outlet />

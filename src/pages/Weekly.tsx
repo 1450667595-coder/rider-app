@@ -7,7 +7,7 @@ import {
 import useStore from "@/store/useStore";
 import AnimatedNumber from "@/components/shared/AnimatedNumber";
 import ShiftBadge from "@/components/shared/ShiftBadge";
-import { getWeekRange, formatDate, getDayOfWeek, parseLocalDate } from "@/utils/date";
+import { getWeekRange, formatDate, getDayOfWeek } from "@/utils/date";
 import { WEATHER_LABELS } from "@/types";
 
 const WEEKDAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];

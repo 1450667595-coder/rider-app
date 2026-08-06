@@ -7,6 +7,7 @@ import {
 } from "@/types";
 import { loadStorage, saveStorage, saveStorageImmediate, generateDemoData, validateAndRepair, startDataHeartbeat } from "@/utils/storage";
 import { today, getCurrentMonth } from "@/utils/date";
+import { getUserLocation, fetchWeatherByCoords, weatherCodeToOurWeather } from "@/services/weather";
 import {
   isSupabaseConfigured,
   SHARED_USER_ID,
@@ -55,6 +56,8 @@ interface AppState extends AppStorage {
   saveRecord: (record: DailyRecord) => void;
   deleteRecord: (date: string) => void;
   updateSettings: (settings: Partial<UserSettings>) => void;
+  lockShift: (weekStart: string, shiftType: ShiftType) => Promise<void>;
+  unlockShift: (weekStart: string) => Promise<void>;
   checkAchievements: () => void;
   loadDemoData: () => void;
   resetData: () => void;
@@ -89,6 +92,59 @@ function ensureTodayRecord(records: Record<string, DailyRecord>): boolean {
   return false;
 }
 
+const WEATHER_CACHE_DATE_KEY = "rider_last_weather_date";
+
+/** 自动获取今日天气并绑定到当日记录（含0单休息日） */
+async function fetchTodayWeather(): Promise<import("@/types").Weather | null> {
+  const loc = await getUserLocation();
+  if (!loc) return null;
+  try {
+    const data = await fetchWeatherByCoords(loc.lat, loc.lon);
+    if (!data) return null;
+    return weatherCodeToOurWeather(data.weatherCode);
+  } catch {
+    return null;
+  }
+}
+
+function bindTodayWeather(getState: () => AppState) {
+  const todayStr = today();
+  // 同一天只自动获取一次，避免重复请求
+  if (localStorage.getItem(WEATHER_CACHE_DATE_KEY) === todayStr) return;
+
+  fetchTodayWeather().then((weather) => {
+    if (!weather) return;
+    const state = getState();
+    const rec = state.records[todayStr];
+    if (!rec) return;
+    // 如果用户已手动修改过天气（非默认 sunny），不覆盖
+    if (rec.weather !== "sunny") {
+      localStorage.setItem(WEATHER_CACHE_DATE_KEY, todayStr);
+      return;
+    }
+    const newRecord: DailyRecord = { ...rec, weather };
+    const newRecords = { ...state.records, [todayStr]: newRecord };
+    const newState = { ...state, records: newRecords };
+    saveStorage(toStorageData(newState));
+
+    // 同步到云端
+    if (isSupabaseConfigured()) {
+      const userId = ensureUserId();
+      pushSingleRecordToCloud(userId, {
+        date: newRecord.date,
+        orders: newRecord.orders,
+        income: newRecord.income,
+        workHours: newRecord.workHours,
+        weather: newRecord.weather,
+        note: newRecord.note,
+      });
+    }
+
+    useStore.setState({ records: newRecords });
+    localStorage.setItem(WEATHER_CACHE_DATE_KEY, todayStr);
+  });
+}
+
 // 云端数据同步配置（必须包含班次相关字段，否则自定义覆盖会丢失）
 function toSyncSettings(s: UserSettings) {
   return {
@@ -102,6 +158,7 @@ function toSyncSettings(s: UserSettings) {
     currentShift: s.currentShift,
     shiftStartDate: s.shiftStartDate,
     weeklyShifts: s.weeklyShifts,
+    weeklyShiftsUpdatedAt: s.weeklyShiftsUpdatedAt,
   };
 }
 
@@ -128,13 +185,24 @@ function mergeCloudData(
     merged.records = { ...state.records, ...typedRecords };
   }
   if (cloudSettings) {
+    // 以时间戳为准决定保留本地还是云端班次覆盖，避免刷新/换设备后已保存的班次被旧数据覆盖
+    const localAt = state.settings.weeklyShiftsUpdatedAt || 0;
+    const cloudAt = (cloudSettings as { weeklyShiftsUpdatedAt?: number }).weeklyShiftsUpdatedAt || 0;
+    const hasCloudShifts = Object.keys(cloudSettings.weeklyShifts || {}).length > 0;
+    const hasLocalShifts = Object.keys(state.settings.weeklyShifts || {}).length > 0;
+    // 云端时间戳更新时优先用云端；都没时间戳但云端有班次而本地没有时，也采用云端
+    const useCloudShifts = cloudAt > localAt || (cloudAt === localAt && !hasLocalShifts && hasCloudShifts);
+
     merged.settings = {
       ...state.settings, ...cloudSettings,
-      currentShift: (cloudSettings.currentShift || "early_mid") as ShiftType,
-      shiftStartDate: cloudSettings.shiftStartDate,
-      weeklyShifts: cloudSettings.weeklyShifts ? Object.fromEntries(
-        Object.entries(cloudSettings.weeklyShifts).map(([k, v]) => [k, v as ShiftType])
-      ) : undefined,
+      currentShift: (cloudSettings.currentShift || state.settings.currentShift || "early_mid") as ShiftType,
+      shiftStartDate: cloudSettings.shiftStartDate || state.settings.shiftStartDate,
+      weeklyShifts: useCloudShifts
+        ? Object.fromEntries(
+            Object.entries(cloudSettings.weeklyShifts || {}).map(([k, v]) => [k, v as ShiftType])
+          )
+        : state.settings.weeklyShifts,
+      weeklyShiftsUpdatedAt: Math.max(localAt, cloudAt) || state.settings.weeklyShiftsUpdatedAt,
     };
   }
   return merged;
@@ -161,6 +229,7 @@ function scheduleApiSync(state: AppState) {
           workDaysPerWeek: s.settings.workDaysPerWeek, currentShift: s.settings.currentShift,
           shiftStartDate: s.settings.shiftStartDate,
           weeklyShifts: s.settings.weeklyShifts,
+          weeklyShiftsUpdatedAt: s.settings.weeklyShiftsUpdatedAt,
         });
         await batchSaveRecords(userId, records.map(r => ({
           date: r.date, orders: r.orders, income: r.income,
@@ -201,6 +270,9 @@ const useStore = create<AppState>((set, get) => {
 
       // 数据加载后立即检查成就
       get().checkAchievements();
+
+      // 自动获取今日天气并绑定到当日记录（含0单休息日）
+      bindTodayWeather(get);
 
       // 防止重复启动 heartbeat
       if (!heartbeatStarted) {
@@ -369,6 +441,82 @@ const useStore = create<AppState>((set, get) => {
         return { settings: newSettings };
       });
       get().checkAchievements();
+    },
+
+    lockShift: async (weekStart: string, shiftType: ShiftType) => {
+      set((state) => {
+        const weeklyShifts = { ...(state.settings.weeklyShifts || {}), [weekStart]: shiftType };
+        const newSettings = { ...state.settings, weeklyShifts, weeklyShiftsUpdatedAt: Date.now() };
+        const newState = { ...state, settings: newSettings };
+        saveStorage(toStorageData(newState));
+
+        if (isSupabaseConfigured()) {
+          const userId = ensureUserId();
+          scheduleSync(userId, newState.records, toSyncSettings(newSettings));
+        }
+
+        scheduleApiSync(newState);
+        return { settings: newSettings };
+      });
+
+      // 立即同步到云端，确保换浏览器也不丢失
+      const state = get();
+      if (isSupabaseConfigured()) {
+        const userId = ensureUserId();
+        await pushSettingsToCloud(userId, toSyncSettings(state.settings));
+      }
+      await apiSaveSettings(getDeviceId(), {
+        riderName: state.settings.riderName,
+        monthlyGoal: state.settings.monthlyGoal,
+        dailyGoal: state.settings.dailyGoal,
+        basePrice: state.settings.basePrice,
+        bonusPrice: state.settings.bonusPrice,
+        bonusThreshold: state.settings.bonusThreshold,
+        workDaysPerWeek: state.settings.workDaysPerWeek,
+        currentShift: state.settings.currentShift,
+        shiftStartDate: state.settings.shiftStartDate,
+      weeklyShifts: state.settings.weeklyShifts,
+      weeklyShiftsUpdatedAt: state.settings.weeklyShiftsUpdatedAt,
+    });
+    get().checkAchievements();
+    },
+
+    unlockShift: async (weekStart: string) => {
+      set((state) => {
+        const weeklyShifts = { ...(state.settings.weeklyShifts || {}) };
+        delete weeklyShifts[weekStart];
+        const newSettings = { ...state.settings, weeklyShifts, weeklyShiftsUpdatedAt: Date.now() };
+        const newState = { ...state, settings: newSettings };
+        saveStorage(toStorageData(newState));
+
+        if (isSupabaseConfigured()) {
+          const userId = ensureUserId();
+          scheduleSync(userId, newState.records, toSyncSettings(newSettings));
+        }
+
+        scheduleApiSync(newState);
+        return { settings: newSettings };
+      });
+
+      const state = get();
+      if (isSupabaseConfigured()) {
+        const userId = ensureUserId();
+        await pushSettingsToCloud(userId, toSyncSettings(state.settings));
+      }
+      await apiSaveSettings(getDeviceId(), {
+        riderName: state.settings.riderName,
+        monthlyGoal: state.settings.monthlyGoal,
+        dailyGoal: state.settings.dailyGoal,
+        basePrice: state.settings.basePrice,
+        bonusPrice: state.settings.bonusPrice,
+        bonusThreshold: state.settings.bonusThreshold,
+        workDaysPerWeek: state.settings.workDaysPerWeek,
+        currentShift: state.settings.currentShift,
+        shiftStartDate: state.settings.shiftStartDate,
+      weeklyShifts: state.settings.weeklyShifts,
+      weeklyShiftsUpdatedAt: state.settings.weeklyShiftsUpdatedAt,
+    });
+    get().checkAchievements();
     },
 
     checkAchievements: () => {

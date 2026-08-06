@@ -9,7 +9,7 @@ import ProgressRing from "@/components/shared/ProgressRing";
 import Confetti from "@/components/shared/Confetti";
 import LiveClock from "@/components/shared/LiveClock";
 import WeatherWidget from "@/components/shared/WeatherWidget";
-import ShiftBadge from "@/components/shared/ShiftBadge";
+import SmartShiftCard from "@/components/shared/SmartShiftCard";
 import SyncIndicator from "@/components/shared/SyncIndicator";
 import { showToast } from "@/components/shared/Toast";
 import { today, formatDateShort } from "@/utils/date";
@@ -244,7 +244,7 @@ function Dashboard() {
       </motion.div>
 
       <WeatherWidget onWeatherChange={handleWeatherChange} />
-      <ShiftBadge />
+      <SmartShiftCard />
 
       {/* 主单量卡片 */}
       <motion.div variants={item} className="holo-card-strong rounded-[24px] p-6 relative overflow-hidden stat-card-enhanced corner-brackets holo-shimmer neon-flicker cyber-data-stream">

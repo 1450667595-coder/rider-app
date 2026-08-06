@@ -109,6 +109,7 @@ export interface DbSettings {
   current_shift: string;
   shift_start_date?: string;
   weekly_shifts?: string;
+  sync_key?: string;
   updated_at?: string;
 }
 
@@ -146,6 +147,7 @@ export interface SyncSettings {
   currentShift: string;
   shiftStartDate?: string;
   weeklyShifts?: Record<string, string>;
+  weeklyShiftsUpdatedAt?: number;
 }
 
 // ── Push to Cloud ──
@@ -245,6 +247,13 @@ export async function pushSettingsToCloud(userId: string, settings: SyncSettings
   try {
     const client = getSupabase();
     if (!client) return false;
+    // 云端 user_settings 表目前缺少 shift_start_date / weekly_shifts 字段，
+    // 把这两部分序列化存到 sync_key（text）字段，避免 upsert 因未知列失败。
+    const syncKey = JSON.stringify({
+      shiftStartDate: settings.shiftStartDate,
+      weeklyShifts: settings.weeklyShifts || {},
+      weeklyShiftsUpdatedAt: settings.weeklyShiftsUpdatedAt,
+    });
     const { error } = await client.from("user_settings").upsert(
       {
         user_id: userId,
@@ -256,8 +265,7 @@ export async function pushSettingsToCloud(userId: string, settings: SyncSettings
         bonus_threshold: settings.bonusThreshold,
         work_days_per_week: settings.workDaysPerWeek,
         current_shift: settings.currentShift,
-        shift_start_date: settings.shiftStartDate,
-        weekly_shifts: settings.weeklyShifts ? JSON.stringify(settings.weeklyShifts) : undefined,
+        sync_key: syncKey,
       },
       { onConflict: "user_id" }
     );
@@ -314,11 +322,20 @@ export async function pullSettingsFromCloud(userId: string): Promise<SyncSetting
     if (error || !data) return null;
 
     const s = data as DbSettings;
+    // 兼容旧数据：weekly_shifts 字段如果存在则直接解析
     let weeklyShifts: Record<string, string> | undefined;
     if (s.weekly_shifts) {
       try {
         const parsed = JSON.parse(s.weekly_shifts);
         if (parsed && typeof parsed === "object") weeklyShifts = parsed;
+      } catch { /* ignore */ }
+    }
+    // 新数据通过 sync_key 携带 shiftStartDate、weeklyShifts 及其修改时间戳
+    let syncExtra: { shiftStartDate?: string; weeklyShifts?: Record<string, string>; weeklyShiftsUpdatedAt?: number } = {};
+    if (s.sync_key) {
+      try {
+        const parsed = JSON.parse(s.sync_key);
+        if (parsed && typeof parsed === "object") syncExtra = parsed;
       } catch { /* ignore */ }
     }
     return {
@@ -330,8 +347,9 @@ export async function pullSettingsFromCloud(userId: string): Promise<SyncSetting
       bonusThreshold: s.bonus_threshold,
       workDaysPerWeek: s.work_days_per_week,
       currentShift: s.current_shift || "early_mid",
-      shiftStartDate: s.shift_start_date,
-      weeklyShifts,
+      shiftStartDate: syncExtra.shiftStartDate || s.shift_start_date,
+      weeklyShifts: syncExtra.weeklyShifts || weeklyShifts,
+      weeklyShiftsUpdatedAt: syncExtra.weeklyShiftsUpdatedAt,
     };
   } catch {
     return null;

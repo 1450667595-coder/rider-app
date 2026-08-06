@@ -42,12 +42,29 @@ db.exec(`
     bonus_threshold INTEGER NOT NULL DEFAULT 1500,
     work_days_per_week INTEGER NOT NULL DEFAULT 6,
     current_shift TEXT NOT NULL DEFAULT 'early_mid',
+    weekly_shifts TEXT,
+    shift_start_date TEXT,
+    weekly_shifts_updated_at INTEGER,
     updated_at TEXT DEFAULT (datetime('now'))
   );
 
   CREATE INDEX IF NOT EXISTS idx_records_user_date ON daily_records(user_id, date);
   CREATE INDEX IF NOT EXISTS idx_records_date ON daily_records(date);
 `);
+
+// 兼容旧数据库：补充班次相关字段
+const shiftColumns = [
+  "weekly_shifts TEXT",
+  "shift_start_date TEXT",
+  "weekly_shifts_updated_at INTEGER",
+];
+for (const colDef of shiftColumns) {
+  try {
+    db.exec(`ALTER TABLE user_settings ADD COLUMN ${colDef}`);
+  } catch {
+    // 字段已存在时忽略
+  }
+}
 
 // Prepare statements for better performance
 const stmts = {
@@ -83,16 +100,19 @@ const stmts = {
 
   getSettings: db.prepare(`
     SELECT rider_name, monthly_goal, daily_goal, base_price, bonus_price,
-           bonus_threshold, work_days_per_week, current_shift, updated_at
+           bonus_threshold, work_days_per_week, current_shift,
+           weekly_shifts, shift_start_date, weekly_shifts_updated_at, updated_at
     FROM user_settings
     WHERE user_id = ?
   `),
 
   upsertSettings: db.prepare(`
     INSERT INTO user_settings (user_id, rider_name, monthly_goal, daily_goal, base_price,
-      bonus_price, bonus_threshold, work_days_per_week, current_shift, updated_at)
+      bonus_price, bonus_threshold, work_days_per_week, current_shift,
+      weekly_shifts, shift_start_date, weekly_shifts_updated_at, updated_at)
     VALUES (@user_id, @rider_name, @monthly_goal, @daily_goal, @base_price,
-      @bonus_price, @bonus_threshold, @work_days_per_week, @current_shift, datetime('now'))
+      @bonus_price, @bonus_threshold, @work_days_per_week, @current_shift,
+      @weekly_shifts, @shift_start_date, @weekly_shifts_updated_at, datetime('now'))
     ON CONFLICT(user_id) DO UPDATE SET
       rider_name = excluded.rider_name,
       monthly_goal = excluded.monthly_goal,
@@ -102,6 +122,9 @@ const stmts = {
       bonus_threshold = excluded.bonus_threshold,
       work_days_per_week = excluded.work_days_per_week,
       current_shift = excluded.current_shift,
+      weekly_shifts = excluded.weekly_shifts,
+      shift_start_date = excluded.shift_start_date,
+      weekly_shifts_updated_at = excluded.weekly_shifts_updated_at,
       updated_at = datetime('now')
   `),
 

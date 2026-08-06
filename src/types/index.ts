@@ -47,6 +47,8 @@ export interface UserSettings {
   shiftStartDate?: string;
   // 每周班次覆盖：key 为周一日期 YYYY-MM-DD，value 为班次
   weeklyShifts?: Record<string, ShiftType>;
+  // 班次覆盖最后修改时间戳，用于多设备同步冲突时以最新为准
+  weeklyShiftsUpdatedAt?: number;
 }
 
 export interface Achievement {

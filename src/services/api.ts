@@ -88,6 +88,8 @@ export interface ApiSettings {
   currentShift: string;
   shiftStartDate?: string;
   weeklyShifts?: Record<string, string>;
+  // 班次覆盖最后修改时间戳，用于多设备同步冲突时以最新为准
+  weeklyShiftsUpdatedAt?: number;
 }
 
 export async function fetchSettings(userId: string): Promise<ApiSettings | null> {
@@ -109,6 +111,7 @@ export async function saveSettings(userId: string, settings: ApiSettings): Promi
       currentShift: settings.currentShift,
       shiftStartDate: settings.shiftStartDate,
       weeklyShifts: settings.weeklyShifts,
+      weeklyShiftsUpdatedAt: settings.weeklyShiftsUpdatedAt,
     }),
   });
   return data?.success ?? false;

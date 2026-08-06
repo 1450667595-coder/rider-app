@@ -8,8 +8,9 @@
 //  5. 目标完成概率、最佳时段、小时分布等骑手实用功能
 // ══════════════════════════════════════════════════════════════════════
 
-import { DailyRecord, Weather, PredictionResult, ShiftType, UserSettings, SHIFT_DEFINITIONS } from "@/types";
-import { parseLocalDate, getShiftForDate } from "@/utils/date";
+import { DailyRecord, Weather, PredictionResult, ShiftType, UserSettings, SHIFT_DEFINITIONS, WEATHER_LABELS } from "@/types";
+import { parseLocalDate, getShiftForDate, today, getCurrentMonth, getUpcomingShifts } from "@/utils/date";
+import { getUserLocation, fetchWeatherByCoords, weatherCodeToOurWeather, type WeatherData } from "@/services/weather";
 
 // ── 默认天气加成（数据不足时的经验 fallback） ──
 const DEFAULT_WEATHER_BOOST: Record<Weather, number> = {
@@ -25,12 +26,21 @@ const DEFAULT_SHIFT_FACTOR: Record<ShiftType, number> = {
   early_mid: 1.00, early: 1.02, late_mid: 1.00, late: 0.98, night: 0.94,
 };
 
+// ── 休息日识别：AI 预测时不计入休息日（即使记录了少量单量） ──
+const REST_NOTE = "休息";
+function isRestDay(r: DailyRecord): boolean {
+  return r.note === REST_NOTE;
+}
+function isWorkDay(r: DailyRecord): boolean {
+  return !isRestDay(r);
+}
+
 // ── 温度记录（外部传入） ──
 export interface TemperatureHistory { date: string; temp: number; }
 
 /** 从历史数据学习班次因子（数据不足则回退到默认值） */
 function learnShiftFactors(records: Record<string, DailyRecord>, settings: Pick<UserSettings, "currentShift" | "shiftStartDate" | "weeklyShifts">): Record<ShiftType, number> {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 20) return { ...DEFAULT_SHIFT_FACTOR };
 
   const baseline = robustAvg(all.map(r => r.orders));
@@ -78,7 +88,7 @@ function holtForecast(values: number[], alpha = 0.3, beta = 0.1, steps = 1): num
 
 /** AR(1) 残差修正：利用前一天实际与预测的偏差 */
 function ar1ResidualAdjustment(records: Record<string, DailyRecord>): number {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 14) return 0;
   // 计算历史预测残差序列（用简单同星期几预测作为 proxy）
   const residuals: number[] = [];
@@ -118,7 +128,7 @@ function variance(values: number[]): number {
 
 /** 计算预测区间（基于历史残差） */
 function computePredictionInterval(records: Record<string, DailyRecord>, basePrediction: number): { low: number; high: number } {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 10) return { low: Math.round(basePrediction * 0.75), high: Math.round(basePrediction * 1.25) };
 
   const residuals: number[] = [];
@@ -178,6 +188,8 @@ interface SpecialEvent {
 
 export const SPECIAL_EVENTS: SpecialEvent[] = [
   { date: "08-07", name: "秋天第一杯奶茶", boost: 1.60, description: "全网奶茶节，订单暴增60%" },
+  { date: "08-15", name: "暑期尾声", boost: 1.15, description: "学生返程前单量高峰" },
+  { date: "09-01", name: "开学季", boost: 0.85, description: "大学生返校，县城单量下降约15%" },
   { date: "02-14", name: "情人节", boost: 1.40, description: "鲜花外卖爆单" },
   { date: "05-20", name: "520表白日", boost: 1.35, description: "礼物外卖激增" },
   { date: "12-24", name: "平安夜", boost: 1.30, description: "圣诞订单高峰" },
@@ -267,7 +279,7 @@ function sortRecords(records: Record<string, DailyRecord>): DailyRecord[] {
 function getRecordsByMonth(records: Record<string, DailyRecord>, year: number, month: number): DailyRecord[] {
   const prefix = `${year}-${String(month).padStart(2, "0")}`;
   return Object.values(records)
-    .filter(r => r.date.startsWith(prefix) && r.orders > 0)
+    .filter(r => r.date.startsWith(prefix) && r.orders > 0 && isWorkDay(r))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
@@ -286,7 +298,7 @@ function getCurrentMonthRecords(records: Record<string, DailyRecord>): DailyReco
 }
 
 function getSameDOWRecords(records: Record<string, DailyRecord>, targetDOW: number, maxDays = 90): DailyRecord[] {
-  const sorted = sortRecords(records).filter(r => r.orders > 0);
+  const sorted = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   const result: DailyRecord[] = [];
   for (let i = sorted.length - 1; i >= 0 && result.length < maxDays; i--) {
     const r = sorted[i];
@@ -311,7 +323,7 @@ function isWeekend(dateStr: string): boolean {
 
 /** 从历史数据学习天气影响（带收缩估计 + 近期加权，更快适应天气变化） */
 function learnWeatherBoost(records: Record<string, DailyRecord>): Record<Weather, number> {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 10) return { ...DEFAULT_WEATHER_BOOST };
 
   const groups: Record<Weather, DailyRecord[]> = {
@@ -346,7 +358,7 @@ function learnWeatherBoost(records: Record<string, DailyRecord>): Record<Weather
 
 /** 计算周末 vs 工作日因子 */
 function learnWeekendFactor(records: Record<string, DailyRecord>, targetIsWeekend: boolean): number {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 14) return targetIsWeekend ? 0.95 : 1.0;
 
   const weekend = all.filter(r => isWeekend(r.date));
@@ -363,7 +375,7 @@ function learnWeekendFactor(records: Record<string, DailyRecord>, targetIsWeeken
 
 /** 个人效率因子：近期每小时单量 vs 历史平均 */
 function learnEfficiencyFactor(records: Record<string, DailyRecord>): number {
-  const all = sortRecords(records).filter(r => r.orders > 0 && r.workHours > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && r.workHours > 0 && isWorkDay(r));
   if (all.length < 6) return 1.0;
 
   const rates = all.map(r => r.orders / r.workHours);
@@ -375,7 +387,7 @@ function learnEfficiencyFactor(records: Record<string, DailyRecord>): number {
 
 /** 趋势因子：最近14天 vs 前14天 */
 function learnTrendFactor(records: Record<string, DailyRecord>): number {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 14) return 1.0;
 
   const recent = all.slice(-14);
@@ -392,7 +404,7 @@ function learnTrendFactor(records: Record<string, DailyRecord>): number {
 
 /** 动量因子：最近3天 vs 最近7天 */
 function learnMomentumFactor(records: Record<string, DailyRecord>): number {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 7) return 1.0;
 
   const last3 = robustAvg(all.slice(-3).map(r => r.orders));
@@ -403,24 +415,42 @@ function learnMomentumFactor(records: Record<string, DailyRecord>): number {
   return Math.max(0.90, Math.min(1.10, ratio));
 }
 
-/** 季节性因子：目标月份历史平均 vs 全年平均 */
+// 社会季节性先验：7-8月大学生回流小县城+高温外卖增多；9月开学季下滑
+const SOCIAL_SEASONAL_PRIOR: Record<number, number> = {
+  7: 1.08, // 暑假开始，学生回流 + 高温
+  8: 1.12, // 暑期高峰 + 酷暑
+  9: 0.88, // 开学季，大学生返校，县城单量下滑
+};
+
+/** 季节性因子：融合历史数据 + 社会/气候先验知识 */
 function learnSeasonalFactor(records: Record<string, DailyRecord>, targetMonth: number): number {
-  const all = sortRecords(records).filter(r => r.orders > 0);
-  if (all.length < 30) return 1.0;
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
+  const prior = SOCIAL_SEASONAL_PRIOR[targetMonth] ?? 1.0;
+
+  if (all.length < 30) return prior;
 
   const monthRecords = all.filter(r => parseLocalDate(r.date).getMonth() + 1 === targetMonth);
-  if (monthRecords.length < 5) return 1.0;
+  if (monthRecords.length < 5) return prior;
 
   const monthAvg = robustAvg(monthRecords.map(r => r.orders));
   const overallAvg = robustAvg(all.map(r => r.orders));
-  if (overallAvg <= 0) return 1.0;
+  if (overallAvg <= 0) return prior;
 
-  return Math.max(0.85, Math.min(1.20, monthAvg / overallAvg));
+  const historicalFactor = Math.max(0.80, Math.min(1.25, monthAvg / overallAvg));
+
+  // 7-9 月：历史数据与社会先验融合（数据越多越相信历史，但先验权重至少 35%）
+  if (targetMonth >= 7 && targetMonth <= 9) {
+    const historyWeight = Math.min(0.65, monthRecords.length / 20);
+    const socialWeight = 1 - historyWeight;
+    return Math.max(0.80, Math.min(1.25, historicalFactor * historyWeight + prior * socialWeight));
+  }
+
+  return historicalFactor;
 }
 
 /** 历史同期因子：去年/前年同月同日 */
 function learnSameDateFactor(records: Record<string, DailyRecord>, targetDateStr: string): number {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 60) return 1.0;
 
   const [year, month, day] = targetDateStr.split("-").map(Number);
@@ -462,7 +492,7 @@ function combineFactors(base: number, factorMap: Record<string, number>, weights
 
 /** 特征交叉：天气 × 星期几 对单量的影响 */
 function learnWeatherDOWFactor(records: Record<string, DailyRecord>, weather: Weather, dow: number): number {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 30) return 1.0;
 
   const baseline = robustAvg(all.map(r => r.orders));
@@ -493,7 +523,7 @@ function learnShiftDOWFactor(
   dow: number,
   settings: Pick<UserSettings, "currentShift" | "shiftStartDate" | "weeklyShifts">
 ): number {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 30) return 1.0;
 
   const sameShiftDOW = all.filter(r => {
@@ -514,7 +544,7 @@ function learnShiftDOWFactor(
 
 /** 通过 Walk-forward 回测估计模型历史偏差，用于校准最终预测 */
 function learnHistoricalBias(records: Record<string, DailyRecord>): number {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   const minHistory = 21;
   if (all.length < minHistory + 5) return 0;
 
@@ -535,7 +565,7 @@ function learnHistoricalBias(records: Record<string, DailyRecord>): number {
 
 /** 动态模型权重：根据历史回测表现自适应调整 */
 function computeDynamicModelWeights(records: Record<string, DailyRecord>): { dow: number; overall: number; sameDate: number; seasonal: number } {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   const minHistory = 28;
   if (all.length < minHistory) {
     return { dow: 0.35, overall: 0.55, sameDate: 0.05, seasonal: 0.05 };
@@ -547,7 +577,7 @@ function computeDynamicModelWeights(records: Record<string, DailyRecord>): { dow
     const target = all[i];
     const history: Record<string, DailyRecord> = {};
     for (let j = 0; j < i; j++) history[all[j].date] = all[j];
-    const histAll = sortRecords(history).filter(r => r.orders > 0);
+    const histAll = sortRecords(history).filter(r => r.orders > 0 && isWorkDay(r));
     if (histAll.length < 14) continue;
 
     const actual = target.orders;
@@ -606,7 +636,7 @@ export function predictForDateAI(
   settings?: Pick<UserSettings, "currentShift" | "shiftStartDate" | "weeklyShifts">,
   options?: PredictOptions
 ): PredictionResult {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   const targetDate = parseLocalDate(targetDateStr);
   const targetDOW = targetDate.getDay();
   const targetIsWeekend = targetDOW === 0 || targetDOW === 6;
@@ -872,11 +902,91 @@ export function predictWeeklyAI(
 }
 
 // ══════════════════════════════════════════════════════════════════════
+//  联网天气增强预测
+// ══════════════════════════════════════════════════════════════════════
+export interface NetworkWeatherForecast {
+  source: "network" | "fallback";
+  cityName?: string;
+  daily: DailyForecast[];
+}
+
+function estimateDayTemperature(fc: DailyForecast): number | undefined {
+  if (fc.maxTemp !== undefined && fc.minTemp !== undefined) {
+    return Math.round((fc.maxTemp + fc.minTemp) / 2);
+  }
+  return undefined;
+}
+
+/** 自动联网获取未来天气（Open-Meteo，无需 API Key） */
+export async function fetchNetworkWeatherForecast(days = 7): Promise<NetworkWeatherForecast> {
+  const loc = await getUserLocation();
+  let weather: WeatherData | null = null;
+  if (loc) {
+    try {
+      weather = await fetchWeatherByCoords(loc.lat, loc.lon);
+    } catch {
+      weather = null;
+    }
+  }
+
+  if (!weather) {
+    const daily: DailyForecast[] = [];
+    const now = new Date();
+    for (let i = 0; i < days; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() + i + 1);
+      const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      daily.push({ date: ds, weather: "sunny" });
+    }
+    return { source: "fallback", daily };
+  }
+
+  const daily = weather.forecast.slice(0, days).map((day) => ({
+    date: day.date,
+    weather: weatherCodeToOurWeather(day.weatherCode),
+    maxTemp: day.maxTemp,
+    minTemp: day.minTemp,
+  }));
+
+  return { source: "network", cityName: weather.cityName, daily };
+}
+
+export interface NetworkPredictionResult extends PredictionResult {
+  source: "network" | "fallback";
+  cityName?: string;
+  temperature?: number;
+}
+
+/** 明日预测：联网获取真实天气 */
+export async function predictTomorrowAIWithNetworkWeather(
+  records: Record<string, DailyRecord>,
+  settings?: Pick<UserSettings, "currentShift" | "shiftStartDate" | "weeklyShifts">,
+  options?: PredictOptions
+): Promise<NetworkPredictionResult> {
+  const forecast = await fetchNetworkWeatherForecast(1);
+  const tomorrow = forecast.daily[0] || { date: "", weather: "sunny" as Weather };
+  const temperature = estimateDayTemperature(tomorrow);
+  const result = predictTomorrowAI(records, tomorrow.weather, settings, { ...options, temperature });
+  return { ...result, source: forecast.source, cityName: forecast.cityName, temperature };
+}
+
+/** 未来 7 天预测：联网获取真实天气 */
+export async function predictWeeklyAIWithNetworkWeather(
+  records: Record<string, DailyRecord>,
+  settings?: Pick<UserSettings, "currentShift" | "shiftStartDate" | "weeklyShifts">
+): Promise<{ totalPredicted: number; dailyPredictions: { day: string; date: string; predicted: number; weather: Weather }[]; source: "network" | "fallback"; cityName?: string }> {
+  const forecast = await fetchNetworkWeatherForecast(7);
+  const result = predictWeeklyAI(records, forecast.daily, settings);
+  return { ...result, source: forecast.source, cityName: forecast.cityName };
+}
+
+// ══════════════════════════════════════════════════════════════════════
 //  月度预测
 // ══════════════════════════════════════════════════════════════════════
 export function predictMonthlyAI(
   records: Record<string, DailyRecord>,
-  settings: { monthlyGoal: number; workDaysPerWeek: number; currentShift: ShiftType; shiftStartDate?: string; weeklyShifts?: Record<string, ShiftType> }
+  settings: { monthlyGoal: number; workDaysPerWeek: number; currentShift: ShiftType; shiftStartDate?: string; weeklyShifts?: Record<string, ShiftType> },
+  weatherForecast?: DailyForecast[]
 ): {
   predicted: number;
   completed: number;
@@ -892,11 +1002,13 @@ export function predictMonthlyAI(
   const today = now.getDate();
   const remainingDays = daysInMonth - today;
 
+  const networkWeatherMap = weatherForecast ? new Map(weatherForecast.map(d => [d.date, d])) : null;
+
   const thisMonth = getCurrentMonthRecords(records);
   const completed = thisMonth.reduce((s, r) => s + r.orders, 0);
 
   // 基于最近 60 天数据的日均单量（个人效率标准化后）
-  const recent = sortRecords(records).filter(r => r.orders > 0).slice(-60);
+  const recent = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r)).slice(-60);
   let dailyAvg = 0;
   if (recent.length > 0) {
     const normalized = recent.map(r => {
@@ -935,7 +1047,19 @@ export function predictMonthlyAI(
     const weekendFactor = learnWeekendFactor(records, dd.getDay() === 0 || dd.getDay() === 6);
     const eventBoost = holiday.boost;
 
-    const dayBase = dailyAvg * shiftFactor * trendFactor * seasonalFactor * avgWeatherFactor;
+    // 联网天气优先：有真实天气预报时用真实天气，否则用历史平均天气因子
+    let dayWeatherFactor = avgWeatherFactor;
+    let dayTemp: number | undefined;
+    if (networkWeatherMap) {
+      const nw = networkWeatherMap.get(ds);
+      if (nw) {
+        dayWeatherFactor = weatherBoost[nw.weather] ?? avgWeatherFactor;
+        dayTemp = estimateDayTemperature(nw);
+      }
+    }
+    const tempFactor = dayTemp !== undefined ? temperatureImpactFactor(dayTemp) : 1.0;
+
+    const dayBase = dailyAvg * shiftFactor * trendFactor * seasonalFactor * dayWeatherFactor * tempFactor;
     const dayPredicted = Math.max(0, Math.round(dayBase * eventBoost * weekendFactor));
     const dayLow = Math.max(0, Math.round(dayBase * 0.75));
     const dayHigh = Math.round(dayBase * 1.25 * eventBoost);
@@ -996,6 +1120,25 @@ export function predictMonthlyAI(
   return { predicted, completed, dailyNeeded, lowEstimate, highEstimate, weeklyBreakdown };
 }
 
+/** 月度预测：联网获取真实天气增强 */
+export async function predictMonthlyAIWithNetworkWeather(
+  records: Record<string, DailyRecord>,
+  settings: { monthlyGoal: number; workDaysPerWeek: number; currentShift: ShiftType; shiftStartDate?: string; weeklyShifts?: Record<string, ShiftType> }
+): Promise<{
+  predicted: number;
+  completed: number;
+  dailyNeeded: number;
+  lowEstimate: number;
+  highEstimate: number;
+  weeklyBreakdown: { week: number; predicted: number; low: number; high: number }[];
+  source: "network" | "fallback";
+  cityName?: string;
+}> {
+  const network = await fetchNetworkWeatherForecast(7);
+  const result = predictMonthlyAI(records, settings, network.daily);
+  return { ...result, source: network.source, cityName: network.cityName };
+}
+
 /** 估算每天出勤概率（基于历史数据：该星期几在历史期间出现过几次 / 其中工作几次） */
 function estimateWorkDayProbability(records: Record<string, DailyRecord>): number[] {
   const all = sortRecords(records);
@@ -1013,7 +1156,7 @@ function estimateWorkDayProbability(records: Record<string, DailyRecord>): numbe
     const ds = `${y}-${m}-${dd}`;
     const dow = d.getDay();
     dowCount[dow]++;
-    if (records[ds]?.orders > 0) dowWork[dow]++;
+    if (records[ds]?.orders > 0 && !isRestDay(records[ds])) dowWork[dow]++;
   }
 
   return dowCount.map((c, i) => {
@@ -1024,7 +1167,7 @@ function estimateWorkDayProbability(records: Record<string, DailyRecord>): numbe
 
 /** 基于历史出勤模式估算剩余天数中的工作日数量 */
 function estimateWorkDays(records: Record<string, DailyRecord>, year: number, month: number, startDay: number, endDay: number): number {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 14) return 0;
 
   // 计算历史上每天的出勤概率
@@ -1058,7 +1201,7 @@ export function generateInsights(
   records: Record<string, DailyRecord>,
   settings: { dailyGoal: number; monthlyGoal: number }
 ): { icon: string; title: string; message: string; priority: "high" | "medium" | "low" }[] {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 3) return [];
 
   const insights: { icon: string; title: string; message: string; priority: "high" | "medium" | "low" }[] = [];
@@ -1141,7 +1284,7 @@ export function generateInsights(
 //  异常检测（改进版：使用 IQR 与 Z-Score 组合）
 // ══════════════════════════════════════════════════════════════════════
 export function detectAnomalies(records: Record<string, DailyRecord>): (DailyRecord & { type?: string; expected?: number; deviation?: number })[] {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 5) return [];
 
   const orders = all.map(r => r.orders);
@@ -1182,7 +1325,7 @@ export interface RainyDayImpact {
 }
 
 export function predictRainyDayImpact(records: Record<string, DailyRecord>): RainyDayImpact {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   const rainy = all.filter(r => r.weather === "rainy");
   const nonRainy = all.filter(r => r.weather !== "rainy");
 
@@ -1281,7 +1424,7 @@ export function predictDailyDistribution(
   weather: Weather,
   settings?: Pick<UserSettings, "currentShift" | "shiftStartDate" | "weeklyShifts">
 ): DailyDistribution {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   // 使用本地时间构造日期字符串，避免 UTC 跨日问题
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -1372,7 +1515,7 @@ export function recommendBestWorkDays(
 ): BestWorkSlot[] {
   const weekly = predictWeeklyAI(records, weatherForecast, settings);
   const boost = learnWeatherBoost(records);
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
 
   return weekly.dailyPredictions.map(day => {
     const event = getSpecialEvent(day.date);
@@ -1412,7 +1555,7 @@ export function predictGoalProbability(
   }
 
   const gap = settings.monthlyGoal - predicted;
-  const stdDev = std(sortRecords(records).filter(r => r.orders > 0).map(r => r.orders)) || 10;
+  const stdDev = std(sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r)).map(r => r.orders)) || 10;
   const remainingWorkDays = dailyNeeded > 0 ? Math.round((settings.monthlyGoal - completed) / dailyNeeded) : 0;
 
   // 使用正态近似估算完成概率
@@ -1586,7 +1729,7 @@ export function deepAnalyze(records: Record<string, DailyRecord>): {
   momentumIndex: { current: number; trend: string; score: number; level: string; value: number };
   quantileDistribution: { p10: number; p25: number; p50: number; p75: number; p90: number };
 } {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   const orders = all.map(r => r.orders);
 
   // 天气 breakdown
@@ -1807,7 +1950,7 @@ export interface ShiftPerformance {
 }
 
 export function analyzeShiftPerformance(records: Record<string, DailyRecord>, settings: Pick<UserSettings, "currentShift" | "shiftStartDate" | "weeklyShifts">): ShiftPerformance[] {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   if (all.length < 10) {
     return SHIFT_DEFINITIONS.map(s => ({
       shift: s.type,
@@ -1860,7 +2003,7 @@ export function backtestPredictionModel(
   records: Record<string, DailyRecord>,
   settings: Pick<UserSettings, "currentShift" | "shiftStartDate" | "weeklyShifts">
 ): BacktestResult {
-  const all = sortRecords(records).filter(r => r.orders > 0);
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
   const minHistory = 21;
   if (all.length < minHistory + 7) {
     return {
@@ -1940,6 +2083,129 @@ export function backtestPredictionModel(
     byDOW,
     recentMape,
   };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  在线 AI 大模型预测
+// ══════════════════════════════════════════════════════════════════════
+export interface LLMPredictionOptions {
+  apiKey: string;
+  baseURL?: string;
+  model?: string;
+  temperature?: number;
+}
+
+/** 调用在线大模型（兼容 OpenAI API 格式） */
+export async function callLLMPrediction(
+  prompt: string,
+  options: LLMPredictionOptions
+): Promise<{ success: boolean; text?: string; error?: string }> {
+  const baseURL = (options.baseURL || "https://api.openai.com/v1").replace(/\/$/, "");
+  const model = options.model || "gpt-4o-mini";
+  try {
+    const res = await fetch(`${baseURL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${options.apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: options.temperature ?? 0.3,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      return { success: false, error: err };
+    }
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content;
+    return { success: true, text };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+/** 生成给在线大模型的预测提示词 */
+export function generateLLMPredictionPrompt(
+  records: Record<string, DailyRecord>,
+  settings: UserSettings,
+  weatherForecast?: NetworkWeatherForecast
+): string {
+  const all = sortRecords(records).filter(r => r.orders > 0 && isWorkDay(r));
+  const { year, month } = getCurrentMonth();
+  const monthPrefix = `${year}-${String(month).padStart(2, "0")}`;
+  const monthRecords = all.filter(r => r.date.startsWith(monthPrefix));
+  const completed = monthRecords.reduce((s, r) => s + r.orders, 0);
+
+  const stats = {
+    totalDays: all.length,
+    avgOrders: all.length > 0 ? Math.round(all.reduce((s, r) => s + r.orders, 0) / all.length) : 0,
+    last7: all.length >= 7 ? Math.round(robustAvg(all.slice(-7).map(r => r.orders))) : 0,
+    last14: all.length >= 14 ? Math.round(robustAvg(all.slice(-14).map(r => r.orders))) : 0,
+    last30: all.length >= 30 ? Math.round(robustAvg(all.slice(-30).map(r => r.orders))) : 0,
+    completed,
+    monthlyGoal: settings.monthlyGoal,
+    dailyGoal: settings.dailyGoal,
+  };
+
+  const todayStr = today();
+  const shiftInfo = getShiftForDate(todayStr, settings);
+  const upcoming = getUpcomingShifts(settings, 2)
+    .map(s => `${s.weekStart.slice(5)} ${s.shift.name}`)
+    .join("；");
+
+  const weatherText =
+    weatherForecast?.daily
+      .map((d) => {
+        const w = WEATHER_LABELS[d.weather];
+        const t = d.maxTemp !== undefined ? ` ${d.minTemp}-${d.maxTemp}°C` : "";
+        return `${d.date}: ${w}${t}`;
+      })
+      .join("\n") || "暂无联网天气预报";
+
+  const events: string[] = [];
+  for (let i = 0; i < 30; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const e = getSpecialEvent(ds);
+    if (e) events.push(`${ds} ${e.name}：${e.description}（影响${e.boost >= 1 ? "+" : ""}${Math.round((e.boost - 1) * 100)}%）`);
+  }
+
+  return `你是外卖骑手单量预测专家。请基于以下真实数据与外部信息，给出未来7天、本月剩余、下月单量预测与工作建议。
+
+=== 骑手历史数据 ===
+- 总记录天数：${stats.totalDays}
+- 历史日均单量：${stats.avgOrders}
+- 近7天日均：${stats.last7}
+- 近14天日均：${stats.last14}
+- 近30天日均：${stats.last30}
+- 本月已完成：${stats.completed} / 目标 ${stats.monthlyGoal}
+- 每日目标：${stats.dailyGoal}
+- 当前班次：${shiftInfo.name}（${shiftInfo.timeRange}）
+- 未来班次：${upcoming || "未设置"}
+
+=== 联网天气预报 ===
+${weatherText}
+${weatherForecast?.cityName ? `定位城市：${weatherForecast.cityName}` : ""}
+
+=== 未来30天特殊事件 ===
+${events.length > 0 ? events.join("\n") : "无重大节日或事件"}
+
+=== 季节性与社会因素 ===
+- 7-8月：大学生暑假回流小县城 + 高温天气，外卖单量通常上升 8%-15%。
+- 9月：开学季大学生返校，小县城单量通常下降约 12%-15%。
+- 请结合历史同期数据判断这些因素的强度。
+
+=== 需要输出 ===
+1. 未来7天每日预测单量（含星期、天气、特殊事件说明）
+2. 本月剩余天数预计可完成单量与达成目标概率
+3. 下月（${month === 12 ? 1 : month + 1}月）趋势预判
+4. 具体工作建议（班次、出勤日、注意事项）
+
+请用中文输出，尽量量化，保持简洁。`;
 }
 
 // ══════════════════════════════════════════════════════════════════════

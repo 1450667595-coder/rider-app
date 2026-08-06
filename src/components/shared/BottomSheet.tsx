@@ -1,11 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import { useEffect } from "react";
 
 interface BottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
+  title: string;
   children: React.ReactNode;
+  headerAction?: React.ReactNode;
 }
 
 export default function BottomSheet({
@@ -13,7 +15,22 @@ export default function BottomSheet({
   onClose,
   title,
   children,
+  headerAction,
 }: BottomSheetProps) {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("sheet-open");
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.classList.remove("sheet-open");
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.classList.remove("sheet-open");
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -26,7 +43,7 @@ export default function BottomSheet({
             onClick={onClose}
           />
           <motion.div
-            className="fixed bottom-0 left-0 right-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-[28px]"
+            className="fixed bottom-0 left-0 right-0 z-50 max-h-[80vh] max-h-[80dvh] overflow-y-auto overscroll-contain rounded-t-[28px]"
             style={{
               background: "rgba(4, 6, 16, 0.92)",
               backdropFilter: "blur(12px)",
@@ -35,6 +52,7 @@ export default function BottomSheet({
               borderLeft: "1px solid rgba(0, 229, 255, 0.04)",
               borderRight: "1px solid rgba(0, 229, 255, 0.04)",
               boxShadow: "0 -8px 40px rgba(0,0,0,0.6), 0 -2px 8px rgba(0,0,0,0.4)",
+              WebkitOverflowScrolling: "touch",
             }}
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -47,8 +65,17 @@ export default function BottomSheet({
                 background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.2), rgba(0,229,255,0.3), rgba(0,229,255,0.2), transparent)",
               }}
             />
-            <div className="flex items-center justify-between p-5 pb-2">
-              <div className="w-8" />
+            <div
+              className="sticky top-0 z-10 flex items-center justify-between p-5 pb-2"
+              style={{
+                background: "rgba(4, 6, 16, 0.92)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+              }}
+            >
+              <div className="w-8 flex items-center justify-start">
+                {headerAction}
+              </div>
               <h3 className="text-lg font-bold text-[#E0E0E0] tracking-tight">{title}</h3>
               <button
                 onClick={onClose}

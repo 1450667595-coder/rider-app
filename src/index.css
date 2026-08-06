@@ -70,6 +70,11 @@ body {
   font-family: var(--font-cn);
 }
 
+/* BottomSheet 打开时隐藏底部导航，避免按钮被导航层遮挡/重叠 */
+body.sheet-open nav.fixed.bottom-0 {
+  display: none;
+}
+
 /* ═══════════════════════════════
    动态网格背景 + 径向辉光
    ═══════════════════════════════ */

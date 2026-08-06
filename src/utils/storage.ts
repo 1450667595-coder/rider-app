@@ -189,19 +189,47 @@ function loadAutoBackup(): AppStorage | null {
 // localStorage → IndexedDB → 自动备份 → 默认数据
 // ═══════════════════════════════════════════════
 
+/** 合并两份本地存储数据：records 取并集，settings 按 weeklyShiftsUpdatedAt 取最新 */
+function mergeStorageData(local: AppStorage, remote: AppStorage): AppStorage {
+  // records：以本地为主，远程补充本地缺失的日期
+  const mergedRecords = { ...remote.records, ...local.records };
+
+  // settings：以班次覆盖时间戳为准，避免旧设置覆盖新锁定的班次
+  const localAt = local.settings.weeklyShiftsUpdatedAt || 0;
+  const remoteAt = remote.settings.weeklyShiftsUpdatedAt || 0;
+  const useRemoteSettings = remoteAt > localAt;
+
+  const mergedSettings = useRemoteSettings
+    ? {
+        ...local.settings,
+        ...remote.settings,
+        weeklyShifts: remote.settings.weeklyShifts,
+        weeklyShiftsUpdatedAt: remoteAt,
+      }
+    : { ...local.settings };
+
+  return {
+    ...local,
+    records: mergedRecords,
+    settings: mergedSettings,
+  };
+}
+
 export function loadStorage(): AppStorage {
   // 1. 先尝试 localStorage（最快）
   const localData = loadFromLocalStorage();
   if (localData) {
-    // 异步从 IndexedDB 加载，如果更新则覆盖
+    // 异步从 IndexedDB 加载，按时间戳/记录数合并，避免旧设置覆盖新锁定的班次
     loadFromIndexedDB().then((idbData) => {
-      if (idbData) {
-        const localCount = Object.keys(localData.records).length;
-        const idbCount = Object.keys(idbData.records).length;
-        // 取记录数多的那份数据
-        if (idbCount > localCount) {
-          saveToLocalStorage(idbData);
-        }
+      if (!idbData) return;
+      const localCount = Object.keys(localData.records).length;
+      const idbCount = Object.keys(idbData.records).length;
+      const localAt = localData.settings.weeklyShiftsUpdatedAt || 0;
+      const idbAt = idbData.settings.weeklyShiftsUpdatedAt || 0;
+      // 只有 IndexedDB 确实更新（记录更多 或 班次时间戳更新）时才重写 localStorage
+      if (idbCount > localCount || idbAt > localAt) {
+        const merged = mergeStorageData(localData, idbData);
+        saveToLocalStorage(merged);
       }
     });
     return localData;
