@@ -1,13 +1,15 @@
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, useCallback, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Area, AreaChart, BarChart, Bar, Cell,
 } from "recharts";
-import { Sparkles, TrendingUp, Calendar, Cloud, AlertCircle, Target, Brain, Zap, Bug, Activity, Clock, CloudRain, Shield } from "lucide-react";
+import { Sparkles, TrendingUp, Calendar, Cloud, AlertCircle, Target, Brain, Zap, Bug, Activity, Clock, CloudRain, Shield, Wifi, WifiOff, Copy } from "lucide-react";
 import useStore from "@/store/useStore";
 import AnimatedNumber from "@/components/shared/AnimatedNumber";
 import WeatherWidget from "@/components/shared/WeatherWidget";
+import BottomSheet from "@/components/shared/BottomSheet";
+import { showToast } from "@/components/shared/Toast";
 import {
   predictTomorrowAI,
   predictWeeklyAI,
@@ -18,6 +20,13 @@ import {
   predictRainyDayImpact,
   backtestPredictionModel,
   SPECIAL_EVENTS,
+  predictMonthlyAIWithNetworkWeather,
+  predictWeeklyAIWithNetworkWeather,
+  predictTomorrowAIWithNetworkWeather,
+  fetchNetworkWeatherForecast,
+  generateLLMPredictionPrompt,
+  callLLMPrediction,
+  type NetworkWeatherForecast,
 } from "@/utils/aiPrediction";
 import { getLastNDays, formatDateShort, getDayOfWeek } from "@/utils/date";
 import { useWeather } from "@/hooks/useWeather";
@@ -57,6 +66,40 @@ function Predict() {
   const [realWeather, setRealWeather] = useState<Weather>("sunny");
   const { weather, forecast } = useWeather();
 
+  // 联网 AI 预测状态
+  const [networkPrediction, setNetworkPrediction] = useState<{
+    predicted: number;
+    completed: number;
+    dailyNeeded: number;
+    lowEstimate: number;
+    highEstimate: number;
+    weeklyBreakdown: { week: number; predicted: number; low: number; high: number }[];
+    source: "network" | "fallback";
+    cityName?: string;
+  } | null>(null);
+  const [weeklyNetwork, setWeeklyNetwork] = useState<{
+    totalPredicted: number;
+    dailyPredictions: { day: string; date: string; predicted: number; weather: import("@/types").Weather }[];
+    source: "network" | "fallback";
+    cityName?: string;
+  } | null>(null);
+  const [tomorrowNetwork, setTomorrowNetwork] = useState<{
+    predictedOrders: number;
+    confidence: "high" | "medium" | "low";
+    factors: { label: string; impact: string }[];
+    source: "network" | "fallback";
+    cityName?: string;
+    temperature?: number;
+  } | null>(null);
+  const [weatherForecast, setWeatherForecast] = useState<NetworkWeatherForecast | null>(null);
+  const [aiSheetOpen, setAiSheetOpen] = useState(false);
+  const [llmApiKey, setLlmApiKey] = useState(() => localStorage.getItem("rider_llm_api_key") || "");
+  const [llmBaseURL, setLlmBaseURL] = useState(() => localStorage.getItem("rider_llm_base_url") || "");
+  const [llmModel, setLlmModel] = useState(() => localStorage.getItem("rider_llm_model") || "gpt-4o-mini");
+  const [llmCustomModel, setLlmCustomModel] = useState(() => localStorage.getItem("rider_llm_custom_model") || "");
+  const [llmLoading, setLlmLoading] = useState(false);
+  const [llmResult, setLlmResult] = useState("");
+
   const handleWeatherChange = useCallback((w: Weather) => {
     setRealWeather(w);
     setSelectedWeather(w);
@@ -88,6 +131,68 @@ function Predict() {
     () => predictMonthlyAI(records, settings),
     [records, settings]
   );
+
+  // 联网获取天气与增强预测
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      predictMonthlyAIWithNetworkWeather(records, settings),
+      predictWeeklyAIWithNetworkWeather(records, settings),
+      predictTomorrowAIWithNetworkWeather(records, settings),
+      fetchNetworkWeatherForecast(7),
+    ]).then(([month, week, tomorrow, weather]) => {
+      if (cancelled) return;
+      setNetworkPrediction(month);
+      setWeeklyNetwork(week);
+      setTomorrowNetwork(tomorrow);
+      setWeatherForecast(weather);
+    });
+    return () => { cancelled = true; };
+  }, [records, settings]);
+
+  // 持久化 LLM API 配置（仅本地，不上传）
+  useEffect(() => { localStorage.setItem("rider_llm_api_key", llmApiKey); }, [llmApiKey]);
+  useEffect(() => { localStorage.setItem("rider_llm_base_url", llmBaseURL); }, [llmBaseURL]);
+  useEffect(() => { localStorage.setItem("rider_llm_model", llmModel); }, [llmModel]);
+  useEffect(() => { localStorage.setItem("rider_llm_custom_model", llmCustomModel); }, [llmCustomModel]);
+
+  const llmPrompt = useMemo(
+    () => generateLLMPredictionPrompt(records, settings, weatherForecast || undefined),
+    [records, settings, weatherForecast]
+  );
+
+  const handleCopyPrompt = () => {
+    navigator.clipboard.writeText(llmPrompt);
+    showToast("AI 预测提示词已复制", "success");
+  };
+
+  const handleRunLLM = async () => {
+    if (!llmApiKey.trim()) {
+      showToast("请输入 API Key", "error");
+      return;
+    }
+    const effectiveModel = llmModel === "custom" ? llmCustomModel.trim() : llmModel;
+    if (!effectiveModel) {
+      showToast("请输入自定义模型名", "error");
+      return;
+    }
+    setLlmLoading(true);
+    setLlmResult("");
+    const res = await callLLMPrediction(llmPrompt, {
+      apiKey: llmApiKey,
+      baseURL: llmBaseURL || undefined,
+      model: effectiveModel,
+    });
+    setLlmLoading(false);
+    if (res.success) {
+      setLlmResult(res.text || "");
+      showToast("AI 大模型预测完成", "success");
+    } else {
+      showToast(`调用失败：${res.error?.slice(0, 60) || "未知错误"}`, "error");
+    }
+  };
+
+  const activeNetworkPrediction = networkPrediction || monthlyPrediction;
 
   const anomalies = useMemo(() => detectAnomalies(records), [records]);
   const insights = useMemo(() => generateInsights(records, settings), [records, settings]);
@@ -793,6 +898,175 @@ function Predict() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* AI 联网预测 */}
+      <motion.div variants={item} className="holo-card rounded-[26px] p-5 corner-brackets relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#E040FB]/10 to-transparent rounded-bl-full -mr-8 -mt-8 pointer-events-none" />
+        <div className="flex items-center justify-between mb-4 relative z-10">
+          <h3 className="cyber-section-title text-sm tracking-tight">
+            <Sparkles size={16} className="icon-glow-cyan" />
+            AI 联网预测
+          </h3>
+          <div className="flex items-center gap-1.5">
+            {weatherForecast?.source === "network" ? (
+              <Wifi size={12} className="text-[#00E676]" />
+            ) : (
+              <WifiOff size={12} className="text-[#E0E0E0]/40" />
+            )}
+            <span className="text-[10px] text-[#E0E0E0]/40 terminal-text">
+              {weatherForecast?.source === "network" ? `已联网${weatherForecast.cityName ? ` · ${weatherForecast.cityName}` : ""}` : "离线模式"}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 relative z-10">
+          <div className="p-3 rounded-2xl bg-[#00E5FF]/8 border border-[#00E5FF]/10">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Cloud size={12} className="text-[#00E5FF]" />
+              <span className="text-[#E0E0E0]/50 text-[10px] terminal-text">明日预测</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-[#E0E0E0]">{tomorrowNetwork?.predictedOrders ?? "-"}</span>
+              <span className="text-[#E0E0E0]/40 text-xs">单</span>
+            </div>
+            {tomorrowNetwork?.temperature !== undefined && (
+              <p className="text-[10px] text-[#E0E0E0]/30 mt-0.5">
+                {tomorrowNetwork.temperature}°C · {WEATHER_LABELS[weeklyNetwork?.dailyPredictions[0]?.weather || "sunny"]}
+              </p>
+            )}
+          </div>
+
+          <div className="p-3 rounded-2xl bg-[#E040FB]/8 border border-[#E040FB]/10">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Activity size={12} className="text-[#E040FB]" />
+              <span className="text-[#E0E0E0]/50 text-[10px] terminal-text">未来7天</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-[#E0E0E0]">{weeklyNetwork?.totalPredicted ?? "-"}</span>
+              <span className="text-[#E0E0E0]/40 text-xs">单</span>
+            </div>
+            <p className="text-[10px] text-[#E0E0E0]/30 mt-0.5">
+              {weeklyNetwork?.dailyPredictions.slice(0, 3).map((d) => d.day).join(" / ")}
+            </p>
+          </div>
+        </div>
+
+        {activeNetworkPrediction.lowEstimate > 0 && activeNetworkPrediction.highEstimate > 0 && (
+          <div className="mt-3 p-3 rounded-2xl bg-[#E0E0E0]/4 border border-[#E0E0E0]/5 relative z-10">
+            <div className="flex items-center justify-between">
+              <span className="text-[#E0E0E0]/50 text-xs">本月预计区间</span>
+              <span className="text-[#E0E0E0] font-bold text-sm">
+                {activeNetworkPrediction.lowEstimate} - {activeNetworkPrediction.highEstimate} 单
+              </span>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={() => setAiSheetOpen(true)}
+          className="mt-3 w-full py-3 rounded-xl bg-gradient-to-r from-[#00E5FF]/15 to-[#E040FB]/15 border border-[#00E5FF]/20 text-[#00E5FF] text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#00E5FF]/10 transition-colors relative z-10"
+        >
+          <Brain size={16} />
+          AI 大模型深度预测
+        </button>
+      </motion.div>
+
+      {/* AI 大模型预测 Bottom Sheet */}
+      <BottomSheet isOpen={aiSheetOpen} onClose={() => setAiSheetOpen(false)} title="AI 大模型深度预测">
+        <div className="space-y-4">
+          <div className="p-3 rounded-xl bg-[#00E5FF]/5 border border-[#00E5FF]/10">
+            <p className="text-[#E0E0E0]/60 text-xs leading-relaxed">
+              已自动生成本地历史数据 + 联网天气 + 季节因素的提示词。你可以：
+            </p>
+            <ul className="mt-2 text-[#E0E0E0]/50 text-xs space-y-1 list-disc list-inside">
+              <li>一键复制提示词，粘贴到 ChatGPT / 豆包 / Kimi 等在线 AI</li>
+              <li>或填入自己的 OpenAI 兼容 API Key，直接在本页调用</li>
+            </ul>
+          </div>
+
+          <div>
+            <label className="block terminal-text text-xs mb-1.5 text-[#E0E0E0]/60">API Key（可选，仅保存在本地）</label>
+            <input
+              type="password"
+              value={llmApiKey}
+              onChange={(e) => setLlmApiKey(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl input-cyber text-[#E0E0E0] placeholder-[#E0E0E0]/20 transition-colors text-sm"
+              placeholder="sk-..."
+            />
+          </div>
+
+          <div>
+            <label className="block terminal-text text-xs mb-1.5 text-[#E0E0E0]/60">API 地址（可选，默认 OpenAI）</label>
+            <input
+              type="text"
+              value={llmBaseURL}
+              onChange={(e) => setLlmBaseURL(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl input-cyber text-[#E0E0E0] placeholder-[#E0E0E0]/20 transition-colors text-sm"
+              placeholder="https://api.openai.com/v1"
+            />
+          </div>
+
+          <div>
+            <label className="block terminal-text text-xs mb-1.5 text-[#E0E0E0]/60">模型</label>
+            <select
+              value={llmModel}
+              onChange={(e) => setLlmModel(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl input-cyber text-[#E0E0E0] text-sm bg-transparent"
+            >
+              <option value="gpt-4o-mini">OpenAI gpt-4o-mini</option>
+              <option value="gpt-4o">OpenAI gpt-4o</option>
+              <option value="deepseek-v4-flash">DeepSeek deepseek-v4-flash</option>
+              <option value="deepseek-v4-pro">DeepSeek deepseek-v4-pro</option>
+              <option value="qwen-plus">通义千问 qwen-plus</option>
+              <option value="custom">自定义</option>
+            </select>
+          </div>
+
+          {llmModel === "custom" && (
+            <div>
+              <label className="block terminal-text text-xs mb-1.5 text-[#E0E0E0]/60">自定义模型名</label>
+              <input
+                type="text"
+                value={llmCustomModel}
+                onChange={(e) => setLlmCustomModel(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl input-cyber text-[#E0E0E0] placeholder-[#E0E0E0]/20 transition-colors text-sm"
+                placeholder="例如：deepseek-v4-flash"
+              />
+            </div>
+          )}
+
+          <div className="p-3 rounded-xl bg-[#FFD740]/5 border border-[#FFD740]/10">
+            <p className="text-[#FFD740]/80 text-xs leading-relaxed">
+              支持 OpenAI 官方及任何兼容 <code className="bg-[#020408]/40 px-1 rounded">/v1/chat/completions</code> 的 API。模型名必须和提供商对应，例如 DeepSeek 用 <code className="bg-[#020408]/40 px-1 rounded">deepseek-v4-flash</code> 或 <code className="bg-[#020408]/40 px-1 rounded">deepseek-v4-pro</code>，API 地址填 <code className="bg-[#020408]/40 px-1 rounded">https://api.deepseek.com</code>。浏览器直接调用需 API 端开启 CORS，若调用失败可复制提示词到在线 AI 使用。
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleCopyPrompt}
+              className="flex-1 py-3 rounded-xl bg-[#E0E0E0]/5 border border-[#E0E0E0]/10 text-[#E0E0E0] text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#E0E0E0]/10 transition-colors"
+            >
+              <Copy size={16} />
+              复制提示词
+            </button>
+            <button
+              onClick={handleRunLLM}
+              disabled={llmLoading}
+              className="flex-1 py-3 rounded-xl bg-[#00E5FF]/15 border border-[#00E5FF]/30 text-[#00E5FF] text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#00E5FF]/25 transition-colors disabled:opacity-50"
+            >
+              {llmLoading ? <Activity size={16} className="animate-spin" /> : <Brain size={16} />}
+              {llmLoading ? "预测中..." : "直接调用"}
+            </button>
+          </div>
+
+          {llmResult && (
+            <div className="p-4 rounded-xl bg-[#020408]/60 border border-[#E0E0E0]/10">
+              <h4 className="text-[#00E5FF] text-xs font-medium mb-2 terminal-text">AI 预测结果</h4>
+              <pre className="text-[#E0E0E0]/80 text-xs whitespace-pre-wrap font-sans leading-relaxed">{llmResult}</pre>
+            </div>
+          )}
+        </div>
+      </BottomSheet>
     </motion.div>
   );
 }
