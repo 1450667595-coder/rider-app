@@ -35,7 +35,7 @@ function getThisMonday(): string {
 
 const DEFAULT_SETTINGS: UserSettings = {
   riderName: "Power",
-  monthlyGoal: 1000,
+  monthlyGoal: 1300,
   dailyGoal: 40,
   basePrice: 4.2,
   bonusPrice: 4.5,
