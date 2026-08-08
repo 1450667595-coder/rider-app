@@ -4,6 +4,7 @@ import {
   Cloud, CloudOff, CheckCircle2, AlertCircle, RefreshCw, Save, Trash2,
   ExternalLink, User, Target, Coins, Gift, Calendar, Briefcase, Database,
   Upload, Download, Info, RotateCcw, Beaker, MapPin, Navigation, Search,
+  Palette, Smartphone, Zap,
 } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import useStore from "@/store/useStore";
@@ -221,6 +222,40 @@ export default function Settings() {
       <motion.div variants={item} className="text-center space-y-2">
         <h1 className="text-2xl font-bold text-[#E0E0E0] neon-cyan tracking-[-0.01em]">系统设置中心</h1>
         <p className="terminal-text text-xs tracking-tight">个人资料 · 目标 · 班次 · 云端 · 数据</p>
+      </motion.div>
+
+      {/* 界面主题 */}
+      <motion.div variants={item} className="holo-card rounded-[26px] p-5 corner-brackets space-y-4">
+        <h3 className="cyber-section-title text-sm font-medium tracking-tight">
+          <Palette size={16} className="icon-glow-cyan" />
+          界面主题
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => updateSetting({ theme: "cyber" })}
+            className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all tap-cyber ${
+              settings.theme === "ios"
+                ? "bg-[#00E5FF]/3 border-[#00E5FF]/8 text-[#E0E0E0]/50"
+                : "bg-[#00E5FF]/10 border-[#00E5FF]/30 text-[#00E5FF]"
+            }`}
+          >
+            <Zap size={22} strokeWidth={1.8} />
+            <span className="text-xs font-medium">赛博朋克</span>
+            <span className="text-[9px] terminal-text">霓虹 · 全息 · 科技感</span>
+          </button>
+          <button
+            onClick={() => updateSetting({ theme: "ios" })}
+            className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all tap-cyber ${
+              settings.theme === "ios"
+                ? "bg-[#00E5FF]/10 border-[#00E5FF]/30 text-[#00E5FF]"
+                : "bg-[#00E5FF]/3 border-[#00E5FF]/8 text-[#E0E0E0]/50"
+            }`}
+          >
+            <Smartphone size={22} strokeWidth={1.8} />
+            <span className="text-xs font-medium">iOS 苹果风</span>
+            <span className="text-[9px] terminal-text">液态玻璃 · 大圆角</span>
+          </button>
+        </div>
       </motion.div>
 
       {/* 个人资料 */}

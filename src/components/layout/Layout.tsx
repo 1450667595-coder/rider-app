@@ -5,6 +5,7 @@ import ToastContainer from "@/components/shared/Toast";
 import useStore from "@/store/useStore";
 import type { SyncStatus } from "@/store/useStore";
 import { isSupabaseConfigured } from "@/services/supabase";
+import { useTheme } from "@/hooks/useTheme";
 
 // 独立时钟组件：状态不提升，避免 Layout 和 Outlet 每秒/每 30 秒重新渲染
 function Clock() {
@@ -37,7 +38,11 @@ function getSyncLabel(status: SyncStatus): string {
 export default function Layout() {
   const loadData = useStore((s) => s.loadData);
   const syncStatus = useStore((s) => s.syncStatus);
+  const settingsTheme = useStore((s) => s.settings.theme);
   const navigate = useNavigate();
+
+  // 主题类会同步设置到 document.documentElement
+  useTheme(settingsTheme);
 
   useEffect(() => {
     loadData();
