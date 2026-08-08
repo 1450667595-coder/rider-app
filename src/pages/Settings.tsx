@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Cloud, CloudOff, CheckCircle2, AlertCircle, RefreshCw, Save, Trash2,
   ExternalLink, User, Target, Coins, Gift, Calendar, Briefcase, Database,
-  Upload, Download, Info, RotateCcw, Beaker,
+  Upload, Download, Info, RotateCcw, Beaker, MapPin, Navigation, Search,
 } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import useStore from "@/store/useStore";
@@ -11,6 +11,7 @@ import { showToast } from "@/components/shared/Toast";
 import { exportBackup, importBackup } from "@/utils/storage";
 import { today } from "@/utils/date";
 import { SHIFT_DEFINITIONS } from "@/types";
+import { searchCities, getUserLocation } from "@/services/weather";
 import {
   isSupabaseConfigured,
   getSyncUserId,
@@ -56,6 +57,12 @@ export default function Settings() {
   const [userId, setUserId] = useState("");
   const [status, setStatus] = useState<SyncStatus>(getSyncStatus());
   const [testing, setTesting] = useState(false);
+
+  // 城市定位
+  const [cityInput, setCityInput] = useState(settings.city || "");
+  const [cityResults, setCityResults] = useState<Array<{ name: string; lat: number; lon: number; admin1?: string }>>([]);
+  const [cityLoading, setCityLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
 
   useEffect(() => {
     setUserId(getSyncUserId());
@@ -103,6 +110,47 @@ export default function Settings() {
     },
     [updateSettings]
   );
+
+  // 城市搜索与定位
+  const handleSearchCity = useCallback(async () => {
+    if (!cityInput.trim()) return;
+    setCityLoading(true);
+    setCityResults([]);
+    try {
+      const results = await searchCities(cityInput.trim());
+      if (results.length === 0) {
+        showToast("未找到该城市，请尝试其他关键词", "error");
+      } else {
+        setCityResults(results);
+      }
+    } finally {
+      setCityLoading(false);
+    }
+  }, [cityInput]);
+
+  const handleSelectCity = useCallback((result: typeof cityResults[number]) => {
+    updateSetting({ city: result.name, cityCoords: { lat: result.lat, lon: result.lon } });
+    setCityInput(result.name);
+    setCityResults([]);
+    showToast(`天气定位已设置为 ${result.name}`, "success");
+  }, [updateSetting]);
+
+  const handleDetectLocation = useCallback(async () => {
+    setLocating(true);
+    try {
+      const loc = await getUserLocation();
+      if (loc) {
+        updateSetting({ city: undefined, cityCoords: { lat: loc.lat, lon: loc.lon } });
+        setCityInput("");
+        setCityResults([]);
+        showToast("已切换到自动 GPS 定位", "success");
+      } else {
+        showToast("无法获取当前位置，请检查定位权限", "error");
+      }
+    } finally {
+      setLocating(false);
+    }
+  }, [updateSetting]);
 
   // 数据管理
   const handleExportJSON = () => {
@@ -312,6 +360,68 @@ export default function Settings() {
             系统从该周一开始按 5 种班次自动轮换，您可在周报页面单独覆盖某周班次。
           </p>
         </div>
+      </motion.div>
+
+      {/* 天气定位 */}
+      <motion.div variants={item} className="holo-card rounded-[26px] p-5 corner-brackets space-y-4">
+        <h3 className="cyber-section-title text-sm font-medium tracking-tight">
+          <MapPin size={16} className="icon-glow-cyan" />
+          天气定位
+        </h3>
+        <div className="flex items-center gap-2 text-xs text-[#E0E0E0]/50">
+          <Navigation size={12} />
+          <span>
+            {settings.city
+              ? `当前定位：${settings.city}`
+              : settings.cityCoords
+              ? "当前定位：自动 GPS 位置"
+              : "当前定位：未设置，将自动使用 GPS"}
+          </span>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={cityInput}
+            onChange={(e) => setCityInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearchCity()}
+            placeholder="输入城市名，如：北京"
+            className="input-cyber flex-1 text-sm"
+          />
+          <button
+            onClick={handleSearchCity}
+            disabled={cityLoading || !cityInput.trim()}
+            className="btn-cyber px-3 rounded-xl flex items-center justify-center"
+          >
+            {cityLoading ? <RefreshCw size={16} className="animate-spin" /> : <Search size={16} />}
+          </button>
+          <button
+            onClick={handleDetectLocation}
+            disabled={locating}
+            className="btn-cyber px-3 rounded-xl flex items-center justify-center"
+            title="使用当前 GPS 位置"
+          >
+            {locating ? <RefreshCw size={16} className="animate-spin" /> : <Navigation size={16} />}
+          </button>
+        </div>
+        {cityResults.length > 0 && (
+          <div className="space-y-2">
+            <p className="terminal-text text-xs text-[#E0E0E0]/40">请选择匹配的城市：</p>
+            <div className="grid gap-2">
+              {cityResults.map((r) => (
+                <button
+                  key={`${r.lat}-${r.lon}`}
+                  onClick={() => handleSelectCity(r)}
+                  className="text-left px-3 py-2 rounded-xl bg-[#00E5FF]/5 border border-[#00E5FF]/10 text-sm text-[#E0E0E0]/80 hover:bg-[#00E5FF]/10 transition-colors"
+                >
+                  {r.name} {r.admin1 ? `· ${r.admin1}` : ""}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <p className="text-[#E0E0E0]/30 text-[10px] leading-relaxed">
+          设置城市后，系统会优先按该城市获取天气，记录单量时自动绑定当天天气。留空则使用 GPS 定位。
+        </p>
       </motion.div>
 
       {/* 云端同步 */}

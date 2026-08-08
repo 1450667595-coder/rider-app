@@ -7,6 +7,15 @@ export interface DailyRecord {
   workHours: number;
   weather: Weather;
   note: string;
+  /** 自动绑定的详细天气信息（可选，旧数据可能没有） */
+  weatherDetail?: {
+    temperature: number;
+    weatherCode: number;
+    weatherLabel: string;
+    weatherEmoji: string;
+    windSpeed?: number;
+    humidity?: number;
+  };
 }
 
 export type ShiftType = "early_mid" | "early" | "late_mid" | "late" | "night";
@@ -49,6 +58,10 @@ export interface UserSettings {
   weeklyShifts?: Record<string, ShiftType>;
   // 班次覆盖最后修改时间戳，用于多设备同步冲突时以最新为准
   weeklyShiftsUpdatedAt?: number;
+  // 城市设置：用于获取更准确的天气
+  city?: string;
+  // 城市坐标：lat,lon
+  cityCoords?: { lat: number; lon: number };
 }
 
 export interface Achievement {

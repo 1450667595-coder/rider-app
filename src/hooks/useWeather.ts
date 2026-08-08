@@ -3,8 +3,10 @@ import {
   WeatherData,
   WeatherForecastDay,
   fetchWeatherByCoords,
+  fetchWeatherByCity,
   getUserLocation,
 } from "@/services/weather";
+import useStore from "@/store/useStore";
 
 const CACHE_KEY = "weather_7day_cache";
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
@@ -39,6 +41,9 @@ function writeCache(data: WeatherData): void {
 }
 
 export function useWeather() {
+  const city = useStore((s) => s.settings.city);
+  const cityCoords = useStore((s) => s.settings.cityCoords);
+
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [forecast, setForecast] = useState<WeatherForecastDay[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,14 +66,22 @@ export function useWeather() {
     setLoading(true);
     setError(false);
 
-    const location = await getUserLocation();
-    if (!location) {
-      setError(true);
-      setLoading(false);
-      return;
+    let data: WeatherData | null = null;
+
+    // 优先使用用户设置的城市坐标
+    if (cityCoords) {
+      data = await fetchWeatherByCoords(cityCoords.lat, cityCoords.lon);
+      if (data && city) data.cityName = city;
+    } else if (city) {
+      data = await fetchWeatherByCity(city);
+    } else {
+      // 回退到 GPS 定位
+      const location = await getUserLocation();
+      if (location) {
+        data = await fetchWeatherByCoords(location.lat, location.lon);
+      }
     }
 
-    const data = await fetchWeatherByCoords(location.lat, location.lon);
     if (data) {
       setWeather(data);
       setForecast(data.forecast);
@@ -78,7 +91,7 @@ export function useWeather() {
     }
     setLoading(false);
     cacheRestored.current = true;
-  }, []);
+  }, [city, cityCoords]);
 
   useEffect(() => {
     fetchWeather();

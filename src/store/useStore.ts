@@ -7,7 +7,7 @@ import {
 } from "@/types";
 import { loadStorage, saveStorage, saveStorageImmediate, generateDemoData, validateAndRepair, startDataHeartbeat } from "@/utils/storage";
 import { today, getCurrentMonth } from "@/utils/date";
-import { getUserLocation, fetchWeatherByCoords, weatherCodeToOurWeather } from "@/services/weather";
+import { getUserLocation, fetchWeatherByCoords, fetchWeatherByCity, weatherCodeToOurWeather } from "@/services/weather";
 import {
   isSupabaseConfigured,
   SHARED_USER_ID,
@@ -95,16 +95,37 @@ function ensureTodayRecord(records: Record<string, DailyRecord>): boolean {
 const WEATHER_CACHE_DATE_KEY = "rider_last_weather_date";
 
 /** 自动获取今日天气并绑定到当日记录（含0单休息日） */
-async function fetchTodayWeather(): Promise<import("@/types").Weather | null> {
-  const loc = await getUserLocation();
-  if (!loc) return null;
-  try {
-    const data = await fetchWeatherByCoords(loc.lat, loc.lon);
-    if (!data) return null;
-    return weatherCodeToOurWeather(data.weatherCode);
-  } catch {
-    return null;
+async function fetchTodayWeather(settings: UserSettings): Promise<{ weather: import("@/types").Weather; detail: NonNullable<DailyRecord["weatherDetail"]> } | null> {
+  let lat: number | undefined;
+  let lon: number | undefined;
+  let data: Awaited<ReturnType<typeof fetchWeatherByCoords>> | null = null;
+
+  if (settings.cityCoords) {
+    lat = settings.cityCoords.lat;
+    lon = settings.cityCoords.lon;
+  } else if (settings.city) {
+    data = await fetchWeatherByCity(settings.city);
+  } else {
+    const loc = await getUserLocation();
+    if (loc) { lat = loc.lat; lon = loc.lon; }
   }
+
+  if (lat != null && lon != null) {
+    try { data = await fetchWeatherByCoords(lat, lon); } catch { /* ignore */ }
+  }
+
+  if (!data) return null;
+  return {
+    weather: weatherCodeToOurWeather(data.weatherCode),
+    detail: {
+      temperature: data.temperature,
+      weatherCode: data.weatherCode,
+      weatherLabel: data.weatherLabel,
+      weatherEmoji: data.weatherEmoji,
+      windSpeed: data.windSpeed,
+      humidity: data.humidity,
+    },
+  };
 }
 
 function bindTodayWeather(getState: () => AppState) {
@@ -112,8 +133,9 @@ function bindTodayWeather(getState: () => AppState) {
   // 同一天只自动获取一次，避免重复请求
   if (localStorage.getItem(WEATHER_CACHE_DATE_KEY) === todayStr) return;
 
-  fetchTodayWeather().then((weather) => {
-    if (!weather) return;
+  fetchTodayWeather(getState().settings).then((result) => {
+    if (!result) return;
+    const { weather, detail } = result;
     const state = getState();
     const rec = state.records[todayStr];
     if (!rec) return;
@@ -122,7 +144,7 @@ function bindTodayWeather(getState: () => AppState) {
       localStorage.setItem(WEATHER_CACHE_DATE_KEY, todayStr);
       return;
     }
-    const newRecord: DailyRecord = { ...rec, weather };
+    const newRecord: DailyRecord = { ...rec, weather, weatherDetail: detail };
     const newRecords = { ...state.records, [todayStr]: newRecord };
     const newState = { ...state, records: newRecords };
     saveStorage(toStorageData(newState));
@@ -180,6 +202,7 @@ function mergeCloudData(
         date: r.date, orders: r.orders, income: r.income,
         workHours: r.workHours, weather: (r.weather || "sunny") as import("@/types").Weather,
         note: r.note || "",
+        weatherDetail: (r as { weatherDetail?: DailyRecord["weatherDetail"] }).weatherDetail,
       };
     }
     merged.records = { ...state.records, ...typedRecords };

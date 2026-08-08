@@ -6,7 +6,13 @@ import AnimatedNumber from "@/components/shared/AnimatedNumber";
 import BottomSheet from "@/components/shared/BottomSheet";
 import { showToast } from "@/components/shared/Toast";
 import { Weather, DailyRecord, WEATHER_OPTIONS } from "@/types";
-import { fetchWeatherByCoords, weatherCodeToOurWeather, getUserLocation } from "@/services/weather";
+import {
+  fetchWeatherByCoords,
+  fetchWeatherForDate,
+  weatherCodeToOurWeather,
+  getUserLocation,
+  searchCities,
+} from "@/services/weather";
 import {
   today,
   getCurrentMonth,
@@ -41,6 +47,8 @@ export default function Records() {
   const saveRecord = useStore((s) => s.saveRecord);
   const deleteRecord = useStore((s) => s.deleteRecord);
   const getEffectivePrice = useStore((s) => s.getEffectivePrice);
+  const city = useStore((s) => s.settings.city);
+  const cityCoords = useStore((s) => s.settings.cityCoords);
 
   const [currentYear, setCurrentYear] = useState(getCurrentMonth().year);
   const [currentMonth, setCurrentMonth] = useState(getCurrentMonth().month);
@@ -51,6 +59,7 @@ export default function Records() {
   const [ordersInput, setOrdersInput] = useState<string>("0");
   const [incomeInput, setIncomeInput] = useState<string>("0");
   const ordersInputRef = useRef<HTMLInputElement>(null);
+  const fetchedDatesRef = useRef<Set<string>>(new Set());
 
   const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
 
@@ -109,7 +118,9 @@ export default function Records() {
 
   const openEditor = (date: string) => {
     const existing = records[date];
-    const form = existing ? { orders: existing.orders, income: existing.income, workHours: existing.workHours, weather: existing.weather, note: existing.note } : { ...EMPTY_RECORD };
+    const form = existing
+      ? { orders: existing.orders, income: existing.income, workHours: existing.workHours, weather: existing.weather, note: existing.note, weatherDetail: existing.weatherDetail }
+      : { ...EMPTY_RECORD };
     setEditForm(form);
     setOrdersInput(String(form.orders));
     setIncomeInput(String(form.income));
@@ -118,35 +129,73 @@ export default function Records() {
 
   const closeEditor = () => setSelectedDate(null);
 
-  // Auto-fetch weather for new records
+  // Auto-fetch weather for selected date (new records or records missing detail)
   useEffect(() => {
     if (!selectedDate) return;
-    if (records[selectedDate]) return; // skip existing records
+    if (fetchedDatesRef.current.has(selectedDate)) return;
+    const existing = records[selectedDate];
+    if (existing?.weatherDetail) return;
 
     let cancelled = false;
     setAutoWeatherLoading(true);
 
+    const resolveLatLon = async (): Promise<{ lat: number; lon: number } | null> => {
+      if (cityCoords) return cityCoords;
+      if (city) {
+        const cities = await searchCities(city);
+        if (cities.length > 0) return { lat: cities[0].lat, lon: cities[0].lon };
+      }
+      return await getUserLocation();
+    };
+
     (async () => {
       try {
-        const location = await getUserLocation();
-        const lat = location?.lat ?? 39.9;
-        const lon = location?.lon ?? 116.4;
-        const weatherData = await fetchWeatherByCoords(lat, lon);
-        if (!cancelled && weatherData) {
-          setEditForm((prev) => ({
-            ...prev,
-            weather: weatherCodeToOurWeather(weatherData.weatherCode),
-          }));
+        const loc = await resolveLatLon();
+        const lat = loc?.lat ?? 39.9;
+        const lon = loc?.lon ?? 116.4;
+        const todayStr = today();
+
+        if (selectedDate === todayStr) {
+          const current = await fetchWeatherByCoords(lat, lon);
+          if (!cancelled && current) {
+            setEditForm((prev) => ({
+              ...prev,
+              weather: weatherCodeToOurWeather(current.weatherCode),
+              weatherDetail: {
+                temperature: current.temperature,
+                weatherCode: current.weatherCode,
+                weatherLabel: current.weatherLabel,
+                weatherEmoji: current.weatherEmoji,
+                windSpeed: current.windSpeed,
+                humidity: current.humidity,
+              },
+            }));
+          }
+        } else {
+          const dateWeather = await fetchWeatherForDate(lat, lon, selectedDate);
+          if (!cancelled && dateWeather) {
+            setEditForm((prev) => ({
+              ...prev,
+              weather: dateWeather.weatherType,
+              weatherDetail: {
+                temperature: Math.round((dateWeather.maxTemp + dateWeather.minTemp) / 2),
+                weatherCode: dateWeather.weatherCode,
+                weatherLabel: dateWeather.weatherLabel,
+                weatherEmoji: dateWeather.weatherEmoji,
+              },
+            }));
+          }
         }
       } catch {
         // silently ignore
       } finally {
         if (!cancelled) setAutoWeatherLoading(false);
+        fetchedDatesRef.current.add(selectedDate);
       }
     })();
 
     return () => { cancelled = true; };
-  }, [selectedDate, records]);
+  }, [selectedDate, records, city, cityCoords]);
 
   const handleSave = () => {
     if (!selectedDate) return;
@@ -160,6 +209,7 @@ export default function Records() {
       workHours: editForm.workHours,
       weather: editForm.weather,
       note: editForm.note,
+      weatherDetail: editForm.weatherDetail,
     });
     showToast("记录已保存", "success");
     closeEditor();
@@ -325,7 +375,15 @@ export default function Records() {
 
             {/* Weather */}
             <div>
-              <label className="block terminal-text text-sm mb-2">天气 {autoWeatherLoading && <span className="text-[#00E5FF]/60 text-xs ml-1 animate-pulse">⏳ 正在获取天气...</span>}</label>
+              <label className="block terminal-text text-sm mb-2">
+                天气
+                {autoWeatherLoading && <span className="text-[#00E5FF]/60 text-xs ml-1 animate-pulse">⏳ 正在获取天气...</span>}
+                {editForm.weatherDetail && !autoWeatherLoading && (
+                  <span className="text-[#00E5FF]/80 text-xs ml-2">
+                    已绑定 {editForm.weatherDetail.weatherEmoji} {editForm.weatherDetail.weatherLabel} {editForm.weatherDetail.temperature}°C
+                  </span>
+                )}
+              </label>
               <div className="flex flex-wrap gap-2">
                 {WEATHER_OPTIONS.map((opt) => (
                   <button

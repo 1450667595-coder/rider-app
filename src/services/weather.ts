@@ -138,21 +138,101 @@ export async function fetchWeatherByCoords(
   }
 }
 
-export async function fetchWeatherByCity(city: string): Promise<WeatherData | null> {
+export interface CityResult {
+  name: string;
+  lat: number;
+  lon: number;
+  country?: string;
+  admin1?: string;
+}
+
+export async function searchCities(city: string): Promise<CityResult[]> {
   try {
-    // Geocode city name to coordinates
-    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=zh`;
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=5&language=zh`;
     const geoRes = await fetch(geoUrl);
     const geoData = await geoRes.json();
+    if (!geoData.results || geoData.results.length === 0) return [];
+    return geoData.results.map((r: Record<string, unknown>) => ({
+      name: String(r.name),
+      lat: Number(r.latitude),
+      lon: Number(r.longitude),
+      country: String(r.country || ""),
+      admin1: String(r.admin1 || ""),
+    }));
+  } catch {
+    return [];
+  }
+}
 
-    if (!geoData.results || geoData.results.length === 0) return null;
+export async function fetchWeatherByCity(city: string): Promise<WeatherData | null> {
+  try {
+    const cities = await searchCities(city);
+    if (cities.length === 0) return null;
 
-    const { latitude, longitude, name } = geoData.results[0];
-    const weather = await fetchWeatherByCoords(latitude, longitude);
+    const { lat, lon, name } = cities[0];
+    const weather = await fetchWeatherByCoords(lat, lon);
     if (weather) {
       weather.cityName = name;
     }
     return weather;
+  } catch {
+    return null;
+  }
+}
+
+// Get user's location
+export interface DateWeather {
+  date: string;
+  weatherCode: number;
+  maxTemp: number;
+  minTemp: number;
+  weatherLabel: string;
+  weatherEmoji: string;
+  weatherType: "sunny" | "cloudy" | "rainy" | "snowy" | "windy";
+}
+
+/**
+ * 获取指定日期的天气（未来用 forecast，过去用 archive，今天用 current + forecast）
+ */
+export async function fetchWeatherForDate(
+  lat: number,
+  lon: number,
+  date: string
+): Promise<DateWeather | null> {
+  try {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const isFuture = date > todayStr;
+
+    let data: { daily?: { time: string[]; weather_code: number[]; temperature_2m_max: number[]; temperature_2m_min: number[] } };
+
+    if (isFuture || date === todayStr) {
+      // 今天和未来用 forecast API
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&start_date=${date}&end_date=${date}`;
+      const res = await fetch(url);
+      data = await res.json();
+    } else {
+      // 过去用 archive API
+      const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&start_date=${date}&end_date=${date}`;
+      const res = await fetch(url);
+      data = await res.json();
+    }
+
+    if (!data.daily || !data.daily.time || data.daily.time.length === 0) return null;
+
+    const idx = data.daily.time.indexOf(date);
+    if (idx === -1) return null;
+
+    const code = data.daily.weather_code[idx];
+    const info = getWeatherInfo(code);
+    return {
+      date,
+      weatherCode: code,
+      maxTemp: Math.round(data.daily.temperature_2m_max[idx]),
+      minTemp: Math.round(data.daily.temperature_2m_min[idx]),
+      weatherLabel: info.label,
+      weatherEmoji: info.emoji,
+      weatherType: weatherCodeToOurWeather(code),
+    };
   } catch {
     return null;
   }

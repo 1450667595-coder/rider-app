@@ -12,7 +12,7 @@ import {
   analyzeShiftPerformance,
 } from "@/utils/aiPrediction";
 import BottomSheet from "@/components/shared/BottomSheet";
-import { SHIFT_DEFINITIONS, SHIFT_MAP, type ShiftType, WEATHER_LABELS } from "@/types";
+import { SHIFT_DEFINITIONS, SHIFT_MAP, type ShiftType } from "@/types";
 
 const container = {
   hidden: { opacity: 0 },
