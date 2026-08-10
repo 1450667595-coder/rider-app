@@ -1,3 +1,5 @@
+import { useTheme } from "@/hooks/useTheme";
+
 interface ProgressRingProps {
   progress: number;
   size?: number;
@@ -11,10 +13,14 @@ export default function ProgressRing({
   progress,
   size = 80,
   strokeWidth = 6,
-  color = "#00E5FF",
-  bgColor = "rgba(0,229,255,0.06)",
+  color,
+  bgColor,
   children,
 }: ProgressRingProps) {
+  const { isIOS } = useTheme();
+  const ringColor = color || (isIOS ? "#007AFF" : "#00E5FF");
+  const ringBgColor = bgColor || (isIOS ? "rgba(120,120,128,0.16)" : "rgba(0,229,255,0.06)");
+
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (Math.min(progress, 100) / 100) * circumference;
@@ -27,7 +33,7 @@ export default function ProgressRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={bgColor}
+          stroke={ringBgColor}
           strokeWidth={strokeWidth}
         />
         <circle
@@ -35,14 +41,14 @@ export default function ProgressRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={color}
+          stroke={ringColor}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           style={{
             transition: "stroke-dashoffset 0.8s ease-out",
-            filter: `drop-shadow(0 0 6px ${color}40)`,
+            filter: isIOS ? undefined : `drop-shadow(0 0 6px ${ringColor}40)`,
           }}
         />
       </svg>

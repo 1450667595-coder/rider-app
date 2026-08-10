@@ -13,6 +13,7 @@ import { exportBackup, importBackup } from "@/utils/storage";
 import { today } from "@/utils/date";
 import { SHIFT_DEFINITIONS } from "@/types";
 import { searchCities, getUserLocation } from "@/services/weather";
+import { useTheme } from "@/hooks/useTheme";
 import {
   isSupabaseConfigured,
   getSyncUserId,
@@ -209,6 +210,7 @@ export default function Settings() {
   const configured = isSupabaseConfigured();
   const config = STATUS_CONFIG[status];
   const Icon = config.icon;
+  const { isIOS } = useTheme(settings.theme);
 
   const stats = useMemo(() => {
     const recordCount = Object.keys(records).length;
@@ -230,30 +232,24 @@ export default function Settings() {
           <Palette size={16} className="icon-glow-cyan" />
           界面主题
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="theme-selector" data-active-theme={settings.theme}>
           <button
             onClick={() => updateSetting({ theme: "cyber" })}
-            className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all tap-cyber ${
-              settings.theme === "ios"
-                ? "bg-[#00E5FF]/3 border-[#00E5FF]/8 text-[#E0E0E0]/50"
-                : "bg-[#00E5FF]/10 border-[#00E5FF]/30 text-[#00E5FF]"
-            }`}
+            data-active={settings.theme === "cyber"}
+            className="flex flex-col items-center gap-1 p-3 transition-all tap-cyber"
           >
-            <Zap size={22} strokeWidth={1.8} />
+            <Zap size={20} strokeWidth={1.8} />
             <span className="text-xs font-medium">赛博朋克</span>
-            <span className="text-[9px] terminal-text">霓虹 · 全息 · 科技感</span>
+            <span className="text-[9px] terminal-text">霓虹 · 全息</span>
           </button>
           <button
             onClick={() => updateSetting({ theme: "ios" })}
-            className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all tap-cyber ${
-              settings.theme === "ios"
-                ? "bg-[#00E5FF]/10 border-[#00E5FF]/30 text-[#00E5FF]"
-                : "bg-[#00E5FF]/3 border-[#00E5FF]/8 text-[#E0E0E0]/50"
-            }`}
+            data-active={settings.theme === "ios"}
+            className="flex flex-col items-center gap-1 p-3 transition-all tap-cyber"
           >
-            <Smartphone size={22} strokeWidth={1.8} />
+            <Smartphone size={20} strokeWidth={1.8} />
             <span className="text-xs font-medium">iOS 苹果风</span>
-            <span className="text-[9px] terminal-text">液态玻璃 · 大圆角</span>
+            <span className="text-[9px] terminal-text">原生 · 简洁</span>
           </button>
         </div>
       </motion.div>

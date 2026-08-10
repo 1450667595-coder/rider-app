@@ -1,7 +1,20 @@
 import { useClock } from "@/hooks/useClock";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function LiveClock() {
   const { timeStr, dateStr } = useClock();
+  const { isIOS } = useTheme();
+
+  if (isIOS) {
+    return (
+      <div className="flex items-center gap-2 rounded-full px-3 py-1.5 bg-[#F2F2F7]">
+        <span className="text-[11px] text-[#8E8E93]">{dateStr}</span>
+        <span className="text-sm font-semibold text-black tabular-nums">
+          {timeStr}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-2 rounded-full px-3 py-1.5"

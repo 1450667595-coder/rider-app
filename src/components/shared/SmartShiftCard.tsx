@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Clock, Coffee, Zap, Calendar, Target, PlusCircle, ArrowRight } from "lucide-react";
 import useStore from "@/store/useStore";
+import { useTheme } from "@/hooks/useTheme";
 import { getWeekStart, getShiftForDate } from "@/utils/date";
 
 function parseTime(dateStr: string, time: string): Date {
@@ -27,6 +28,7 @@ export default function SmartShiftCard() {
   const navigate = useNavigate();
   const settings = useStore((s) => s.settings);
   const [now, setNow] = useState(new Date());
+  const { isIOS } = useTheme();
 
   useEffect(() => {
     setNow(new Date());
@@ -63,7 +65,7 @@ export default function SmartShiftCard() {
       return {
         state: "upcoming",
         label: "未开始",
-        color: "#00E5FF",
+        color: isIOS ? "#007AFF" : "#00E5FF",
         sub: `距开始 ${formatDuration(start.getTime() - now.getTime())}`,
         progress: 0,
       };
@@ -72,7 +74,7 @@ export default function SmartShiftCard() {
       return {
         state: "finished",
         label: "已下班",
-        color: "#E040FB",
+        color: isIOS ? "#AF52DE" : "#E040FB",
         sub: "今日班次已结束",
         progress: 100,
       };
@@ -86,7 +88,7 @@ export default function SmartShiftCard() {
       return {
         state: "resting",
         label: "休息中",
-        color: "#FFD740",
+        color: isIOS ? "#FF9500" : "#FFD740",
         sub: `休息至 ${shift.restTime?.split("-")[1]}`,
         progress,
       };
@@ -95,17 +97,91 @@ export default function SmartShiftCard() {
     return {
       state: "working",
       label: "工作中",
-      color: "#00E676",
+      color: isIOS ? "#34C759" : "#00E676",
       sub: `预计下班 ${shift.endTime}`,
       progress,
     };
-  }, [now, shift, todayStr]);
+  }, [now, shift, todayStr, isIOS]);
 
   const quickActions = [
     { label: "记单", icon: PlusCircle, to: "/records" },
     { label: "周报", icon: Calendar, to: "/weekly" },
     { label: "目标", icon: Target, to: "/goals" },
   ];
+
+  if (isIOS) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-2xl p-4 shadow-sm"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+              style={{ background: `${status.color}15` }}
+            >
+              {shift.emoji}
+            </div>
+            <div>
+              <p className="text-black font-semibold text-sm flex items-center gap-2">
+                本周班次 · {shift.name}
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                  style={{ color: status.color, background: `${status.color}15` }}
+                >
+                  {status.label}
+                </span>
+              </p>
+              <p className="text-[11px] text-[#8E8E93] flex items-center gap-1 mt-0.5">
+                <Clock size={10} style={{ color: status.color }} />
+                {shift.timeRange}
+                {shift.restTime && (
+                  <>
+                    <span className="mx-1 text-[#C7C7CC]">|</span>
+                    <Coffee size={10} className="text-[#FF9500]" />
+                    休息 {shift.restTime}
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+          <Zap size={16} className="text-[#C7C7CC]" />
+        </div>
+
+        {/* 班次进度 */}
+        <div className="space-y-1.5 mb-4">
+          <div className="flex justify-between text-[10px]">
+            <span className="text-[#8E8E93]">班次进度</span>
+            <span className="font-medium" style={{ color: status.color }}>{Math.round(status.progress)}%</span>
+          </div>
+          <div className="h-1.5 bg-[#F2F2F7] rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${status.progress}%`, background: status.color }}
+            />
+          </div>
+          <p className="text-[9px] text-[#C7C7CC]">{status.sub}</p>
+        </div>
+
+        {/* 快捷操作 */}
+        <div className="grid grid-cols-3 gap-2">
+          {quickActions.map((action) => (
+            <button
+              key={action.to}
+              onClick={() => navigate(action.to)}
+              className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-medium bg-[#F2F2F7] text-black active:bg-[#E5E5EA] transition-colors"
+            >
+              <action.icon size={13} className="text-[#007AFF]" />
+              {action.label}
+              <ArrowRight size={10} className="text-[#C7C7CC]" />
+            </button>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

@@ -42,7 +42,7 @@ export default function Layout() {
   const navigate = useNavigate();
 
   // 主题类会同步设置到 document.documentElement
-  useTheme(settingsTheme);
+  const { isIOS } = useTheme(settingsTheme);
 
   useEffect(() => {
     loadData();
@@ -57,39 +57,45 @@ export default function Layout() {
   }, [loadData, navigate]);
 
   return (
-    <div className="min-h-screen min-h-dvh text-[#E0E0E0] relative cyber-particles">
-      {/* 扫描线 */}
-      <div className="scanlines-overlay" />
+    <div className={`min-h-screen min-h-dvh relative ${isIOS ? "ios-shell" : "text-[#E0E0E0] cyber-particles"}`}>
+      {!isIOS && (
+        <>
+          {/* 扫描线 */}
+          <div className="scanlines-overlay" />
 
-      {/* HUD 顶部扫描线 */}
-      <div className="hud-scan-line" />
+          {/* HUD 顶部扫描线 */}
+          <div className="hud-scan-line" />
+        </>
+      )}
 
-      {/* 顶部状态栏 */}
-      <div className="top-status-bar">
-        <div className="status-bar-left">
-          <span className="system-status-indicator">
-            <span className="system-status-dot" />
-            系统正常
-          </span>
-          <span className="status-bar-sep" />
-          <span
-            className="status-bar-sync"
-            onClick={triggerSync}
-            style={{ cursor: "pointer" }}
-          >
-            <span className={`sync-dot ${syncStatus}`} />
-            <span>{getSyncLabel(syncStatus)}</span>
-          </span>
+      {/* 顶部状态栏：iOS 模式下使用更原生的简洁风格 */}
+      {!isIOS && (
+        <div className="top-status-bar">
+          <div className="status-bar-left">
+            <span className="system-status-indicator">
+              <span className="system-status-dot" />
+              系统正常
+            </span>
+            <span className="status-bar-sep" />
+            <span
+              className="status-bar-sync"
+              onClick={triggerSync}
+              style={{ cursor: "pointer" }}
+            >
+              <span className={`sync-dot ${syncStatus}`} />
+              <span>{getSyncLabel(syncStatus)}</span>
+            </span>
+          </div>
+          <div className="status-bar-right">
+            <Clock />
+          </div>
         </div>
-        <div className="status-bar-right">
-          <Clock />
-        </div>
-      </div>
+      )}
 
       {/* Content layer */}
       <div
-        className="max-w-lg mx-auto pb-28 relative z-10 holo-data-bg"
-        style={{ paddingTop: "44px" }}
+        className={`relative z-10 ${isIOS ? "ios-content" : "max-w-lg mx-auto pb-28 holo-data-bg"}`}
+        style={isIOS ? undefined : { paddingTop: "44px" }}
       >
         <Outlet />
       </div>
