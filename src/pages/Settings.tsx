@@ -14,6 +14,7 @@ import { today } from "@/utils/date";
 import { SHIFT_DEFINITIONS } from "@/types";
 import { searchCities, getUserLocation } from "@/services/weather";
 import { useTheme } from "@/hooks/useTheme";
+import IOSSettings from "@/components/ios/IOSSettings";
 import {
   isSupabaseConfigured,
   getSyncUserId,
@@ -217,6 +218,10 @@ export default function Settings() {
     const unlockedCount = achievements.filter((a) => a.unlocked).length;
     return { recordCount, unlockedCount };
   }, [records, achievements]);
+
+  if (isIOS) {
+    return <IOSSettings />;
+  }
 
   return (
     <motion.div className="px-4 pt-6 pb-24 space-y-5" variants={container} initial="hidden" animate="show">
