@@ -1,814 +1,111 @@
-/* iOS Glass Theme - auto-generated color mappings + manual overrides */
+/* ═══════════════════════════════════════════════════════════════════
+   iOS Native Design System
+   参考：Apple Human Interface Guidelines、iOS 原生 App、apple.com
+   核心：大留白、高对比、系统色、分组卡片、液态玻璃导航
+   ═══════════════════════════════════════════════════════════════════ */
+
 .theme-ios {
-  /* iOS color variables */
-  --ios-bg: #F2F2F7;
-  --ios-bg-secondary: #E5E5EA;
-  --ios-surface: rgba(255, 255, 255, 0.72);
-  --ios-surface-solid: #FFFFFF;
-  --ios-surface-elevated: rgba(255, 255, 255, 0.88);
+  /* ── iOS 系统色板（与 Apple 原生一致）── */
+  --ios-system-blue: #007aff;
+  --ios-system-green: #34c759;
+  --ios-system-red: #ff3b30;
+  --ios-system-orange: #ff9500;
+  --ios-system-yellow: #ffcc00;
+  --ios-system-pink: #ff2d55;
+  --ios-system-purple: #af52de;
+  --ios-system-indigo: #5856d6;
+  --ios-system-teal: #5ac8fa;
+  --ios-system-brown: #a2845e;
+  --ios-system-gray: #8e8e93;
+  --ios-system-gray2: #aeaeb2;
+  --ios-system-gray3: #c7c7cc;
+  --ios-system-gray4: #d1d1d6;
+  --ios-system-gray5: #e5e5ea;
+  --ios-system-gray6: #f2f2f7;
+
+  /* ── 标签/文字色（高对比优先）── */
+  --ios-label: #000000;
+  --ios-label-secondary: rgba(60, 60, 67, 0.6);
+  --ios-label-tertiary: rgba(60, 60, 67, 0.3);
+  --ios-label-quaternary: rgba(60, 60, 67, 0.18);
+  --ios-link: #007aff;
+
+  /* ── 背景色（分组样式）── */
+  --ios-system-background: #ffffff;
+  --ios-secondary-background: #f2f2f7;
+  --ios-tertiary-background: #ffffff;
+  --ios-grouped-background: #f2f2f7;
+  --ios-grouped-secondary: #ffffff;
+  --ios-grouped-tertiary: #f2f2f7;
+  --ios-fill: rgba(120, 120, 128, 0.16);
+  --ios-fill-secondary: rgba(120, 120, 128, 0.08);
+  --ios-fill-tertiary: rgba(118, 118, 128, 0.12);
+
+  /* ── 材质/玻璃（用于导航、浮层）── */
+  --ios-material-thick: rgba(255, 255, 255, 0.92);
+  --ios-material-regular: rgba(255, 255, 255, 0.72);
+  --ios-material-thin: rgba(255, 255, 255, 0.55);
+  --ios-material-ultrathin: rgba(255, 255, 255, 0.36);
+  --ios-separator: rgba(60, 60, 67, 0.29);
+  --ios-separator-opaque: #c6c6c8;
   --ios-border: rgba(120, 120, 128, 0.16);
-  --ios-border-strong: rgba(120, 120, 128, 0.24);
-  --ios-text: #1C1C1E;
-  --ios-text-secondary: #8E8E93;
-  --ios-text-tertiary: #C7C7CC;
-  --ios-blue: #007AFF;
-  --ios-purple: #AF52DE;
-  --ios-orange: #FF9500;
-  --ios-green: #34C759;
-  --ios-red: #FF3B30;
-  --ios-pink: #FF2D55;
-  --ios-indigo: #5856D6;
-  --ios-yellow: #FFCC00;
-  --ios-teal: #5AC8FA;
-  --ios-shadow: rgba(0, 0, 0, 0.08);
-  --ios-shadow-strong: rgba(0, 0, 0, 0.16);
-}
-
-.theme-ios .border-\[\#00E5FF\]\/20 {
-  border-color: rgb(0 122 255 / 0.2) !important;
-}
-
-.theme-ios .border-t-\[\#00E5FF\] {
-  border-top-color: rgb(0 122 255) !important;
-}
-
-.theme-ios .text-\[\#00E5FF\] {
-  color: rgb(0 122 255) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/60 {
-  color: rgb(28 28 30 / 0.6) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/25 {
-  color: rgb(28 28 30 / 0.25) !important;
-}
-
-.theme-ios .bg-\[\#00E5FF\]\/10 {
-  background-color: rgb(0 122 255 / 0.1) !important;
-}
-
-.theme-ios .border-\[\#00E5FF\]\/30 {
-  border-color: rgb(0 122 255 / 0.3) !important;
-}
-
-.theme-ios .bg-\[\#00E5FF\]\/3 {
-  background-color: rgb(0 122 255 / 0.03) !important;
-}
-
-.theme-ios .border-\[\#00E5FF\]\/8 {
-  border-color: rgb(0 122 255 / 0.08) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/70 {
-  color: rgb(28 28 30 / 0.7) !important;
-}
-
-.theme-ios .bg-\[\#00E5FF\]\/8 {
-  background-color: rgb(0 122 255 / 0.08) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/50 {
-  color: rgb(28 28 30 / 0.5) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\] {
-  color: rgb(28 28 30) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/40 {
-  color: rgb(28 28 30 / 0.4) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/35 {
-  color: rgb(28 28 30 / 0.35) !important;
-}
-
-.theme-ios .border-\[\#E0E0E0\]\/10 {
-  border-color: rgb(28 28 30 / 0.1) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/80 {
-  color: rgb(28 28 30 / 0.8) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/20 {
-  color: rgb(28 28 30 / 0.2) !important;
-}
-
-.theme-ios .text-\[\#FFD740\] {
-  color: rgb(255 149 0) !important;
-}
-
-.theme-ios .text-\[\#00E5FF\]\/30 {
-  color: rgb(0 122 255 / 0.3) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/30 {
-  color: rgb(28 28 30 / 0.3) !important;
-}
-
-.theme-ios .text-\[\#00E676\] {
-  color: rgb(52 199 89) !important;
-}
-
-.theme-ios .text-\[\#FF1744\] {
-  color: rgb(255 59 48) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/45 {
-  color: rgb(28 28 30 / 0.45) !important;
-}
-
-.theme-ios .text-\[\#00E5FF\]\/60 {
-  color: rgb(0 122 255 / 0.6) !important;
-}
-
-.theme-ios .text-\[\#E040FB\] {
-  color: rgb(175 82 222) !important;
-}
-
-.theme-ios .text-\[\#FF6D00\] {
-  color: rgb(255 149 0) !important;
-}
-
-.theme-ios .bg-\[\#00E5FF\]\/5 {
-  background-color: rgb(0 122 255 / 0.05) !important;
-}
-
-.theme-ios .bg-\[\#00E5FF\] {
-  background-color: rgb(0 122 255) !important;
-}
-
-.theme-ios .text-\[\#020408\] {
-  color: rgb(242 242 247) !important;
-}
-
-.theme-ios .bg-\[\#E040FB\] {
-  background-color: rgb(175 82 222) !important;
-}
-
-.theme-ios .border-\[\#E0E0E0\]\/5 {
-  border-color: rgb(28 28 30 / 0.05) !important;
-}
-
-.theme-ios .text-\[\#00E676\]\/60 {
-  color: rgb(52 199 89 / 0.6) !important;
-}
-
-.theme-ios .bg-\[\#00E676\]\/20 {
-  background-color: rgb(52 199 89 / 0.2) !important;
-}
-
-.theme-ios .bg-\[\#FF1744\]\/20 {
-  background-color: rgb(255 59 48 / 0.2) !important;
-}
-
-.theme-ios .text-\[\#FFD740\]\/80 {
-  color: rgb(255 149 0 / 0.8) !important;
-}
-
-.theme-ios .border-\[\#00E5FF\]\/10 {
-  border-color: rgb(0 122 255 / 0.1) !important;
-}
-
-.theme-ios .bg-\[\#00E676\] {
-  background-color: rgb(52 199 89) !important;
-}
-
-.theme-ios .text-\[\#00E5FF\]\/40 {
-  color: rgb(0 122 255 / 0.4) !important;
-}
-
-.theme-ios .border-\[\#FFD740\]\/25 {
-  border-color: rgb(255 149 0 / 0.25) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/85 {
-  color: rgb(28 28 30 / 0.85) !important;
-}
-
-.theme-ios .border-\[\#00E676\]\/30 {
-  border-color: rgb(52 199 89 / 0.3) !important;
-}
-
-.theme-ios .from-\[\#00E5FF\]\/10 {
-  --tw-gradient-from: rgb(0 122 255 / 0.1) var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(0 122 255 / 0) var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-
-.theme-ios .to-\[\#00E5FF\]\/5 {
-  --tw-gradient-to: rgb(0 122 255 / 0.05) var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-
-.theme-ios .bg-\[\#FFD740\]\/5 {
-  background-color: rgb(255 149 0 / 0.05) !important;
-}
-
-.theme-ios .border-\[\#FFD740\]\/15 {
-  border-color: rgb(255 149 0 / 0.15) !important;
-}
-
-.theme-ios .bg-\[\#FFD740\] {
-  background-color: rgb(255 149 0) !important;
-}
-
-.theme-ios .border-\[\#FFD740\] {
-  border-color: rgb(255 149 0) !important;
-}
-
-.theme-ios .bg-\[\#E0E0E0\]\/5 {
-  background-color: rgb(28 28 30 / 0.05) !important;
-}
-
-.theme-ios .border-\[\#E0E0E0\]\/20 {
-  border-color: rgb(28 28 30 / 0.2) !important;
-}
-
-.theme-ios .bg-\[\#E0E0E0\]\/10 {
-  background-color: rgb(28 28 30 / 0.1) !important;
-}
-
-.theme-ios .border-\[\#00E5FF\]\/15 {
-  border-color: rgb(0 122 255 / 0.15) !important;
-}
-
-.theme-ios .bg-\[\#E0E0E0\]\/4 {
-  background-color: rgb(28 28 30 / 0.04) !important;
-}
-
-.theme-ios .bg-\[\#FFD740\]\/10 {
-  background-color: rgb(255 149 0 / 0.1) !important;
-}
-
-.theme-ios .border-\[\#FFD740\]\/20 {
-  border-color: rgb(255 149 0 / 0.2) !important;
-}
-
-.theme-ios .text-\[\#00E5FF\]\/70 {
-  color: rgb(0 122 255 / 0.7) !important;
-}
-
-.theme-ios .bg-\[\#020408\]\/40 {
-  background-color: rgb(242 242 247 / 0.4) !important;
-}
-
-.theme-ios .border-\[\#E0E0E0\]\/30 {
-  border-color: rgb(28 28 30 / 0.3) !important;
-}
-
-.theme-ios .bg-\[\#00E5FF\]\/20 {
-  background-color: rgb(0 122 255 / 0.2) !important;
-}
-
-.theme-ios .ring-\[\#00E5FF\]\/20 {
-  --tw-ring-color: rgb(0 122 255 / 0.2) !important;
-}
-
-.theme-ios .from-\[\#E040FB\]\/10 {
-  --tw-gradient-from: rgb(175 82 222 / 0.1) var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(175 82 222 / 0) var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-
-.theme-ios .bg-\[\#E040FB\]\/8 {
-  background-color: rgb(175 82 222 / 0.08) !important;
-}
-
-.theme-ios .border-\[\#E040FB\]\/10 {
-  border-color: rgb(175 82 222 / 0.1) !important;
-}
-
-.theme-ios .from-\[\#00E5FF\]\/15 {
-  --tw-gradient-from: rgb(0 122 255 / 0.15) var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(0 122 255 / 0) var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-
-.theme-ios .to-\[\#E040FB\]\/15 {
-  --tw-gradient-to: rgb(175 82 222 / 0.15) var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-
-.theme-ios .border-\[\#FFD740\]\/10 {
-  border-color: rgb(255 149 0 / 0.1) !important;
-}
-
-.theme-ios .bg-\[\#00E5FF\]\/15 {
-  background-color: rgb(0 122 255 / 0.15) !important;
-}
-
-.theme-ios .bg-\[\#00E5FF\]\/25 {
-  background-color: rgb(0 122 255 / 0.25) !important;
-}
-
-.theme-ios .bg-\[\#020408\]\/60 {
-  background-color: rgb(242 242 247 / 0.6) !important;
-}
-
-.theme-ios .ring-\[\#00E5FF\] {
-  --tw-ring-color: rgb(0 122 255) !important;
-}
-
-.theme-ios .ring-offset-\[\#020408\] {
-  --tw-ring-offset-color: rgb(242 242 247) !important;
-}
-
-.theme-ios .text-\[\#E0E0E0\]\/55 {
-  color: rgb(28 28 30 / 0.55) !important;
-}
-
-.theme-ios .text-\[\#E040FB\]\/60 {
-  color: rgb(175 82 222 / 0.6) !important;
-}
-
-.theme-ios .text-\[\#00E5FF\]\/80 {
-  color: rgb(0 122 255 / 0.8) !important;
-}
-
-.theme-ios .bg-\[\#FFD740\]\/20 {
-  background-color: rgb(255 149 0 / 0.2) !important;
-}
-
-.theme-ios .border-\[\#FFD740\]\/40 {
-  border-color: rgb(255 149 0 / 0.4) !important;
-}
-
-.theme-ios .bg-\[\#FFD740\]\/3 {
-  background-color: rgb(255 149 0 / 0.03) !important;
-}
-
-.theme-ios .border-\[\#FFD740\]\/8 {
-  border-color: rgb(255 149 0 / 0.08) !important;
-}
-
-.theme-ios .bg-\[\#020408\] {
-  background-color: rgb(242 242 247) !important;
-}
-
-.theme-ios .ring-\[\#00E5FF\]\/10 {
-  --tw-ring-color: rgb(0 122 255 / 0.1) !important;
-}
-
-.theme-ios .text-\[\#7B2FF7\] {
-  color: rgb(88 86 214) !important;
-}
-
-.theme-ios .bg-\[\#E040FB\]\/10 {
-  background-color: rgb(175 82 222 / 0.1) !important;
-}
-
-.theme-ios .border-\[\#E040FB\]\/30 {
-  border-color: rgb(175 82 222 / 0.3) !important;
-}
-
-.theme-ios .ring-\[\#E040FB\]\/30 {
-  --tw-ring-color: rgb(175 82 222 / 0.3) !important;
-}
-
-
-/* ═══════════════════════════════════════════════════
-   iOS Glassmorphism 2.0 液态玻璃全局覆盖
-   ═══════════════════════════════════════════════════ */
 
-.theme-ios html,
-.theme-ios body {
-  background: var(--ios-bg) !important;
-  color: var(--ios-text) !important;
+  /* ── 阴影（极轻、分层）── */
+  --ios-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ios-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --ios-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --ios-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  /* ── 圆角（iOS 标准）── */
+  --ios-radius-sm: 8px;
+  --ios-radius-md: 10px;
+  --ios-radius-lg: 12px;
+  --ios-radius-xl: 16px;
+  --ios-radius-2xl: 20px;
+  --ios-radius-full: 9999px;
+
+  /* ── 字体（SF Pro 优先）── */
+  --ios-font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Helvetica Neue', 'Segoe UI', system-ui, sans-serif;
+  --ios-font-mono: 'SF Mono', 'SFMono-Regular', ui-monospace, Menlo, Consolas,
+    monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   1. 全局重置：彻底清理赛博风格
+   ═══════════════════════════════════════════════════════════════════ */
+html.theme-ios,
+html.theme-ios body,
+.theme-ios {
+  background: var(--ios-secondary-background) !important;
+  color: var(--ios-label) !important;
+  font-family: var(--ios-font) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: auto;
+  text-shadow: none !important;
+  box-shadow: none !important;
 }
 
-/* 移除赛博风格的动态网格、辉光、扫描线 */
 .theme-ios body::before,
 .theme-ios body::after,
 .theme-ios .scanlines-overlay,
 .theme-ios .hud-scan-line,
-.theme-ios .cyber-particles::before,
-.theme-ios .holo-data-bg::before {
-  display: none !important;
-}
-
-/* 添加 iOS 柔和背景：分层模糊渐变 */
-.theme-ios #root {
-  background:
-    radial-gradient(ellipse at 10% 10%, rgba(0, 122, 255, 0.06) 0%, transparent 45%),
-    radial-gradient(ellipse at 90% 20%, rgba(175, 82, 222, 0.05) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 90%, rgba(255, 149, 0, 0.04) 0%, transparent 45%),
-    var(--ios-bg);
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
-/* ═══════════════════════════════════════════════════
-   玻璃卡片
-   ═══════════════════════════════════════════════════ */
-.theme-ios .holo-card,
-.theme-ios .holo-card-strong,
-.theme-ios .holo-card-gold {
-  background: var(--ios-surface) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  border: 1px solid var(--ios-border) !important;
-  border-radius: 26px !important;
-  box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.04),
-    0 1px 3px rgba(0, 0, 0, 0.04),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important;
-}
-
-.theme-ios .holo-card::before,
-.theme-ios .holo-card::after,
-.theme-ios .holo-card-strong::before,
-.theme-ios .holo-card-strong::after,
-.theme-ios .holo-card-gold::before,
-.theme-ios .holo-card-gold::after {
-  display: none !important;
-}
-
-.theme-ios .holo-card:hover,
-.theme-ios .holo-card-strong:hover,
-.theme-ios .holo-card-gold:hover {
-  box-shadow:
-    0 8px 36px rgba(0, 0, 0, 0.08),
-    0 1px 3px rgba(0, 0, 0, 0.04),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
-}
-
-/* 角落装饰移除 */
-.theme-ios .corner-brackets::before,
-.theme-ios .corner-brackets::after {
-  display: none !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   按钮
-   ═══════════════════════════════════════════════════ */
-.theme-ios .btn-cyber {
-  background: rgba(255, 255, 255, 0.6) !important;
-  border: 1px solid var(--ios-border) !important;
-  color: var(--ios-blue) !important;
-  border-radius: 18px !important;
-  font-weight: 600 !important;
-  box-shadow: 0 2px 12px var(--ios-shadow) !important;
-  text-shadow: none !important;
-}
-
-.theme-ios .btn-cyber-primary {
-  background: var(--ios-blue) !important;
-  color: #FFFFFF !important;
-  border-radius: 20px !important;
-  font-weight: 700 !important;
-  box-shadow: 0 4px 20px rgba(0, 122, 255, 0.28) !important;
-}
-
-.theme-ios .btn-cyber-danger {
-  background: rgba(255, 59, 48, 0.08) !important;
-  border: 1px solid rgba(255, 59, 48, 0.2) !important;
-  color: var(--ios-red) !important;
-  border-radius: 18px !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   输入框
-   ═══════════════════════════════════════════════════ */
-.theme-ios .input-cyber,
-.theme-ios select.input-cyber {
-  background: rgba(255, 255, 255, 0.55) !important;
-  border: 1px solid var(--ios-border) !important;
-  color: var(--ios-text) !important;
-  border-radius: 16px !important;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
-}
-
-.theme-ios .input-cyber::placeholder {
-  color: var(--ios-text-tertiary) !important;
-}
-
-.theme-ios .input-cyber:focus {
-  border-color: var(--ios-blue) !important;
-  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.12), inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   徽章
-   ═══════════════════════════════════════════════════ */
-.theme-ios .badge-cyber {
-  background: rgba(0, 122, 255, 0.1) !important;
-  border: 1px solid rgba(0, 122, 255, 0.18) !important;
-  color: var(--ios-blue) !important;
-}
-
-.theme-ios .badge-cyber-gold {
-  background: rgba(255, 149, 0, 0.1) !important;
-  border: 1px solid rgba(255, 149, 0, 0.18) !important;
-  color: var(--ios-orange) !important;
-}
-
-.theme-ios .badge-cyber-green {
-  background: rgba(52, 199, 89, 0.1) !important;
-  border: 1px solid rgba(52, 199, 89, 0.18) !important;
-  color: var(--ios-green) !important;
-}
-
-.theme-ios .badge-cyber-red {
-  background: rgba(255, 59, 48, 0.1) !important;
-  border: 1px solid rgba(255, 59, 48, 0.18) !important;
-  color: var(--ios-red) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   进度条
-   ═══════════════════════════════════════════════════ */
-.theme-ios .progress-cyber {
-  background: rgba(0, 0, 0, 0.05) !important;
-  border: none !important;
-  height: 6px !important;
-  border-radius: 999px !important;
-  overflow: hidden !important;
-}
-
-.theme-ios .progress-cyber-fill {
-  background: var(--ios-blue) !important;
-  box-shadow: none !important;
-}
-
-.theme-ios .progress-cyber-fill-gold {
-  background: var(--ios-orange) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   底部导航
-   ═══════════════════════════════════════════════════ */
-.theme-ios .cyber-nav {
-  background: rgba(255, 255, 255, 0.78) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  border-top: 1px solid var(--ios-border) !important;
-  box-shadow: 0 -4px 24px var(--ios-shadow) !important;
-}
-
-.theme-ios .nav-glow-tracker {
-  display: none !important;
-}
-
-.theme-ios .nav-cyber-active::before {
-  display: none !important;
-}
-
-.theme-ios [data-nav-item] svg {
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
-
-.theme-ios [data-nav-item].nav-cyber-active svg {
-  transform: scale(1.08) !important;
-}
-
-.theme-ios [data-nav-item] span {
-  font-weight: 500 !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   顶部状态栏
-   ═══════════════════════════════════════════════════ */
-.theme-ios .top-status-bar {
-  background: rgba(255, 255, 255, 0.82) !important;
-  backdrop-filter: blur(20px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
-  border-bottom: 1px solid var(--ios-border) !important;
-  color: var(--ios-text) !important;
-}
-
-.theme-ios .status-bar-clock {
-  color: var(--ios-text) !important;
-  font-weight: 600 !important;
-}
-
-.theme-ios .sync-dot {
-  box-shadow: none !important;
-}
-
-.theme-ios .sync-dot.syncing { background: var(--ios-blue) !important; }
-.theme-ios .sync-dot.synced { background: var(--ios-green) !important; }
-.theme-ios .sync-dot.offline { background: var(--ios-red) !important; }
-
-.theme-ios .system-status-dot {
-  box-shadow: none !important;
-  background: var(--ios-green) !important;
-}
-
-.theme-ios .system-status-indicator {
-  color: var(--ios-text-secondary) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   文字特效
-   ═══════════════════════════════════════════════════ */
-.theme-ios .neon-cyan,
-.theme-ios .neon-gold,
-.theme-ios .neon-magenta,
-.theme-ios .neon-green {
-  text-shadow: none !important;
-}
-
-.theme-ios .terminal-text {
-  color: var(--ios-text-secondary) !important;
-}
-
-.theme-ios .cyber-section-title {
-  color: var(--ios-text-secondary) !important;
-  font-weight: 600 !important;
-}
-
-.theme-ios .cyber-section-title::after {
-  background: var(--ios-border) !important;
-}
-
-.theme-ios .cyber-divider {
-  background: var(--ios-border) !important;
-}
-
-.theme-ios .cyber-data-row {
-  border-bottom-color: var(--ios-border) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   点击反馈
-   ═══════════════════════════════════════════════════ */
-.theme-ios .tap-cyber {
-  transition: transform 0.15s ease, opacity 0.15s ease !important;
-}
-
-.theme-ios .tap-cyber:active {
-  transform: scale(0.96) !important;
-  opacity: 0.85 !important;
-}
-
-.theme-ios .icon-glow-cyan,
-.theme-ios .icon-glow-gold,
-.theme-ios .icon-glow-magenta,
-.theme-ios .icon-glow-green {
-  filter: none !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   滚动条与选区
-   ═══════════════════════════════════════════════════ */
-.theme-ios ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12) !important;
-  border-radius: 999px !important;
-}
-
-.theme-ios ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.22) !important;
-}
-
-.theme-ios ::selection {
-  background: rgba(0, 122, 255, 0.2) !important;
-  color: var(--ios-text) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   图表工具提示
-   ═══════════════════════════════════════════════════ */
-.theme-ios .recharts-default-tooltip {
-  background: rgba(255, 255, 255, 0.92) !important;
-  border: 1px solid var(--ios-border) !important;
-  box-shadow: 0 8px 32px var(--ios-shadow) !important;
-  border-radius: 14px !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   启动画面
-   ═══════════════════════════════════════════════════ */
 .theme-ios .boot-screen {
-  background: var(--ios-bg) !important;
+  display: none !important;
+  content: none !important;
 }
 
-.theme-ios .boot-logo {
-  color: var(--ios-blue) !important;
-  text-shadow: none !important;
-  font-weight: 800 !important;
+/* 停止所有赛博动画 */
+.theme-ios *,
+.theme-ios *::before,
+.theme-ios *::after {
+  animation: none !important;
+  transition-duration: 0.2s !important;
+  transition-property: color, background-color, border-color, opacity,
+    transform !important;
 }
 
-.theme-ios .boot-progress {
-  background: rgba(0, 0, 0, 0.08) !important;
-  border-radius: 999px !important;
-  overflow: hidden !important;
-}
-
-.theme-ios .boot-progress-fill {
-  background: var(--ios-blue) !important;
-  box-shadow: none !important;
-}
-
-.theme-ios .boot-log {
-  color: var(--ios-text-secondary) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   悬浮按钮 FAB
-   ═══════════════════════════════════════════════════ */
-.theme-ios .fab-button {
-  background: var(--ios-blue) !important;
-  box-shadow: 0 6px 24px rgba(0, 122, 255, 0.28) !important;
-}
-
-.theme-ios .fab-menu-item {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border: 1px solid var(--ios-border) !important;
-  color: var(--ios-text) !important;
-  box-shadow: 0 8px 32px var(--ios-shadow) !important;
-}
-
-.theme-ios .fab-menu-item:hover {
-  background: rgba(255, 255, 255, 1) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   底部弹层
-   ═══════════════════════════════════════════════════ */
-.theme-ios [data-rsbs-backdrop] {
-  background: rgba(0, 0, 0, 0.25) !important;
-}
-
-.theme-ios [data-rsbs-overlay] {
-  background: var(--ios-surface-elevated) !important;
-  border-top-left-radius: 26px !important;
-  border-top-right-radius: 26px !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-}
-
-/* 底部“更多”抽屉 iOS 化（匹配内联深色背景） */
-.theme-ios [style*="background: rgba(4, 6, 16, 0.92)"],
-.theme-ios [style*="background-color: rgba(4, 6, 16, 0.92)"] {
-  background: rgba(255, 255, 255, 0.9) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  border-top: 1px solid var(--ios-border) !important;
-  border-left: 1px solid var(--ios-border) !important;
-  border-right: 1px solid var(--ios-border) !important;
-  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.08) !important;
-}
-
-/* 抽屉标题颜色 */
-.theme-ios [style*="background: rgba(4, 6, 16, 0.92)"] h3,
-.theme-ios [style*="background-color: rgba(4, 6, 16, 0.92)"] h3,
-.theme-ios [style*="background: rgba(4, 6, 16, 0.92)"] button,
-.theme-ios [style*="background-color: rgba(4, 6, 16, 0.92)"] button {
-  color: var(--ios-text) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   五彩纸屑
-   ═══════════════════════════════════════════════════ */
-.theme-ios .confetti-piece {
-  filter: saturate(0.85) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   列表项与数据行通用优化
-   ═══════════════════════════════════════════════════ */
-.theme-ios .cyber-list-item {
-  background: var(--ios-surface) !important;
-  border: 1px solid var(--ios-border) !important;
-  border-radius: 20px !important;
-  box-shadow: 0 2px 12px var(--ios-shadow) !important;
-}
-
-/* 针对 inline style 中写死的深黑背景做兜底覆盖 */
-.theme-ios [style*="background-color: rgb(26, 26, 46)"] {
-  background: var(--ios-surface-solid) !important;
-}
-
-/* 日期选择器、原生输入框 */
-.theme-ios input[type="date"]::-webkit-calendar-picker-indicator,
-.theme-ios input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.4) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   清理赛博风残留特效（Glitch / 闪烁 / 扫描线 / 数据流 / 网格）
-   ═══════════════════════════════════════════════════ */
-
-/* 移除 glitch 伪元素、霓虹闪烁、全息闪烁、数据流、扫描线 */
-html.theme-ios .cyber-glitch::before,
-html.theme-ios .cyber-glitch::after,
-html.theme-ios .neon-flicker::before,
-html.theme-ios .neon-flicker::after,
-html.theme-ios .holo-shimmer::after,
-html.theme-ios .cyber-data-stream::before,
-html.theme-ios .cyber-scan-line::before,
-html.theme-ios .cyber-scan-line::after,
-html.theme-ios .pulse-ring::before,
-html.theme-ios .data-pulse::after,
-html.theme-ios .holo-rainbow-border::before,
-html.theme-ios .tech-border-animated::before,
-html.theme-ios .holo-data-card::before,
-html.theme-ios .terminal-cursor::after,
-html.theme-ios .corner-brackets::before,
-html.theme-ios .corner-brackets::after,
+/* 移除所有霓虹/全息伪元素 */
 .theme-ios .cyber-glitch::before,
 .theme-ios .cyber-glitch::after,
 .theme-ios .neon-flicker::before,
@@ -824,137 +121,645 @@ html.theme-ios .corner-brackets::after,
 .theme-ios .holo-data-card::before,
 .theme-ios .terminal-cursor::after,
 .theme-ios .corner-brackets::before,
-.theme-ios .corner-brackets::after {
+.theme-ios .corner-brackets::after,
+.theme-ios .holo-card::before,
+.theme-ios .holo-card::after,
+.theme-ios .holo-card-strong::before,
+.theme-ios .holo-card-strong::after,
+.theme-ios .holo-card-gold::before,
+.theme-ios .holo-card-gold::after {
   display: none !important;
   content: none !important;
+  background: none !important;
+  box-shadow: none !important;
 }
 
-/* 停止动画，避免 iOS 下继续消耗资源 */
-html.theme-ios .cyber-glitch,
-html.theme-ios .neon-flicker,
-html.theme-ios .holo-shimmer,
-html.theme-ios .cyber-data-stream,
-html.theme-ios .cyber-scan-line,
-html.theme-ios .pulse-ring,
-html.theme-ios .data-pulse,
-html.theme-ios .holo-rainbow-border,
-html.theme-ios .tech-border-animated,
-html.theme-ios .holo-data-card,
-html.theme-ios .neon-text-pulse,
-html.theme-ios .holo-text-flicker,
-html.theme-ios .cyber-grid-enhanced,
-html.theme-ios .hex-grid-bg,
-html.theme-ios .tech-grid-card,
-html.theme-ios .cyber-particles,
-html.theme-ios .cyber-glow-hover,
-.theme-ios .cyber-glitch,
-.theme-ios .neon-flicker,
-.theme-ios .holo-shimmer,
-.theme-ios .cyber-data-stream,
-.theme-ios .cyber-scan-line,
-.theme-ios .pulse-ring,
-.theme-ios .data-pulse,
-.theme-ios .holo-rainbow-border,
-.theme-ios .tech-border-animated,
-.theme-ios .holo-data-card,
+/* 移除发光类效果 */
+.theme-ios .neon-cyan,
+.theme-ios .neon-gold,
+.theme-ios .neon-magenta,
+.theme-ios .neon-green,
+.theme-ios .neon-red,
+.theme-ios .icon-glow-cyan,
+.theme-ios .icon-glow-magenta,
+.theme-ios .icon-glow-gold,
 .theme-ios .neon-text-pulse,
-.theme-ios .holo-text-flicker,
-.theme-ios .cyber-grid-enhanced,
-.theme-ios .hex-grid-bg,
+.theme-ios .holo-text-flicker {
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   2. 文字可读性：默认全部深色，再为强调色开例外
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios {
+  color: var(--ios-label);
+}
+
+.theme-ios h1,
+.theme-ios h2,
+.theme-ios h3,
+.theme-ios h4,
+.theme-ios h5,
+.theme-ios h6,
+.theme-ios p,
+.theme-ios span,
+.theme-ios div,
+.theme-ios label,
+.theme-ios li,
+.theme-ios td,
+.theme-ios th {
+  color: inherit;
+}
+
+/* 兜底：所有显式写成浅色的文字，在 iOS 主题下强制变黑 */
+.theme-ios [style*='color: rgb(224, 224, 224)'],
+.theme-ios [style*='color: #E0E0E0'],
+.theme-ios [style*='color: #e0e0e0'],
+.theme-ios [style*='color: rgb(255, 255, 255)'],
+.theme-ios [style*='color: #ffffff'],
+.theme-ios [style*='color: #fff'],
+.theme-ios [style*='color: rgb(255, 255, 255)'],
+.theme-ios [style*='color: rgba(255, 255, 255'],
+.theme-ios [style*='color: rgba(224, 224, 224'],
+.theme-ios [style*='fill: rgb(224, 224, 224)'],
+.theme-ios [style*='fill: #E0E0E0'],
+.theme-ios [style*='fill: #ffffff'],
+.theme-ios [style*='fill: rgb(255, 255, 255)'],
+.theme-ios [class*='text-[#E0E0E0]'],
+.theme-ios [class*='text-[#fff'],
+.theme-ios [class*='text-[#FFF'],
+.theme-ios [class*='text-white'],
+.theme-ios [class*='text-gray-100'],
+.theme-ios [class*='text-gray-200'],
+.theme-ios [class*='text-gray-300'] {
+  color: var(--ios-label) !important;
+  fill: var(--ios-label) !important;
+}
+
+/* 次要文字：显式写成半透明浅灰的，映射为 iOS secondary */
+.theme-ios [style*='color: rgba(224, 224, 224, 0.'],
+.theme-ios [style*='color: rgba(255, 255, 255, 0.'],
+.theme-ios [class*='text-[#E0E0E0]/'],
+.theme-ios [class*='text-[#ffffff]/'],
+.theme-ios [class*='text-[#fff]/'] {
+  color: var(--ios-label-secondary) !important;
+  fill: var(--ios-label-secondary) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   3. 强调色映射（赛博色 → iOS 系统色）
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios .text-\[\#00E5FF\],
+.theme-ios .text-\[\#00B0D0\],
+.theme-ios .text-\[\#00D2FF\],
+.theme-ios .text-\[\#4B6BFB\],
+.theme-ios [style*='color: #00E5FF'],
+.theme-ios [style*='color: #00B0D0'],
+.theme-ios [style*='color: #00D2FF'],
+.theme-ios [style*='color: #4B6BFB'] {
+  color: var(--ios-system-blue) !important;
+}
+
+.theme-ios .text-\[\#E040FB\],
+.theme-ios .text-\[\#7B2FF7\],
+.theme-ios [style*='color: #E040FB'],
+.theme-ios [style*='color: #7B2FF7'] {
+  color: var(--ios-system-purple) !important;
+}
+
+.theme-ios .text-\[\#FFD740\],
+.theme-ios .text-\[\#FF6D00\],
+.theme-ios .text-\[\#FF8C00\],
+.theme-ios .text-\[\#FF6B35\],
+.theme-ios .text-\[\#FFD100\],
+.theme-ios .text-\[\#FF9500\],
+.theme-ios [style*='color: #FFD740'],
+.theme-ios [style*='color: #FF6D00'],
+.theme-ios [style*='color: #FF8C00'],
+.theme-ios [style*='color: #FF6B35'],
+.theme-ios [style*='color: #FFD100'] {
+  color: var(--ios-system-orange) !important;
+}
+
+.theme-ios .text-\[\#00E676\],
+.theme-ios .text-\[\#00C853\],
+.theme-ios [style*='color: #00E676'],
+.theme-ios [style*='color: #00C853'] {
+  color: var(--ios-system-green) !important;
+}
+
+.theme-ios .text-\[\#FF1744\],
+.theme-ios .text-\[\#FF4081\],
+.theme-ios .text-\[\#FF6B9D\],
+.theme-ios .text-\[\#C51162\],
+.theme-ios [style*='color: #FF1744'],
+.theme-ios [style*='color: #FF4081'],
+.theme-ios [style*='color: #FF6B9D'] {
+  color: var(--ios-system-red) !important;
+}
+
+.theme-ios .text-\[\#020408\],
+.theme-ios .text-\[\#060A12\],
+.theme-ios .text-\[\#0A0F1A\],
+.theme-ios .text-\[\#0E1422\],
+.theme-ios [style*='color: #020408'],
+.theme-ios [style*='color: #060A12'],
+.theme-ios [style*='color: #0A0F1A'] {
+  color: var(--ios-label) !important;
+}
+
+/* 背景色映射 */
+.theme-ios .bg-\[\#00E5FF\],
+.theme-ios [style*='background-color: #00E5FF'],
+.theme-ios [style*='background: #00E5FF'] {
+  background-color: var(--ios-system-blue) !important;
+}
+
+.theme-ios .bg-\[\#E040FB\],
+.theme-ios [style*='background-color: #E040FB'],
+.theme-ios [style*='background: #E040FB'] {
+  background-color: var(--ios-system-purple) !important;
+}
+
+.theme-ios .bg-\[\#00E676\],
+.theme-ios [style*='background-color: #00E676'] {
+  background-color: var(--ios-system-green) !important;
+}
+
+.theme-ios .bg-\[\#FF1744\],
+.theme-ios [style*='background-color: #FF1744'] {
+  background-color: var(--ios-system-red) !important;
+}
+
+.theme-ios .bg-\[\#FFD740\],
+.theme-ios [style*='background-color: #FFD740'] {
+  background-color: var(--ios-system-orange) !important;
+}
+
+.theme-ios .bg-\[\#020408\],
+.theme-ios .bg-\[\#060A12\],
+.theme-ios .bg-\[\#0A0F1A\],
+.theme-ios .bg-\[\#0E1422\],
+.theme-ios [style*='background-color: #020408'],
+.theme-ios [style*='background-color: #060A12'],
+.theme-ios [style*='background-color: #0A0F1A'],
+.theme-ios [style*='background-color: #0E1422'],
+.theme-ios [style*='background: #020408'],
+.theme-ios [style*='background: #060A12'] {
+  background-color: var(--ios-secondary-background) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   4. 卡片：iOS 分组卡片样式
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios .holo-card,
+.theme-ios .holo-card-strong,
+.theme-ios .holo-card-gold,
 .theme-ios .tech-grid-card,
-.theme-ios .cyber-particles,
-.theme-ios .cyber-glow-hover {
-  animation: none !important;
+.theme-ios .stat-card-enhanced {
+  background: var(--ios-grouped-secondary) !important;
+  border: none !important;
+  border-radius: var(--ios-radius-xl) !important;
+  box-shadow: var(--ios-shadow-sm) !important;
+  color: var(--ios-label) !important;
+  overflow: hidden;
 }
 
-/* 强制 glitch 文字在 iOS 下显示为纯净深色 */
-html.theme-ios .cyber-glitch,
-.theme-ios .cyber-glitch {
-  color: var(--ios-text) !important;
+.theme-ios .holo-card:hover,
+.theme-ios .holo-card-strong:hover,
+.theme-ios .holo-card-gold:hover {
+  box-shadow: var(--ios-shadow-md) !important;
+  border-color: transparent !important;
 }
 
-/* 科技网格背景替换为纯净浅色 */
-.theme-ios .tech-grid-card,
-.theme-ios .cyber-grid-enhanced,
-.theme-ios .hex-grid-bg {
-  background: var(--ios-surface) !important;
-  border: 1px solid var(--ios-border) !important;
+/* 大卡片（仪表盘主卡片） */
+.theme-ios .holo-card-strong.rounded-\[24px\],
+.theme-ios .holo-card.rounded-\[24px\],
+.theme-ios .holo-card.rounded-\[26px\] {
+  border-radius: var(--ios-radius-2xl) !important;
+  background: var(--ios-grouped-secondary) !important;
 }
 
-/* 全息数据卡片 iOS 化 */
-.theme-ios .holo-data-card {
-  background: var(--ios-surface) !important;
-  border: 1px solid var(--ios-border) !important;
-  box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.04),
-    0 1px 3px rgba(0, 0, 0, 0.04),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important;
+/* 强调卡片：使用渐变蓝 */
+.theme-ios .holo-card-strong {
+  background: linear-gradient(
+    180deg,
+    var(--ios-grouped-secondary) 0%,
+    #f7f7f9 100%
+  ) !important;
 }
 
-/* 全局深色文字兜底：所有未命中 Tailwind 映射的文本 */
-.theme-ios body,
-.theme-ios .h1, .theme-ios .h2, .theme-ios .h3, .theme-ios .h4, .theme-ios .h5, .theme-ios .h6,
-.theme-ios h1, .theme-ios h2, .theme-ios h3, .theme-ios h4, .theme-ios h5, .theme-ios h6,
-.theme-ios p, .theme-ios span, .theme-ios div, .theme-ios label, .theme-ios li {
-  color-scheme: light;
+/* ═══════════════════════════════════════════════════════════════════
+   5. 按钮：iOS 原生按钮
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios .btn-cyber,
+.theme-ios .btn-cyber-primary,
+.theme-ios .btn-cyber-danger,
+.theme-ios button[class*='tap-cyber'],
+.theme-ios .tap-cyber {
+  background: var(--ios-system-blue) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: var(--ios-radius-md) !important;
+  font-weight: 600 !important;
+  font-family: var(--ios-font) !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  letter-spacing: -0.01em !important;
 }
 
-/* 未覆盖到的内联浅色文字，强制改为 iOS 深色 */
-.theme-ios [style*="color: rgb(224, 224, 224)"],
-.theme-ios [style*="color: #E0E0E0"],
-.theme-ios [style*="color: rgb(255, 255, 255)"] {
-  color: var(--ios-text) !important;
+.theme-ios .btn-cyber:active,
+.theme-ios .btn-cyber-primary:active,
+.theme-ios .tap-cyber:active {
+  transform: scale(0.97) !important;
+  opacity: 0.9;
 }
 
-/* 未覆盖到的深黑背景内联样式，替换为 iOS 白/灰 */
-.theme-ios [style*="background-color: rgb(2, 4, 8)"],
-.theme-ios [style*="background-color: #020408"],
-.theme-ios [style*="background: rgb(2, 4, 8)"],
-.theme-ios [style*="background: #020408"],
-.theme-ios [style*="background-color: rgb(10, 15, 26)"],
-.theme-ios [style*="background-color: #0A0F1A"] {
-  background: var(--ios-surface-solid) !important;
+.theme-ios .btn-cyber-danger {
+  background: var(--ios-system-red) !important;
 }
 
-/* iOS 下移除所有文字阴影 */
-.theme-ios * {
+.theme-ios .btn-cyber:disabled,
+.theme-ios button:disabled {
+  background: var(--ios-fill) !important;
+  color: var(--ios-label-tertiary) !important;
+}
+
+/* 次要/幽灵按钮 */
+.theme-ios button[class*='bg-\[#00E5FF\]\/10'],
+.theme-ios button[class*='border-\[#00E5FF\]\/20'] {
+  background: var(--ios-fill-secondary) !important;
+  color: var(--ios-system-blue) !important;
+  border: none !important;
+}
+
+/* 圆形加减按钮 */
+.theme-ios button[class*='rounded-full'] {
+  border-radius: var(--ios-radius-full) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   6. 表单输入：iOS 文本框/选择器
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios input,
+.theme-ios select,
+.theme-ios textarea,
+.theme-ios [role='textbox'],
+.theme-ios [role='combobox'],
+.theme-ios [role='spinbutton'] {
+  background: var(--ios-grouped-secondary) !important;
+  color: var(--ios-label) !important;
+  border: none !important;
+  border-radius: var(--ios-radius-md) !important;
+  font-family: var(--ios-font) !important;
+  box-shadow: inset 0 0 0 0.5px var(--ios-border) !important;
+}
+
+.theme-ios input::placeholder,
+.theme-ios textarea::placeholder {
+  color: var(--ios-label-tertiary) !important;
+}
+
+.theme-ios input:focus,
+.theme-ios select:focus,
+.theme-ios textarea:focus {
+  box-shadow: inset 0 0 0 1.5px var(--ios-system-blue) !important;
+  outline: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   7. 徽章 / 标签
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios .badge-cyber,
+.theme-ios .badge-cyber-gold,
+.theme-ios .badge-cyber-green,
+.theme-ios .badge-cyber-red {
+  background: var(--ios-fill-secondary) !important;
+  color: var(--ios-label-secondary) !important;
+  border: none !important;
+  border-radius: var(--ios-radius-full) !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
   text-shadow: none !important;
 }
 
-/* iOS 下移除 box-shadow 光晕，保留柔和阴影 */
-.theme-ios .holo-card-strong,
-.theme-ios .holo-card-gold {
-  box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.04),
-    0 1px 3px rgba(0, 0, 0, 0.04),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important;
+.theme-ios .badge-cyber-gold {
+  background: rgba(255, 149, 0, 0.12) !important;
+  color: var(--ios-system-orange) !important;
 }
 
-/* 表格/列表 zebra 色等深色背景兜底 */
-.theme-ios [class*="bg-[#020408]"],
-.theme-ios [class*="bg-[#0A0F1A]"],
-.theme-ios [class*="bg-[#1A1A2E]"] {
-  background-color: var(--ios-surface-solid) !important;
+.theme-ios .badge-cyber-green {
+  background: rgba(52, 199, 89, 0.12) !important;
+  color: var(--ios-system-green) !important;
 }
 
-/* 黑色半透明覆盖层 iOS 化 */
-.theme-ios [class*="bg-black"] {
-  background-color: rgba(0, 0, 0, 0.4) !important;
+.theme-ios .badge-cyber-red {
+  background: rgba(255, 59, 48, 0.12) !important;
+  color: var(--ios-system-red) !important;
 }
 
-/* Toast 提示 iOS 化 */
-.theme-ios .toast-container {
-  --toast-bg: rgba(255, 255, 255, 0.92) !important;
-  --toast-border: var(--ios-border) !important;
-  --toast-text: var(--ios-text) !important;
+/* ═══════════════════════════════════════════════════════════════════
+   8. 进度条 / 图表
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios .progress-cyber {
+  background: var(--ios-fill) !important;
+  border-radius: var(--ios-radius-full) !important;
+  height: 6px !important;
+  overflow: hidden;
 }
 
-.theme-ios .toast-item {
-  background: rgba(255, 255, 255, 0.92) !important;
-  border: 1px solid var(--ios-border) !important;
-  color: var(--ios-text) !important;
-  box-shadow: 0 8px 32px var(--ios-shadow) !important;
-  border-radius: 18px !important;
+.theme-ios .progress-cyber-fill {
+  background: var(--ios-system-blue) !important;
+  border-radius: var(--ios-radius-full) !important;
+  box-shadow: none !important;
+}
+
+/* 进度环 SVG */
+.theme-ios svg circle[stroke='#00E5FF'],
+.theme-ios svg circle[stroke='rgba(0,229,255,1)'] {
+  stroke: var(--ios-system-blue) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   9. 底部导航：iOS Tab Bar
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios nav.fixed.bottom-0,
+.theme-ios .cyber-nav,
+.theme-ios [class*='fixed bottom-0'] {
+  background: var(--ios-material-thick) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-top: 0.5px solid var(--ios-separator) !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+
+.theme-ios nav a,
+.theme-ios nav button {
+  color: var(--ios-system-gray) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.theme-ios nav a[aria-current='page'],
+.theme-ios nav a:focus,
+.theme-ios .nav-cyber-active,
+.theme-ios nav a[class*='text-\\[#00E5FF\\]'] {
+  color: var(--ios-system-blue) !important;
+}
+
+.theme-ios nav a::before,
+.theme-ios nav a::after,
+.theme-ios .nav-cyber-active::before {
+  display: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   10. 顶部状态 / HUD
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios .terminal-text,
+.theme-ios [class*='terminal-text'] {
+  font-family: var(--ios-font) !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+}
+
+.theme-ios .cyber-section-title {
+  color: var(--ios-label) !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  letter-spacing: -0.02em !important;
+}
+
+.theme-ios .cyber-section-title svg {
+  color: var(--ios-system-blue) !important;
+}
+
+/* 顶部状态条 */
+.theme-ios [class*='pulse-ring'],
+.theme-ios [class*='data-pulse'] {
+  background: var(--ios-fill-secondary) !important;
+  color: var(--ios-system-green) !important;
+  border: none !important;
+  border-radius: var(--ios-radius-full) !important;
+}
+
+.theme-ios [class*='pulse-ring'] span[class*='bg-\\[#00E676\\]'] {
+  background: var(--ios-system-green) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   11. 列表行 / 设置项
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios .space-y-3 > .holo-card,
+.theme-ios .space-y-4 > .holo-card,
+.theme-ios form .holo-card,
+.theme-ios .grid > .holo-card {
+  margin-bottom: 12px !important;
+}
+
+/* 设置页内部的标签/说明 */
+.theme-ios label,
+.theme-ios .text-xs,
+.theme-ios .text-\[10px\],
+.theme-ios .text-\[11px\],
+.theme-ios .text-\[9px\] {
+  color: var(--ios-label-secondary) !important;
+}
+
+.theme-ios h3 + div label,
+.theme-ios h3 + div .text-sm {
+  color: var(--ios-label) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   12. 抽屉 / 弹窗 / 模态
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios [class*='BottomSheet'],
+.theme-ios [role='dialog'],
+.theme-ios [class*='sheet'],
+.theme-ios [style*='background: rgba(4, 6, 16, 0.92)'],
+.theme-ios [style*='background-color: rgba(4, 6, 16, 0.92)'] {
+  background: var(--ios-material-thick) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border-top: 0.5px solid var(--ios-separator) !important;
+  color: var(--ios-label) !important;
+  border-radius: var(--ios-radius-2xl) var(--ios-radius-2xl) 0 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   13. 通用背景覆盖（处理内联深色背景）
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios [style*='background: rgba(0, 229, 255'],
+.theme-ios [style*='background: rgba(224, 64, 251'],
+.theme-ios [style*='background: rgba(255, 215, 64'],
+.theme-ios [style*='background: rgba(4, 6, 16'],
+.theme-ios [style*='background-color: rgba(4, 6, 16'],
+.theme-ios [style*='background: rgba(10, 15, 26'],
+.theme-ios [style*='background-color: rgba(10, 15, 26'] {
+  background: var(--ios-grouped-secondary) !important;
+}
+
+.theme-ios [style*='background: linear-gradient'][style*='rgba(0, 229, 255'],
+.theme-ios [style*='background: linear-gradient'][style*='rgba(224, 64, 251'],
+.theme-ios [style*='background: linear-gradient'][style*='rgba(255, 215, 64'] {
+  background: var(--ios-grouped-secondary) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   14. 透明度类映射（让半透明赛博色变 iOS 填充色）
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios [class*='bg-\\[#00E5FF\\]/'] {
+  background-color: var(--ios-system-blue) !important;
+}
+
+.theme-ios [class*='bg-\\[#E040FB\\]/'] {
+  background-color: var(--ios-system-purple) !important;
+}
+
+.theme-ios [class*='bg-\\[#00E676\\]/'] {
+  background-color: var(--ios-system-green) !important;
+}
+
+.theme-ios [class*='bg-\\[#FF1744\\]/'] {
+  background-color: var(--ios-system-red) !important;
+}
+
+.theme-ios [class*='bg-\\[#FFD740\\]/'] {
+  background-color: var(--ios-system-orange) !important;
+}
+
+.theme-ios [class*='bg-\\[#E0E0E0\\]/'] {
+  background-color: var(--ios-fill) !important;
+}
+
+.theme-ios [class*='bg-\\[#020408\\]/'] {
+  background-color: var(--ios-fill) !important;
+}
+
+.theme-ios [class*='border-\\[#00E5FF\\]/'],
+.theme-ios [class*='border-\\[#E0E0E0\\]/'],
+.theme-ios [class*='border-\\[#020408\\]/'] {
+  border-color: var(--ios-border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   15. 通用文字透明度映射
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios [class*='text-\\[#00E5FF\\]/'] {
+  color: var(--ios-system-blue) !important;
+}
+
+.theme-ios [class*='text-\\[#E0E0E0\\]/'] {
+  color: var(--ios-label-secondary) !important;
+}
+
+.theme-ios [class*='text-\\[#ffffff\\]/'],
+.theme-ios [class*='text-\\[#fff\\]/'] {
+  color: var(--ios-label-secondary) !important;
+}
+
+.theme-ios [class*='text-\\[#020408\\]/'] {
+  color: var(--ios-label-secondary) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   16. 顶部大标题区域清理
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios h1.cyber-glitch,
+.theme-ios h1[data-text] {
+  color: var(--ios-label) !important;
+  text-shadow: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   17. 修复特定组件
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* 天气小组件 */
+.theme-ios .WeatherWidget,
+.theme-ios [class*='WeatherWidget'] {
+  background: var(--ios-grouped-secondary) !important;
+  border-radius: var(--ios-radius-xl) !important;
+}
+
+/* 班次卡片 */
+.theme-ios .SmartShiftCard,
+.theme-ios [class*='SmartShiftCard'] {
+  background: var(--ios-grouped-secondary) !important;
+  border-radius: var(--ios-radius-xl) !important;
+}
+
+/* 空状态 / 暂无数据 */
+.theme-ios [class*='text-\\[#E0E0E0\\]/40'],
+.theme-ios [class*='text-\\[#E0E0E0\\]/30'] {
+  color: var(--ios-label-tertiary) !important;
+}
+
+/* 底部更多抽屉中的按钮 */
+.theme-ios [class*='bottom-sheet'] button,
+.theme-ios [class*='drawer'] button {
+  background: var(--ios-grouped-secondary) !important;
+  color: var(--ios-label) !important;
+  border-radius: var(--ios-radius-lg) !important;
+}
+
+/* 数据表格 / 列表 */
+.theme-ios table,
+.theme-ios tr,
+.theme-ios td,
+.theme-ios th {
+  border-color: var(--ios-separator) !important;
+}
+
+/* SVG 图标默认色 */
+.theme-ios svg {
+  color: currentColor;
+}
+
+/* 强制 SVG 中仍使用浅色描边的元素转深色 */
+.theme-ios svg[stroke='#E0E0E0'],
+.theme-ios svg [stroke='#E0E0E0'],
+.theme-ios svg[stroke='#ffffff'],
+.theme-ios svg [stroke='#ffffff'],
+.theme-ios svg[stroke='rgb(224, 224, 224)'],
+.theme-ios svg [stroke='rgb(224, 224, 224)'],
+.theme-ios svg[stroke='rgb(255, 255, 255)'],
+.theme-ios svg [stroke='rgb(255, 255, 255)'] {
+  stroke: var(--ios-label) !important;
+}
+
+.theme-ios svg[fill='#E0E0E0'],
+.theme-ios svg [fill='#E0E0E0'],
+.theme-ios svg[fill='#ffffff'],
+.theme-ios svg [fill='#ffffff'] {
+  fill: var(--ios-label) !important;
+}
+
+/* 暗色文字在蓝色按钮上应变白 */
+.theme-ios .btn-cyber-primary *,
+.theme-ios .btn-cyber *,
+.theme-ios button[class*='tap-cyber'] *,
+.theme-ios .bg-\[\#00E5FF\] *,
+.theme-ios [style*='background: linear-gradient(135deg, #00E5FF'] * {
+  color: #ffffff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   18. 安全区与滚动
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios body {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   19. 滚动条（iOS 风格）
+   ═══════════════════════════════════════════════════════════════════ */
+.theme-ios ::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
 }
