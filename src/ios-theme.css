@@ -356,8 +356,7 @@ html.theme-ios body,
 .theme-ios .btn-cyber,
 .theme-ios .btn-cyber-primary,
 .theme-ios .btn-cyber-danger,
-.theme-ios button[class*='tap-cyber'],
-.theme-ios .tap-cyber {
+.theme-ios button:not(nav button):not([class*='bottom-sheet'] button):not([class*='drawer'] button) {
   background: var(--ios-system-blue) !important;
   color: #ffffff !important;
   border: none !important;
@@ -370,8 +369,7 @@ html.theme-ios body,
 }
 
 .theme-ios .btn-cyber:active,
-.theme-ios .btn-cyber-primary:active,
-.theme-ios .tap-cyber:active {
+.theme-ios .btn-cyber-primary:active {
   transform: scale(0.97) !important;
   opacity: 0.9;
 }
@@ -496,24 +494,39 @@ html.theme-ios body,
   padding-bottom: env(safe-area-inset-bottom, 0px) !important;
 }
 
+/* 导航项本身不要背景 */
 .theme-ios nav a,
-.theme-ios nav button {
+.theme-ios nav button,
+.theme-ios .cyber-nav a,
+.theme-ios .cyber-nav button {
+  background: transparent !important;
   color: var(--ios-system-gray) !important;
   font-size: 10px !important;
   font-weight: 500 !important;
   letter-spacing: -0.01em !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 .theme-ios nav a[aria-current='page'],
 .theme-ios nav a:focus,
 .theme-ios .nav-cyber-active,
-.theme-ios nav a[class*='text-\\[#00E5FF\\]'] {
+.theme-ios nav a[class*='text-\\[#00E5FF\\]'],
+.theme-ios .cyber-nav a[aria-current='page'] {
   color: var(--ios-system-blue) !important;
 }
 
 .theme-ios nav a::before,
 .theme-ios nav a::after,
-.theme-ios .nav-cyber-active::before {
+.theme-ios .nav-cyber-active::before,
+.theme-ios .nav-glow-tracker {
+  display: none !important;
+}
+
+/* 移除活动指示器小圆点 */
+.theme-ios nav a > div > div[class*='absolute'],
+.theme-ios nav button > div > div[class*='absolute'] {
   display: none !important;
 }
 
@@ -743,7 +756,6 @@ html.theme-ios body,
 /* 暗色文字在蓝色按钮上应变白 */
 .theme-ios .btn-cyber-primary *,
 .theme-ios .btn-cyber *,
-.theme-ios button[class*='tap-cyber'] *,
 .theme-ios .bg-\[\#00E5FF\] *,
 .theme-ios [style*='background: linear-gradient(135deg, #00E5FF'] * {
   color: #ffffff !important;
