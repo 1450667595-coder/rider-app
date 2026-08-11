@@ -44,7 +44,6 @@ const DEFAULT_SETTINGS: UserSettings = {
   currentShift: "early_mid",
   shiftStartDate: getThisMonday(),
   weeklyShifts: {},
-  theme: "cyber",
 };
 
 function getDefaultStorage(): AppStorage {

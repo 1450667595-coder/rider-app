@@ -4,7 +4,6 @@ import {
   Cloud, CloudOff, CheckCircle2, AlertCircle, RefreshCw, Save, Trash2,
   ExternalLink, User, Target, Coins, Gift, Calendar, Briefcase, Database,
   Upload, Download, Info, RotateCcw, Beaker, MapPin, Navigation, Search,
-  Palette, Smartphone, Zap,
 } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import useStore from "@/store/useStore";
@@ -13,8 +12,6 @@ import { exportBackup, importBackup } from "@/utils/storage";
 import { today } from "@/utils/date";
 import { SHIFT_DEFINITIONS } from "@/types";
 import { searchCities, getUserLocation } from "@/services/weather";
-import { useTheme } from "@/hooks/useTheme";
-import IOSSettings from "@/components/ios/IOSSettings";
 import {
   isSupabaseConfigured,
   getSyncUserId,
@@ -211,7 +208,6 @@ export default function Settings() {
   const configured = isSupabaseConfigured();
   const config = STATUS_CONFIG[status];
   const Icon = config.icon;
-  const { isIOS } = useTheme(settings.theme);
 
   const stats = useMemo(() => {
     const recordCount = Object.keys(records).length;
@@ -219,44 +215,12 @@ export default function Settings() {
     return { recordCount, unlockedCount };
   }, [records, achievements]);
 
-  if (isIOS) {
-    return <IOSSettings />;
-  }
-
   return (
     <motion.div className="px-4 pt-6 pb-24 space-y-5" variants={container} initial="hidden" animate="show">
       {/* Header */}
       <motion.div variants={item} className="text-center space-y-2">
         <h1 className="text-2xl font-bold text-[#E0E0E0] neon-cyan tracking-[-0.01em]">系统设置中心</h1>
         <p className="terminal-text text-xs tracking-tight">个人资料 · 目标 · 班次 · 云端 · 数据</p>
-      </motion.div>
-
-      {/* 界面主题 */}
-      <motion.div variants={item} className="holo-card rounded-[26px] p-5 corner-brackets space-y-4">
-        <h3 className="cyber-section-title text-sm font-medium tracking-tight">
-          <Palette size={16} className="icon-glow-cyan" />
-          界面主题
-        </h3>
-        <div className="theme-selector" data-active-theme={settings.theme}>
-          <button
-            onClick={() => updateSetting({ theme: "cyber" })}
-            data-active={settings.theme === "cyber"}
-            className="flex flex-col items-center gap-1 p-3 transition-all tap-cyber"
-          >
-            <Zap size={20} strokeWidth={1.8} />
-            <span className="text-xs font-medium">赛博朋克</span>
-            <span className="text-[9px] terminal-text">霓虹 · 全息</span>
-          </button>
-          <button
-            onClick={() => updateSetting({ theme: "ios" })}
-            data-active={settings.theme === "ios"}
-            className="flex flex-col items-center gap-1 p-3 transition-all tap-cyber"
-          >
-            <Smartphone size={20} strokeWidth={1.8} />
-            <span className="text-xs font-medium">iOS 苹果风</span>
-            <span className="text-[9px] terminal-text">原生 · 简洁</span>
-          </button>
-        </div>
       </motion.div>
 
       {/* 个人资料 */}

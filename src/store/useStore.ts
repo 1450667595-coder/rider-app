@@ -181,7 +181,6 @@ function toSyncSettings(s: UserSettings) {
     shiftStartDate: s.shiftStartDate,
     weeklyShifts: s.weeklyShifts,
     weeklyShiftsUpdatedAt: s.weeklyShiftsUpdatedAt,
-    theme: s.theme,
   };
 }
 

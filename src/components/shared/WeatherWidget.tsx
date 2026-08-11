@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Cloud, Wind, Droplets, RefreshCw, ChevronDown, ChevronUp, Calendar, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useWeather } from "@/hooks/useWeather";
 import { weatherCodeToOurWeather, getWeatherForecastSummary, getWeatherImpactScore } from "@/services/weather";
-import { useTheme } from "@/hooks/useTheme";
 import type { Weather } from "@/types";
 
 interface WeatherWidgetProps {
@@ -14,7 +13,6 @@ export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
   const { weather, forecast, loading, error, refetch } = useWeather();
   const prevWeatherRef = useRef<Weather | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const { isIOS } = useTheme();
 
   useEffect(() => {
     if (weather && onWeatherChange) {
@@ -31,14 +29,6 @@ export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
   const impactScore = weather ? getWeatherImpactScore(weather) : null;
 
   if (loading) {
-    if (isIOS) {
-      return (
-        <div className="flex items-center gap-2 rounded-full px-3 py-1.5 bg-[#F2F2F7]">
-          <Cloud size={14} className="text-[#8E8E93]" />
-          <span className="text-[10px] text-[#8E8E93]">获取天气中...</span>
-        </div>
-      );
-    }
     return (
       <div className="flex items-center gap-2 rounded-full px-3 py-1.5"
         style={{
@@ -52,17 +42,6 @@ export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
   }
 
   if (error || !weather) {
-    if (isIOS) {
-      return (
-        <button
-          onClick={refetch}
-          className="flex items-center gap-2 rounded-full px-3 py-1.5 bg-[#F2F2F7] active:opacity-70 transition-opacity"
-        >
-          <RefreshCw size={14} className="text-[#007AFF]" />
-          <span className="text-[10px] text-[#8E8E93]">获取天气</span>
-        </button>
-      );
-    }
     return (
       <button
         onClick={refetch}
@@ -77,36 +56,7 @@ export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
     );
   }
 
-  const CurrentBar = isIOS ? (
-    <div
-      className="flex items-center gap-3 rounded-full px-3 py-1.5 cursor-pointer bg-white shadow-sm"
-      onClick={() => setExpanded(!expanded)}
-    >
-      <span className="text-lg">{weather.weatherEmoji}</span>
-      <span className="text-black text-sm font-semibold">{weather.temperature}°C</span>
-      <span className="text-[11px] text-[#8E8E93]">{weather.weatherLabel}</span>
-      <div className="flex items-center gap-1 text-[#8E8E93] text-[10px]">
-        <Wind size={10} />
-        <span>{weather.windSpeed}km/h</span>
-      </div>
-      <div className="flex items-center gap-1 text-[#8E8E93] text-[10px]">
-        <Droplets size={10} />
-        <span>{weather.humidity}%</span>
-      </div>
-      {impactScore && (
-        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-          impactScore.score <= 30 ? "bg-[#34C759]/12 text-[#34C759]" :
-          impactScore.score <= 60 ? "bg-[#FF9500]/12 text-[#FF9500]" : "bg-[#FF3B30]/12 text-[#FF3B30]"
-        }`}>
-          {impactScore.score}分
-        </span>
-      )}
-      <button onClick={(e) => { e.stopPropagation(); refetch(); }} className="text-[#C7C7CC] hover:text-[#8E8E93] transition-colors ml-auto active:opacity-60">
-        <RefreshCw size={10} />
-      </button>
-      {expanded ? <ChevronUp size={12} className="text-[#C7C7CC]" /> : <ChevronDown size={12} className="text-[#C7C7CC]" />}
-    </div>
-  ) : (
+  const CurrentBar = (
     <div className="flex items-center gap-3 rounded-full px-3 py-1.5 cursor-pointer"
       style={{
         background: "rgba(0,229,255,0.03)",
@@ -156,13 +106,13 @@ export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className={`overflow-hidden ${isIOS ? "bg-white rounded-2xl p-4 shadow-sm" : "holo-card rounded-[20px] p-4"}`}
+            className="overflow-hidden holo-card rounded-[20px] p-4"
           >
             <div className="flex items-center gap-2 mb-3">
-              <Calendar size={12} className={isIOS ? "text-[#007AFF]" : "text-[#00E5FF]/60"} />
-              <span className={`text-[10px] ${isIOS ? "text-[#8E8E93]" : "terminal-text text-[#E0E0E0]/40"}`}>7日天气预报</span>
+              <Calendar size={12} className="text-[#00E5FF]/60" />
+              <span className="text-[10px] terminal-text text-[#E0E0E0]/40">7日天气预报</span>
               {forecastSummary && (
-                <span className={`text-[9px] ml-auto ${isIOS ? "text-[#C7C7CC]" : "text-[#E0E0E0]/25"}`}>
+                <span className="text-[9px] ml-auto text-[#E0E0E0]/25">
                   降雨概率 {forecastSummary.rainProbability}%
                 </span>
               )}
@@ -177,20 +127,18 @@ export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
                     key={day.date}
                     className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl min-w-[60px] ${
                       isToday
-                        ? (isIOS ? "bg-[#F2F2F7]" : "bg-[#00E5FF]/10 border border-[#00E5FF]/20")
-                        : (isIOS ? "bg-[#F2F2F7]/50" : "bg-[#00E5FF]/3")
+                        ? "bg-[#00E5FF]/10 border border-[#00E5FF]/20"
+                        : "bg-[#00E5FF]/3"
                     }`}
                   >
-                    <span className={`text-[9px] ${isIOS ? "text-[#8E8E93]" : "text-[#E0E0E0]/40"}`}>
+                    <span className="text-[9px] text-[#E0E0E0]/40">
                       {isToday ? "今天" : new Date(day.date).getDate() + "日"}
                     </span>
                     <span className="text-base">{day.weatherEmoji}</span>
-                    <span className={`text-[11px] font-medium ${isIOS ? "text-black" : "text-[#E0E0E0]"}`}>{day.maxTemp}°</span>
-                    <span className={`text-[9px] ${isIOS ? "text-[#8E8E93]" : "text-[#E0E0E0]/30"}`}>{day.minTemp}°</span>
+                    <span className="text-[11px] font-medium text-[#E0E0E0]">{day.maxTemp}°</span>
+                    <span className="text-[9px] text-[#E0E0E0]/30">{day.minTemp}°</span>
                     <span className={`text-[8px] ${
-                      isIOS
-                        ? (dayWeather === "rainy" ? "text-[#007AFF]" : dayWeather === "sunny" ? "text-[#FF9500]" : "text-[#8E8E93]")
-                        : (dayWeather === "rainy" ? "text-[#E040FB]" : dayWeather === "sunny" ? "text-[#FFD740]" : "text-[#E0E0E0]/40")
+                      dayWeather === "rainy" ? "text-[#E040FB]" : dayWeather === "sunny" ? "text-[#FFD740]" : "text-[#E0E0E0]/40"
                     }`}>
                       {day.weatherLabel}
                     </span>
@@ -201,16 +149,16 @@ export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
 
             {/* Temperature Trend */}
             {forecastSummary && (
-              <div className={`flex items-center gap-2 mt-3 pt-2 border-t ${isIOS ? "border-[#E5E5EA]" : "border-[#00E5FF]/8"}`}>
-                <span className={`text-[9px] ${isIOS ? "text-[#8E8E93]" : "text-[#E0E0E0]/30"}`}>气温趋势:</span>
+              <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[#00E5FF]/8">
+                <span className="text-[9px] text-[#E0E0E0]/30">气温趋势:</span>
                 {forecastSummary.temperatureTrend === "rising" ? (
-                  <span className={`text-[9px] flex items-center gap-1 ${isIOS ? "text-[#FF9500]" : "text-[#FF6D00]"}`}><TrendingUp size={10} /> 升温</span>
+                  <span className="text-[9px] flex items-center gap-1 text-[#FF6D00]"><TrendingUp size={10} /> 升温</span>
                 ) : forecastSummary.temperatureTrend === "falling" ? (
-                  <span className={`text-[9px] flex items-center gap-1 ${isIOS ? "text-[#007AFF]" : "text-[#00E5FF]"}`}><TrendingDown size={10} /> 降温</span>
+                  <span className="text-[9px] flex items-center gap-1 text-[#00E5FF]"><TrendingDown size={10} /> 降温</span>
                 ) : (
-                  <span className={`text-[9px] flex items-center gap-1 ${isIOS ? "text-[#8E8E93]" : "text-[#E0E0E0]/40"}`}><Minus size={10} /> 稳定</span>
+                  <span className="text-[9px] flex items-center gap-1 text-[#E0E0E0]/40"><Minus size={10} /> 稳定</span>
                 )}
-                <span className={`text-[9px] ml-auto ${isIOS ? "text-[#C7C7CC]" : "text-[#E0E0E0]/20"}`}>
+                <span className="text-[9px] ml-auto text-[#E0E0E0]/20">
                   最佳工作日: {forecastSummary.bestWorkDay.date.slice(5)}
                 </span>
               </div>

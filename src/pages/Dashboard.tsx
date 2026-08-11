@@ -17,8 +17,6 @@ import { exportBackup, importBackup } from "@/utils/storage";
 import { Weather, WEATHER_LABELS } from "@/types";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { isSupabaseConfigured } from "@/services/supabase";
-import { useTheme } from "@/hooks/useTheme";
-import IOSDashboard from "@/components/ios/IOSDashboard";
 
 // ── 动画配置 ──
 const container = {
@@ -185,12 +183,6 @@ function Dashboard() {
     if (h < 18) return "下午好";
     return "晚上好";
   };
-
-  const { isIOS } = useTheme();
-
-  if (isIOS) {
-    return <IOSDashboard />;
-  }
 
   const { todayOrders, todayIncome, todayGoalPercent, monthOrders, monthIncome, goalProgress, effectivePrice, bonusGap,
     monthlyPrediction, predictedIncome, tomorrowPrediction, insights,

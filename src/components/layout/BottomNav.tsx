@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { prefetchPage } from "@/utils/prefetch";
 import BottomSheet from "@/components/shared/BottomSheet";
-import { useTheme } from "@/hooks/useTheme";
 
 interface NavItem {
   to: string;
@@ -50,7 +49,6 @@ function BottomNav() {
   const navRef = useRef<HTMLDivElement>(null);
   const [glowStyle, setGlowStyle] = useState({ left: 0, width: 0, opacity: 0 });
   const [moreOpen, setMoreOpen] = useState(false);
-  const { isIOS } = useTheme();
 
   const activeIndex = mainItems.findIndex((i) => i.to === location.pathname);
   const isMoreActive = morePaths.has(location.pathname);
@@ -85,37 +83,7 @@ function BottomNav() {
     return () => clearTimeout(id);
   }, []);
 
-  const renderIOSMainItem = (item: NavItem) => (
-    <NavLink
-      key={item.to}
-      to={item.to}
-      data-nav-item
-      onPointerEnter={() => item.prefetch?.()}
-      onTouchStart={() => item.prefetch?.()}
-      className={({ isActive }) =>
-        `flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full transition-colors ${
-          isActive ? "text-[#007AFF]" : "text-[#8E8E93]"
-        }`
-      }
-    >
-      {({ isActive }) => (
-        <>
-          <div className="relative">
-            <item.icon size={22} strokeWidth={isActive ? 2.2 : 1.6} />
-            {item.badge && (
-              <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-[#FF3B30] text-white text-[9px] font-bold flex items-center justify-center">
-                {item.badge > 99 ? "99+" : item.badge}
-              </span>
-            )}
-            {item.badgeDot && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#FF3B30]" />}
-          </div>
-          <span className="text-[10px] font-medium leading-none">{item.label}</span>
-        </>
-      )}
-    </NavLink>
-  );
-
-  const renderCyberMainItem = (item: NavItem) => (
+  const renderMainItem = (item: NavItem) => (
     <NavLink
       key={item.to}
       to={item.to}
@@ -172,55 +140,6 @@ function BottomNav() {
     </NavLink>
   );
 
-  if (isIOS) {
-    return (
-      <>
-        <nav className="ios-tab-bar">
-          <div
-            ref={navRef}
-            className="flex items-center justify-around max-w-lg mx-auto h-[48px] px-2"
-          >
-            {mainItems.map(renderIOSMainItem)}
-            <button
-              data-nav-item
-              onClick={() => setMoreOpen(true)}
-              onPointerEnter={() => moreItems.forEach((i) => i.prefetch?.())}
-              className={`flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full transition-colors ${
-                isMoreActive ? "text-[#007AFF]" : "text-[#8E8E93]"
-              }`}
-            >
-              <LayoutGrid size={22} strokeWidth={isMoreActive ? 2.2 : 1.6} />
-              <span className="text-[10px] font-medium leading-none">更多</span>
-            </button>
-          </div>
-        </nav>
-
-        <BottomSheet isOpen={moreOpen} onClose={() => setMoreOpen(false)} title="更多功能" ios>
-          <div className="grid grid-cols-3 gap-3">
-            {moreItems.map((item) => (
-              <button
-                key={item.to}
-                onClick={() => {
-                  navigate(item.to);
-                  setMoreOpen(false);
-                }}
-                onPointerEnter={() => item.prefetch?.()}
-                className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all active:scale-95 active:opacity-80 ${
-                  location.pathname === item.to
-                    ? "bg-[#007AFF]/12 text-[#007AFF]"
-                    : "bg-[#F2F2F7] text-[#000000]"
-                }`}
-              >
-                <item.icon size={24} strokeWidth={1.8} />
-                <span className="text-xs font-medium">{item.label}</span>
-              </button>
-            ))}
-          </div>
-        </BottomSheet>
-      </>
-    );
-  }
-
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-30">
@@ -240,7 +159,7 @@ function BottomNav() {
             className="flex items-center justify-around max-w-lg mx-auto h-[62px] px-2 relative"
           >
             {/* 主入口 */}
-            {mainItems.map(renderCyberMainItem)}
+            {mainItems.map(renderMainItem)}
 
             {/* 更多入口 */}
             <button

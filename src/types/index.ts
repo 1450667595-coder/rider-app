@@ -62,8 +62,6 @@ export interface UserSettings {
   city?: string;
   // 城市坐标：lat,lon
   cityCoords?: { lat: number; lon: number };
-  // 界面主题：cyber=赛博朋克（默认），ios=苹果玻璃态
-  theme?: "cyber" | "ios";
 }
 
 export interface Achievement {
