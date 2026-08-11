@@ -47,7 +47,7 @@ function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const navRef = useRef<HTMLDivElement>(null);
-  const [glowStyle, setGlowStyle] = useState({ left: 0, width: 0, opacity: 0 });
+  const [glowStyle, setGlowStyle] = useState({ x: 0, width: 0, opacity: 0 });
   const [moreOpen, setMoreOpen] = useState(false);
 
   const activeIndex = mainItems.findIndex((i) => i.to === location.pathname);
@@ -66,7 +66,7 @@ function BottomNav() {
       const navRect = navRef.current.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
       setGlowStyle({
-        left: targetRect.left - navRect.left + targetRect.width / 2 - 24,
+        x: targetRect.left - navRect.left + targetRect.width / 2 - 24,
         width: 48,
         opacity: 1,
       });
@@ -91,7 +91,7 @@ function BottomNav() {
       onPointerEnter={() => item.prefetch?.()}
       onTouchStart={() => item.prefetch?.()}
       className={({ isActive }) =>
-        `flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full transition-all duration-300 tap-cyber nav-tap-haptic ${
+        `flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full transition-colors duration-300 tap-cyber nav-tap-haptic ${
           isActive ? "nav-cyber-active" : ""
         }`
       }
@@ -102,7 +102,7 @@ function BottomNav() {
             <item.icon
               size={18}
               strokeWidth={isActive ? 2.5 : 1.5}
-              className={`transition-all duration-300 ${
+              className={`transition-colors duration-300 ${
                 isActive ? "text-[#00E5FF]" : "text-[#E0E0E0]/25"
               }`}
               style={
@@ -126,7 +126,7 @@ function BottomNav() {
             {item.badgeDot && <span className="nav-badge-dot" />}
           </div>
           <span
-            className={`text-[10px] font-medium leading-none tracking-wider transition-all duration-300 ${
+            className={`text-[10px] font-medium leading-none tracking-wider transition-colors duration-300 ${
               isActive ? "text-[#00E5FF]" : "text-[#E0E0E0]/25"
             }`}
             style={
@@ -148,7 +148,7 @@ function BottomNav() {
           <div
             className="nav-glow-tracker"
             style={{
-              left: `${glowStyle.left}px`,
+              transform: `translateX(${glowStyle.x}px)`,
               width: `${glowStyle.width}px`,
               opacity: glowStyle.opacity,
             }}
@@ -166,7 +166,7 @@ function BottomNav() {
               data-nav-item
               onClick={() => setMoreOpen(true)}
               onPointerEnter={() => moreItems.forEach((i) => i.prefetch?.())}
-              className={`flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full transition-all duration-300 tap-cyber nav-tap-haptic ${
+              className={`flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full transition-colors duration-300 tap-cyber nav-tap-haptic ${
                 isMoreActive ? "nav-cyber-active" : ""
               }`}
             >
@@ -174,7 +174,7 @@ function BottomNav() {
                 <LayoutGrid
                   size={18}
                   strokeWidth={isMoreActive ? 2.5 : 1.5}
-                  className={`transition-all duration-300 ${
+                  className={`transition-colors duration-300 ${
                     isMoreActive ? "text-[#00E5FF]" : "text-[#E0E0E0]/25"
                   }`}
                   style={
@@ -194,7 +194,7 @@ function BottomNav() {
                 )}
               </div>
               <span
-                className={`text-[10px] font-medium leading-none tracking-wider transition-all duration-300 ${
+                className={`text-[10px] font-medium leading-none tracking-wider transition-colors duration-300 ${
                   isMoreActive ? "text-[#00E5FF]" : "text-[#E0E0E0]/25"
                 }`}
                 style={
@@ -218,7 +218,7 @@ function BottomNav() {
                 setMoreOpen(false);
               }}
               onPointerEnter={() => item.prefetch?.()}
-              className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all tap-cyber ${
+              className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-colors tap-cyber ${
                 location.pathname === item.to
                   ? "bg-[#00E5FF]/10 border-[#00E5FF]/30 text-[#00E5FF]"
                   : "bg-[#00E5FF]/3 border-[#00E5FF]/8 text-[#E0E0E0]/70 hover:bg-[#00E5FF]/8 hover:border-[#00E5FF]/20"

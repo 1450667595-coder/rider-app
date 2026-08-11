@@ -20,6 +20,46 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// ── Weather Proxy（解决 HTTP 源在 HTTPS 页面下的混合内容问题）──
+
+// wthrcdn.etouch.cn（中国天气网/万年历）按城市名查询
+app.get("/api/weather/wthrcdn", async (req, res) => {
+  try {
+    const city = req.query.city;
+    if (!city || typeof city !== "string" || city.trim().length === 0) {
+      return res.status(400).json({ error: "city is required" });
+    }
+    const upstream = await fetch(`https://wthrcdn.etouch.cn/weather_mini?city=${encodeURIComponent(city)}`);
+    if (!upstream.ok) {
+      return res.status(502).json({ error: "upstream weather api error" });
+    }
+    const data = await upstream.json();
+    res.json(data);
+  } catch (err) {
+    console.error("Weather proxy error:", err);
+    res.status(502).json({ error: "failed to fetch weather" });
+  }
+});
+
+// sojson.com 按城市代码查询
+app.get("/api/weather/city/:code", async (req, res) => {
+  try {
+    const { code } = req.params;
+    if (!/^\d{9}$/.test(code)) {
+      return res.status(400).json({ error: "invalid city code" });
+    }
+    const upstream = await fetch(`http://t.weather.sojson.com/api/weather/city/${code}`);
+    if (!upstream.ok) {
+      return res.status(502).json({ error: "upstream weather api error" });
+    }
+    const data = await upstream.json();
+    res.json(data);
+  } catch (err) {
+    console.error("Weather proxy error:", err);
+    res.status(502).json({ error: "failed to fetch weather" });
+  }
+});
+
 // ── Records CRUD ──
 
 // Get all records for a user

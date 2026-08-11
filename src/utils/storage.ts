@@ -1,4 +1,4 @@
-import { AppStorage, UserSettings, Achievement } from "@/types";
+import { AppStorage, UserSettings, Achievement, ShiftType } from "@/types";
 
 const STORAGE_KEY = "rider-workbench-data";
 const DB_NAME = "rider-workbench-db";
@@ -7,6 +7,7 @@ const STORE_NAME = "app-data";
 const BACKUP_KEY = "rider-workbench-backup";
 const SAVE_COUNT_KEY = "rider-save-count";
 const LAST_SAVE_KEY = "rider-last-save";
+const SHIFT_LOCK_BACKUP_KEY = "rider-shift-lock-backup";
 
 const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   { id: "total_100", name: "初出茅庐", description: "累计完成 100 单", icon: "🚴", threshold: 100, type: "total_orders", unlocked: false, unlockedAt: null },
@@ -185,28 +186,91 @@ function loadAutoBackup(): AppStorage | null {
 }
 
 // ═══════════════════════════════════════════════
+// 班次锁定专用备份层（防止主存储被旧数据覆盖导致锁定丢失）
+// ═══════════════════════════════════════════════
+
+export interface ShiftLockBackup {
+  weeklyShifts: Record<string, ShiftType>;
+  weeklyShiftsUpdatedAt: number;
+  savedAt: string;
+}
+
+export function saveShiftLockBackup(weeklyShifts: Record<string, ShiftType>, weeklyShiftsUpdatedAt: number): void {
+  try {
+    const backup: ShiftLockBackup = {
+      weeklyShifts: { ...weeklyShifts },
+      weeklyShiftsUpdatedAt,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(SHIFT_LOCK_BACKUP_KEY, JSON.stringify(backup));
+  } catch {
+    // 静默失败，不影响主流程
+  }
+}
+
+export function loadShiftLockBackup(): ShiftLockBackup | null {
+  try {
+    const raw = localStorage.getItem(SHIFT_LOCK_BACKUP_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as ShiftLockBackup;
+    if (data.weeklyShifts && typeof data.weeklyShiftsUpdatedAt === "number") {
+      return data;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** 如果班次锁定备份比当前数据新，则合并到数据中 */
+export function applyShiftLockBackup(data: AppStorage): AppStorage {
+  const backup = loadShiftLockBackup();
+  if (!backup) return data;
+
+  const currentAt = data.settings?.weeklyShiftsUpdatedAt || 0;
+  if (backup.weeklyShiftsUpdatedAt <= currentAt) return data;
+
+  const mergedShifts = { ...(data.settings.weeklyShifts || {}), ...backup.weeklyShifts };
+  return {
+    ...data,
+    settings: {
+      ...data.settings,
+      weeklyShifts: mergedShifts,
+      weeklyShiftsUpdatedAt: backup.weeklyShiftsUpdatedAt,
+    },
+  };
+}
+
+// ═══════════════════════════════════════════════
 // 统一加载：三重保障，确保数据永不丢失
 // localStorage → IndexedDB → 自动备份 → 默认数据
 // ═══════════════════════════════════════════════
 
-/** 合并两份本地存储数据：records 取并集，settings 按 weeklyShiftsUpdatedAt 取最新 */
-function mergeStorageData(local: AppStorage, remote: AppStorage): AppStorage {
+/** 合并两份本地存储数据：records 取并集；weeklyShifts 以最新时间戳为准 */
+export function mergeStorageData(local: AppStorage, remote: AppStorage): AppStorage {
   // records：以本地为主，远程补充本地缺失的日期
   const mergedRecords = { ...remote.records, ...local.records };
 
-  // settings：以班次覆盖时间戳为准，避免旧设置覆盖新锁定的班次
+  // settings：只有 remote 的班次时间戳更新时，才认为 remote 整体配置更新；
+  // 否则保留本地基础设置，避免旧 IndexedDB/云端数据把用户最新设置刷回旧值。
   const localAt = local.settings.weeklyShiftsUpdatedAt || 0;
   const remoteAt = remote.settings.weeklyShiftsUpdatedAt || 0;
-  const useRemoteSettings = remoteAt > localAt;
+  const remoteIsNewer = remoteAt > localAt;
 
-  const mergedSettings = useRemoteSettings
-    ? {
-        ...local.settings,
-        ...remote.settings,
-        weeklyShifts: remote.settings.weeklyShifts,
-        weeklyShiftsUpdatedAt: remoteAt,
-      }
-    : { ...local.settings };
+  const localShifts = local.settings.weeklyShifts || {};
+  const remoteShifts = remote.settings.weeklyShifts || {};
+
+  // weeklyShifts 按周合并：以最新时间戳为准，完全信任更新方。
+  // 这样跨设备解锁也能正确同步，避免旧锁定被旧数据残留覆盖。
+  const mergedShifts = remoteIsNewer
+    ? { ...remoteShifts }
+    : { ...localShifts };
+
+  const mergedSettings: UserSettings = {
+    ...(remoteIsNewer ? { ...local.settings, ...remote.settings } : { ...remote.settings, ...local.settings }),
+    weeklyShifts: mergedShifts,
+    weeklyShiftsUpdatedAt: Math.max(localAt, remoteAt),
+  };
 
   return {
     ...local,
@@ -215,33 +279,24 @@ function mergeStorageData(local: AppStorage, remote: AppStorage): AppStorage {
   };
 }
 
+function repairLoadedData(data: AppStorage): AppStorage {
+  if (data.settings?.riderName === "骑手") {
+    data.settings.riderName = "Power";
+  }
+  return data;
+}
+
+/** 同步加载：优先返回最快的 localStorage（初始化首屏用） */
 export function loadStorage(): AppStorage {
-  // 1. 先尝试 localStorage（最快）
   const localData = loadFromLocalStorage();
   if (localData) {
-    // 异步从 IndexedDB 加载，按时间戳/记录数合并，避免旧设置覆盖新锁定的班次
-    loadFromIndexedDB().then((idbData) => {
-      if (!idbData) return;
-      const localCount = Object.keys(localData.records).length;
-      const idbCount = Object.keys(idbData.records).length;
-      const localAt = localData.settings.weeklyShiftsUpdatedAt || 0;
-      const idbAt = idbData.settings.weeklyShiftsUpdatedAt || 0;
-      // 只有 IndexedDB 确实更新（记录更多 或 班次时间戳更新）时才重写 localStorage
-      if (idbCount > localCount || idbAt > localAt) {
-        const merged = mergeStorageData(localData, idbData);
-        saveToLocalStorage(merged);
-      }
-    });
-    return localData;
+    repairLoadedData(localData);
+    return applyShiftLockBackup(localData);
   }
 
-  // 2. 尝试从自动备份恢复
   const backup = loadAutoBackup();
   if (backup) {
-    // 迁移旧默认值
-    if (backup.settings?.riderName === "骑手") {
-      backup.settings.riderName = "Power";
-    }
+    repairLoadedData(backup);
     const merged = {
       ...getDefaultStorage(),
       ...backup,
@@ -251,11 +306,60 @@ export function loadStorage(): AppStorage {
     saveToLocalStorage(merged);
     saveToIndexedDB(merged);
     console.log("已从自动备份恢复数据");
+    return applyShiftLockBackup(merged);
+  }
+
+  return applyShiftLockBackup(getDefaultStorage());
+}
+
+/**
+ * 异步加载：完整走一遍 localStorage → IndexedDB → 备份的合并，
+ * 返回最终应当以内存为准的数据。用于关键操作后重新加载。
+ */
+export async function loadStorageAsync(): Promise<AppStorage> {
+  const localData = loadFromLocalStorage();
+  const idbData = await loadFromIndexedDB();
+
+  if (localData && idbData) {
+    const localAt = localData.settings.weeklyShiftsUpdatedAt || 0;
+    const idbAt = idbData.settings.weeklyShiftsUpdatedAt || 0;
+    const localCount = Object.keys(localData.records).length;
+    const idbCount = Object.keys(idbData.records).length;
+
+    // 只要 IDB 更新，就合并回写；避免 localStorage 因崩溃/杀进程没写成功导致数据回退
+    if (idbAt > localAt || idbCount > localCount) {
+      const merged = applyShiftLockBackup(mergeStorageData(localData, idbData));
+      saveToLocalStorage(merged);
+      return merged;
+    }
+    return applyShiftLockBackup(localData);
+  }
+
+  if (idbData) {
+    const merged = applyShiftLockBackup(idbData);
+    saveToLocalStorage(merged);
     return merged;
   }
 
-  // 3. 返回默认数据
-  return getDefaultStorage();
+  if (localData) {
+    return applyShiftLockBackup(localData);
+  }
+
+  const backup = loadAutoBackup();
+  if (backup) {
+    repairLoadedData(backup);
+    const merged = {
+      ...getDefaultStorage(),
+      ...backup,
+      settings: { ...DEFAULT_SETTINGS, ...backup.settings },
+      achievements: backup.achievements || DEFAULT_ACHIEVEMENTS.map(a => ({ ...a })),
+    };
+    saveToLocalStorage(merged);
+    saveToIndexedDB(merged);
+    return applyShiftLockBackup(merged);
+  }
+
+  return applyShiftLockBackup(getDefaultStorage());
 }
 
 // ═══════════════════════════════════════════════
@@ -267,7 +371,12 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 export function saveStorage(data: AppStorage): void {
   // 立即写入 localStorage（最快）
   saveToLocalStorage(data);
-  
+
+  // 班次锁定专用备份：只要主存储里有时间戳就同步写入，确保锁定状态多一层保护
+  if (data.settings?.weeklyShiftsUpdatedAt) {
+    saveShiftLockBackup(data.settings.weeklyShifts || {}, data.settings.weeklyShiftsUpdatedAt);
+  }
+
   // 防抖写入 IndexedDB（300ms 内多次调用只写一次）
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -290,16 +399,19 @@ export function saveStorage(data: AppStorage): void {
 // 立即保存（不防抖，用于关键操作）
 // ═══════════════════════════════════════════════
 
-export function saveStorageImmediate(data: AppStorage): void {
+export function saveStorageImmediate(data: AppStorage): Promise<void> {
   if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
   saveToLocalStorage(data);
-  saveToIndexedDB(data);
+  saveAutoBackup(data);
+  // 班次锁定专用备份：关键操作时同步写入
+  if (data.settings?.weeklyShiftsUpdatedAt) {
+    saveShiftLockBackup(data.settings.weeklyShifts || {}, data.settings.weeklyShiftsUpdatedAt);
+  }
+  const idbPromise = saveToIndexedDB(data);
   const saveCount = parseInt(localStorage.getItem(SAVE_COUNT_KEY) || "0") + 1;
   localStorage.setItem(SAVE_COUNT_KEY, String(saveCount));
-  if (saveCount % 5 === 0) {
-    saveAutoBackup(data);
-  }
   localStorage.setItem(LAST_SAVE_KEY, new Date().toISOString());
+  return idbPromise;
 }
 
 // ═══════════════════════════════════════════════

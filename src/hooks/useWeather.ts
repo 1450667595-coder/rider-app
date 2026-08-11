@@ -68,12 +68,16 @@ export function useWeather() {
 
     let data: WeatherData | null = null;
 
-    // 优先使用用户设置的城市坐标
-    if (cityCoords) {
-      data = await fetchWeatherByCoords(cityCoords.lat, cityCoords.lon);
-      if (data && city) data.cityName = city;
-    } else if (city) {
+    // 优先使用用户设置的城市名（中国源 wthrcdn.etouch.cn 更准确）
+    if (city) {
       data = await fetchWeatherByCity(city);
+      // 城市名失败且用户同时有坐标时，用坐标兜底
+      if (!data && cityCoords) {
+        data = await fetchWeatherByCoords(cityCoords.lat, cityCoords.lon);
+        if (data) data.cityName = city;
+      }
+    } else if (cityCoords) {
+      data = await fetchWeatherByCoords(cityCoords.lat, cityCoords.lon);
     } else {
       // 回退到 GPS 定位
       const location = await getUserLocation();

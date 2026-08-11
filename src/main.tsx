@@ -5,7 +5,7 @@ import './index.css'
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    const swPath = `${import.meta.env.BASE_URL || './'}sw.js?v=2`
+    const swPath = `${import.meta.env.BASE_URL || './'}sw.js?v=4`
     navigator.serviceWorker
       .register(swPath)
       .then((registration) => {

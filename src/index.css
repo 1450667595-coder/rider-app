@@ -91,6 +91,7 @@ body::before {
   animation: gridDrift 60s linear infinite;
   will-change: transform;
   transform: translateZ(0);
+  contain: paint;
 }
 
 body::after {
@@ -106,6 +107,7 @@ body::after {
   animation: glowBreathe 8s ease-in-out infinite;
   will-change: opacity;
   transform: translateZ(0);
+  contain: paint;
 }
 
 @keyframes gridDrift {
@@ -142,6 +144,7 @@ body::after {
   );
   transform: translateZ(0);
   will-change: transform;
+  contain: paint;
 }
 
 /* ═══════════════════════════════
@@ -158,13 +161,14 @@ body::after {
   background: linear-gradient(90deg, transparent, rgba(0,229,255,0.4) 20%, rgba(0,229,255,0.5) 50%, rgba(0,229,255,0.4) 80%, transparent);
   box-shadow: 0 0 10px rgba(0,229,255,0.4), 0 0 30px rgba(0,229,255,0.2);
   animation: hudScan 4s ease-in-out infinite;
-  will-change: top, opacity;
-  transform: translateZ(0);
+  will-change: transform, opacity;
+  transform: translateY(36px) translateZ(0);
+  contain: paint;
 }
 
 @keyframes hudScan {
-  0%, 100% { opacity: 0.4; top: 36px; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: 0.4; transform: translateY(36px) translateZ(0); }
+  50% { opacity: 1; transform: translateY(44px) translateZ(0); }
 }
 
 /* ═══════════════════════════════
@@ -409,7 +413,7 @@ body::after {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   font-family: var(--font-cn);
   letter-spacing: 0.02em;
   text-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
@@ -429,7 +433,7 @@ body::after {
   padding: 12px 24px;
   font-size: 15px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
   font-family: var(--font-cn);
   letter-spacing: 0.02em;
   box-shadow: 0 0 30px rgba(0, 229, 255, 0.25), 0 4px 16px rgba(0, 229, 255, 0.15);
@@ -448,7 +452,7 @@ body::after {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   font-family: var(--font-cn);
 }
 .btn-cyber-danger:active {
@@ -519,7 +523,7 @@ body::after {
   font-size: 14px;
   font-family: var(--font-cn);
   outline: none;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
   width: 100%;
 }
 .input-cyber::placeholder { color: rgba(255,255,255,0.15); }
@@ -657,7 +661,7 @@ body::after {
   overflow: visible;
 }
 .sparkline-svg polyline {
-  transition: all 0.4s ease;
+  transition: stroke 0.4s ease, stroke-width 0.4s ease;
 }
 
 /* ═══════════════════════════════
@@ -722,7 +726,8 @@ body::after {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 20px rgba(0, 229, 255, 0.35), 0 0 40px rgba(0, 229, 255, 0.15);
-  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  will-change: transform;
 }
 .fab-button:hover {
   transform: scale(1.08);
@@ -754,7 +759,8 @@ body::after {
   font-family: var(--font-cn);
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 .fab-menu-item:hover {
@@ -883,7 +889,8 @@ body::after {
   border-radius: 3px;
   background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
   box-shadow: 0 0 12px var(--neon-cyan-glow), 0 0 24px rgba(0, 229, 255, 0.2);
-  transition: left 0.2s ease, width 0.2s ease;
+  transition: transform 0.2s ease, width 0.2s ease;
+  will-change: transform, width;
   pointer-events: none;
 }
 
@@ -1308,7 +1315,7 @@ body::after {
   content: '';
   position: absolute;
   top: 50%;
-  left: -100%;
+  left: 0;
   width: 100%;
   height: 2px;
   background: linear-gradient(90deg,
@@ -1319,11 +1326,12 @@ body::after {
   animation: dataPulse 3s ease-in-out infinite;
   pointer-events: none;
   z-index: 3;
+  will-change: transform, opacity;
 }
 @keyframes dataPulse {
-  0% { left: -100%; opacity: 0; }
+  0% { transform: translateX(-100%); opacity: 0; }
   50% { opacity: 1; }
-  100% { left: 100%; opacity: 0; }
+  100% { transform: translateX(100%); opacity: 0; }
 }
 
 /* 科技感六边形网格 */
@@ -1400,7 +1408,7 @@ body::after {
   content: '';
   position: absolute;
   top: 0;
-  left: -100%;
+  left: 0;
   width: 50%;
   height: 100%;
   background: linear-gradient(90deg,
@@ -1410,10 +1418,11 @@ body::after {
   animation: dataStreamGlow 3s ease-in-out infinite;
   pointer-events: none;
   z-index: 1;
+  will-change: transform;
 }
 @keyframes dataStreamGlow {
-  0% { left: -100%; }
-  100% { left: 200%; }
+  0% { transform: translateX(-200%); }
+  100% { transform: translateX(200%); }
 }
 
 /* 霓虹文字脉冲 */
@@ -1604,4 +1613,18 @@ body::after {
 @keyframes holoDataBgMove {
   0% { transform: translate(0, 0); }
   100% { transform: translate(30px, 30px); }
+}
+
+/* ═══════════════════════════════
+   减少动态效果 / 性能与可访问性
+   ═══════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

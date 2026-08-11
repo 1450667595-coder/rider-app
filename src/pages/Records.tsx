@@ -8,6 +8,7 @@ import { showToast } from "@/components/shared/Toast";
 import { Weather, DailyRecord, WEATHER_OPTIONS } from "@/types";
 import {
   fetchWeatherByCoords,
+  fetchWeatherByCity,
   fetchWeatherForDate,
   weatherCodeToOurWeather,
   getUserLocation,
@@ -155,8 +156,11 @@ export default function Records() {
         const lon = loc?.lon ?? 116.4;
         const todayStr = today();
 
+        // 优先使用用户设置的城市（中国源更准确）
         if (selectedDate === todayStr) {
-          const current = await fetchWeatherByCoords(lat, lon);
+          const current = city
+            ? await fetchWeatherByCity(city)
+            : await fetchWeatherByCoords(lat, lon);
           if (!cancelled && current) {
             setEditForm((prev) => ({
               ...prev,
@@ -172,7 +176,7 @@ export default function Records() {
             }));
           }
         } else {
-          const dateWeather = await fetchWeatherForDate(lat, lon, selectedDate);
+          const dateWeather = await fetchWeatherForDate(lat, lon, selectedDate, city);
           if (!cancelled && dateWeather) {
             setEditForm((prev) => ({
               ...prev,
