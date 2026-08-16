@@ -254,7 +254,7 @@ function scheduleApiSync() {
     useStore.setState({ syncStatus: "syncing" });
     try {
       // 必须用当前最新状态，避免闭包捕获旧状态把已修改的班次/设置刷回旧值
-      const s = useStore.getState();
+      const s = useStore.getState() as AppState;
       const records = Object.values(s.records);
       if (records.length > 0) {
         await apiSaveSettings(userId, {
@@ -358,7 +358,7 @@ const useStore = create<AppState>((set, get) => {
               // 合并后立即检查成就（云端数据可能包含新的历史记录）
               get().checkAchievements();
               // 合并后把本地多余的数据也推上云端
-              set((state) => {
+              set((state: AppState) => {
                 const localOnly: Record<string, DailyRecord> = {};
                 const cloudKeys = new Set(cloudRecords ? Object.keys(cloudRecords) : []);
                 for (const [date, rec] of Object.entries(state.records)) {
