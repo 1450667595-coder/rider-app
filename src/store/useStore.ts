@@ -124,6 +124,7 @@ async function fetchTodayWeather(settings: UserSettings): Promise<{ weather: imp
       weatherEmoji: data.weatherEmoji,
       windSpeed: data.windSpeed,
       humidity: data.humidity,
+      source: data.source,
     },
   };
 }

@@ -15,6 +15,8 @@ export interface DailyRecord {
     weatherEmoji: string;
     windSpeed?: number;
     humidity?: number;
+    /** 数据来源：wthrcdn / sojson / open-meteo（可用于 UI 展示可信度标签） */
+    source?: string;
   };
 }
 

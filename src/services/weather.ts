@@ -60,6 +60,70 @@ export interface WeatherImpactScore {
   recommendation: string;
 }
 
+// ═══════════════════════════════════════════════════
+// 网络工具：带超时 + 重试的 fetch 封装
+// ═══════════════════════════════════════════════════
+
+interface FetchWithRetryOptions {
+  timeoutMs?: number;
+  maxRetries?: number;
+  retryDelayMs?: number;
+}
+
+const DEFAULT_FETCH_OPTIONS: Required<FetchWithRetryOptions> = {
+  timeoutMs: 8000,
+  maxRetries: 2,
+  retryDelayMs: 400,
+};
+
+function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+  return Promise.race([
+    fetch(url),
+    new Promise<Response>((_, reject) =>
+      setTimeout(() => reject(new Error(`Request timeout after ${timeoutMs}ms`)), timeoutMs)
+    ),
+  ]);
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: FetchWithRetryOptions = {}
+): Promise<Response> {
+  const { timeoutMs, maxRetries, retryDelayMs } = { ...DEFAULT_FETCH_OPTIONS, ...options };
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetchWithTimeout(url, timeoutMs);
+      if (res.ok) return res;
+      lastErr = new Error(`HTTP ${res.status}`);
+    } catch (e) {
+      lastErr = e;
+    }
+    // 如果不是最后一次尝试，等一下再重试（指数退避）
+    if (attempt < maxRetries) {
+      const delay = retryDelayMs * Math.pow(2, attempt);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("Request failed");
+}
+
+// 对多个候选 URL 逐个尝试，直到找到一个可用的
+async function tryFetchUrls(
+  urls: string[],
+  options: FetchWithRetryOptions = {}
+): Promise<Response | null> {
+  for (const url of urls) {
+    try {
+      const res = await fetchWithRetry(url, options);
+      if (res?.ok) return res;
+    } catch {
+      // 继续下一个
+    }
+  }
+  return null;
+}
+
 // WMO Weather Codes mapping（Open-Meteo 降级用）
 const WMO_CODES: Record<number, { label: string; emoji: string }> = {
   0: { label: "晴天", emoji: "☀️" },
@@ -513,15 +577,7 @@ async function fetchWthrcdnWeather(city: string): Promise<WeatherData | null> {
       `http://wthrcdn.etouch.cn/weather_mini?city=${encoded}`,
     ];
 
-    let res: Response | null = null;
-    for (const url of urls) {
-      try {
-        const attempt = await fetch(url);
-        if (attempt.ok) { res = attempt; break; }
-      } catch {
-        res = null;
-      }
-    }
+    const res = await tryFetchUrls(urls);
     if (!res) return null;
 
     const json: WthrcdnResponse = await res.json();
@@ -599,17 +655,8 @@ async function fetchSojsonWeather(cityCode: string): Promise<WeatherData | null>
     const proxyUrl = `${apiBase}/api/weather/city/${cityCode}`;
     const directUrl = `http://t.weather.sojson.com/api/weather/city/${cityCode}`;
 
-    let res: Response | null = null;
-    try {
-      res = await fetch(proxyUrl);
-      if (!res.ok) res = null;
-    } catch {
-      res = null;
-    }
-    if (!res) {
-      res = await fetch(directUrl);
-      if (!res.ok) return null;
-    }
+    const res = await tryFetchUrls([proxyUrl, directUrl]);
+    if (!res) return null;
 
     const json: SojsonResponse = await res.json();
     if (json.status !== 200 || !json.data) return null;
@@ -688,7 +735,8 @@ export async function fetchWeatherByCoords(
 ): Promise<WeatherData | null> {
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7`;
-    const res = await fetch(url);
+    const res = await fetchWithRetry(url, { timeoutMs: 10000 });
+    if (!res.ok) return null;
     const data = await res.json();
 
     const currentCode = data.current.weather_code;
@@ -732,7 +780,8 @@ export interface CityResult {
 export async function searchCities(city: string): Promise<CityResult[]> {
   try {
     const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=5&language=zh`;
-    const geoRes = await fetch(geoUrl);
+    const geoRes = await fetchWithRetry(geoUrl, { timeoutMs: 5000, maxRetries: 1 });
+    if (!geoRes.ok) return [];
     const geoData = await geoRes.json();
     if (!geoData.results || geoData.results.length === 0) return [];
     return geoData.results.map((r: Record<string, unknown>) => ({

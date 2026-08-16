@@ -1,12 +1,38 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cloud, Wind, Droplets, RefreshCw, ChevronDown, ChevronUp, Calendar, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Cloud, Wind, Droplets, RefreshCw, ChevronDown, ChevronUp, Calendar, TrendingUp, TrendingDown, Minus, Signal } from "lucide-react";
 import { useWeather } from "@/hooks/useWeather";
 import { weatherCodeToOurWeather, getWeatherForecastSummary, getWeatherImpactScore } from "@/services/weather";
 import type { Weather } from "@/types";
 
 interface WeatherWidgetProps {
   onWeatherChange?: (weather: Weather) => void;
+}
+
+// 天气来源展示：用更友好的名字 + 可信度颜色标识
+const SOURCE_META: Record<string, { label: string; color: string; hint: string }> = {
+  wthrcdn: { label: "中国天气网", color: "#00E5FF", hint: "最准确" },
+  sojson: { label: "Sojson", color: "#FFD740", hint: "较准确" },
+  "open-meteo": { label: "Open-Meteo", color: "#9E9E9E", hint: "全球源" },
+};
+
+function SourceBadge({ source }: { source?: string }) {
+  if (!source) return null;
+  const meta = SOURCE_META[source] || { label: source, color: "#9E9E9E", hint: "" };
+  return (
+    <span
+      className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full"
+      title={meta.hint ? `数据源: ${meta.label} · ${meta.hint}` : `数据源: ${meta.label}`}
+      style={{
+        background: `${meta.color}10`,
+        color: meta.color,
+        border: `1px solid ${meta.color}30`,
+      }}
+    >
+      <Signal size={8} />
+      {meta.label}
+    </span>
+  );
 }
 
 export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
@@ -83,6 +109,7 @@ export default function WeatherWidget({ onWeatherChange }: WeatherWidgetProps) {
           {impactScore.score}分
         </span>
       )}
+      <SourceBadge source={weather.source} />
       <button onClick={(e) => { e.stopPropagation(); refetch(); }} className="tap-cyber text-[#E0E0E0]/20 hover:text-[#E0E0E0]/45 transition-colors ml-auto">
         <RefreshCw size={10} />
       </button>
