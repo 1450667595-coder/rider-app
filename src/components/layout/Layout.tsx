@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import BottomNav from "./BottomNav";
 import ToastContainer from "@/components/shared/Toast";
+import NetworkBanner from "@/components/shared/NetworkBanner";
 import useStore from "@/store/useStore";
 import type { SyncStatus } from "@/store/useStore";
 import { isSupabaseConfigured } from "@/services/supabase";
@@ -53,6 +54,9 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen min-h-dvh relative text-[#E0E0E0] cyber-particles">
+      {/* 断网/弱网提示横幅（优先级最高，先盖住状态条上面） */}
+      <NetworkBanner />
+
       {/* 扫描线 */}
       <div className="scanlines-overlay" />
 
